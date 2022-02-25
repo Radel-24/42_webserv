@@ -25,4 +25,6 @@ class	Request {
 		void	setBody(std::string body);
 
 		void	setRequestKey();
+
+		void	findRequestType();
 };

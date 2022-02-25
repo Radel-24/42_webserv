@@ -34,4 +34,4 @@ fclean: clean
 	$(RM) $(NAME)
 
 #removes executable and rebuild it
-re: clean all
+re: fclean all

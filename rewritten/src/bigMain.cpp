@@ -44,12 +44,12 @@ void accepter()
 	new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
 	read(new_socket, buffer, 3000);
 	std::cout << buffer << std::endl;
-	std::pair<std::string, std::string> input_pair = divideInput(buffer);
+	std::pair<std::string, std::string> input_pair = divideString(buffer, "\n\r\n");
 	request.setHeader(input_pair.first);
 	request.setBody(input_pair.second);
 	std::cout << "header: " << request.getHeader() << "\n";
 	std::cout << "body: " << request.getBody() << "\n";
-	request.setRequestKey();
+	request.findRequestType();
 }
 
 void	createFile()
