@@ -3,7 +3,10 @@
 # define TESTSERVER_H
 
 #include "SimpleServer.hpp"
+#include "Request.hpp"
+#include "utils.hpp"
 #include <unistd.h>
+#include <fstream>
 
 class TestServer: public SimpleServer
 {
@@ -11,6 +14,7 @@ class TestServer: public SimpleServer
 
 	char buffer[3000];
 	int new_socket;
+	Request	request;
 
 	void accepter()
 	{
@@ -18,11 +22,32 @@ class TestServer: public SimpleServer
 		int addrlen = sizeof(address);
 		new_socket = accept(get_sock()->get_socket(), (struct sockaddr *)&address, (socklen_t *)&addrlen);
 		read(new_socket, buffer, 3000);
+		std::cout << buffer << std::endl;
+		std::pair<std::string, std::string> input_pair = divideInput(buffer);
+		request.setHeader(input_pair.first);
+		request.setBody(input_pair.second);
+		std::cout << "header: " << request.getHeader() << "\n";
+		std::cout << "body: " << request.getBody() << "\n";
+		request.setRequestKey();
+		//request.setHeader(buffer);
+		//request.setRequestKey();
+		//if (request.getRequestKey() == POST)
+		//	request.setBody(buffer);
+	}
+
+	void	createFile() {
+		std::ofstream	file;
+		file.open("testfile.txt");
+		file << request.getBody();
+		file.close();
 	}
 
 	void handler()
 	{
-		std::cout << buffer << std::endl;
+		if (request.getRequestKey() == GET)
+			responder();
+		else if (request.getRequestKey() == POST)
+			createFile();
 	}
 
 	void responder()
@@ -34,7 +59,7 @@ class TestServer: public SimpleServer
 
 	public:
 
-	
+
 	void launch()
 	{
 		while (1)
@@ -43,7 +68,7 @@ class TestServer: public SimpleServer
 			bzero(buffer,3000); // vllt muell
 			accepter();
 			handler();
-			responder();
+			//responder();
 			std::cout << "===DONE===" << std::endl;
 		}
 	}
