@@ -4,7 +4,7 @@ CC = c++
 CPPFLAGS = -Wall -Wextra -Werror -std=c++98
 # -Wshadow -Wno-shadow
 
-SRC =	bigMain.cpp		\
+SRC =	main.cpp		\
 		Request.cpp		\
 		utils.cpp
 

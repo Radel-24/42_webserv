@@ -7,8 +7,8 @@
 #include <string>
 #include <fstream>
 
-#include "Request.hpp"
-#include "utils.hpp"
+#include "../inc/Request.hpp"
+#include "../inc/utils.hpp"
 
 /* LISTENING SOCKET */
 int					backlog = 10;
@@ -37,19 +37,35 @@ void test_connection(int item_to_test)
 	}
 }
 
+void	findRequestType(std::string header) {
+	if (header.length() < 3) { request.setRequestKey(NIL); }
+	else if (header.find("GET") != std::string::npos) { request.setRequestKey(GET); } // if keyword not always at the beginning, us find("GET")
+	else if (header.find("POST") != std::string::npos) { request.setRequestKey(POST); }
+	else if (header.find("PUT") != std::string::npos) { request.setRequestKey(PUT); }
+	else if (header.find("DELETE") != std::string::npos) { request.setRequestKey(DELETE); }
+}
+
 void accepter()
 {
 	struct sockaddr_in address = g_address;
 	int addrlen = sizeof(address);
 	new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
 	read(new_socket, buffer, 3000);
+	request.setHeader(buffer);
+	usleep(100);
+	read(new_socket, buffer, 3000);
+	request.setBody(buffer);
 	std::cout << buffer << std::endl;
-	std::pair<std::string, std::string> input_pair = divideString(buffer, "\n\r\n");
-	request.setHeader(input_pair.first);
-	request.setBody(input_pair.second);
-	std::cout << "header: " << request.getHeader() << "\n";
-	std::cout << "body: " << request.getBody() << "\n";
-	request.findRequestType();
+	//std::pair<std::string, std::string> input_pair = divideString(buffer, "\n\r\n");
+	//request.setHeader(input_pair.first);
+	//request.setBody(input_pair.second);
+	std::cout << "header: \n" << request.getHeader() << "\n";
+	std::cout << "body: \n" << request.getBody() << "\n";
+	std::string headerValues = request.getHeader().substr(request.getHeader().find("\n") + 1, std::string::npos);
+	std::cout << "header values:\n" << headerValues << "\n";
+	request.setHeaderValues(stringToMap(headerValues, "\n", ": "));
+	request.printHeaderValues();
+	findRequestType(request.getHeader());
 }
 
 void	createFile()
@@ -157,7 +173,7 @@ int	main( void )
 		bzero(buffer, 3000);
 		accepter();
 		handler();
-		//responder();
+		responder();
 		std::cout << "===DONE===" << std::endl;
 	}
 	/* LAUNCH */

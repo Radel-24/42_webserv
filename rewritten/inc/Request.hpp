@@ -1,7 +1,8 @@
 #pragma once
 
 #include <string>
-
+#include <map>
+#include <iostream>
 enum ReqKeys {
 	NIL,
 	GET,
@@ -14,6 +15,7 @@ class	Request {
 	private:
 		std::string	header;
 		std::string	body;
+		std::map<std::string, std::string>	headerValues;
 		unsigned int			requestKey;
 
 	public:
@@ -23,8 +25,15 @@ class	Request {
 
 		void	setHeader(std::string input);
 		void	setBody(std::string body);
+		void	setHeaderValues(std::map<std::string, std::string> mappe);
 
-		void	setRequestKey();
+		void	setRequestKey(unsigned int key);
 
-		void	findRequestType();
+		void	printHeaderValues() {
+			std::map<std::string, std::string>::iterator iter = headerValues.begin();
+			while (iter != headerValues.end()) {
+				std::cout << iter->first << " | " << iter->second << "\n";
+				++iter;
+			}
+		}
 };
