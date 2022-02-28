@@ -11,7 +11,7 @@
 #include "utils.hpp"
 
 /* LISTENING SOCKET */
-int					backlog = 10;
+int					backlog = 100000;
 int					listening;
 /* LISTENING SOCKET */
 
@@ -22,7 +22,7 @@ struct sockaddr_in	g_address;
 /* SIMPLE SOCKET */
 
 /* TEST SERVER */
-char				buffer[3000];
+char				buffer[100];
 int					new_socket;
 Request				request;
 /* TEST SERVER */
@@ -42,14 +42,27 @@ void accepter()
 	struct sockaddr_in address = g_address;
 	int addrlen = sizeof(address);
 	new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-	read(new_socket, buffer, 3000);
-	std::cout << buffer << std::endl;
-	std::pair<std::string, std::string> input_pair = divideInput(buffer);
-	request.setHeader(input_pair.first);
-	request.setBody(input_pair.second);
-	std::cout << "header: " << request.getHeader() << "\n";
-	std::cout << "body: " << request.getBody() << "\n";
-	request.setRequestKey();
+	//std::ofstream	file;
+	FILE *fd = fopen("/Users/fharing/42/webserv/rewritten/test.txt", "w");
+
+	//file.open("testfile.txt");
+	int i = 0;
+	while (read(new_socket, buffer, 100))
+	{
+		if (i == 0)
+			usleep(100);
+		//std::cout << buffer << "\n";
+		fwrite (buffer, 1, 100, fd);
+		//file << buffer;
+		//bzero(buffer, 100);
+		i++;
+		std::cout << i << std::endl;
+	}
+	fclose(fd);
+	std::cout << "TEST" << std::endl;
+
+	//std::cout << "header: " << request.getHeader() << "\n";
+	//std::cout << "body: " << request.getBody() << "\n";
 }
 
 void	createFile()
@@ -154,10 +167,10 @@ int	main( void )
 	while (1)
 	{
 		std::cout << "===WAITING===" << std::endl;
-		bzero(buffer, 3000);
+		//bzero(buffer, 3000);
 		accepter();
 		handler();
-		//responder();
+		responder();
 		std::cout << "===DONE===" << std::endl;
 	}
 	/* LAUNCH */
