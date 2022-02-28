@@ -1,7 +1,8 @@
 NAME = webserv
 
 CC = c++
-CPPFLAGS = -Wall -Wextra -Werror -std=c++98 -Wshadow -Wno-shadow
+CPPFLAGS = -Wall -Wextra -Werror -std=c++98
+# -Wshadow -Wno-shadow
 
 SRC =	bigMain.cpp		\
 		Request.cpp		\
