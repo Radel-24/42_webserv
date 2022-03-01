@@ -149,9 +149,15 @@ int	main( void )
 	Config config;
 	config.buildMap("setup.conf");
 	config.printMap();
-	std::string nec_vars[] = {"port", "necessary", "fail"};
-	std::vector<std::string> vec(&(nec_vars[0]), &(nec_vars[3]));
+	std::string nec_vars[] = {"port", "necessary"};
+	std::vector<std::string> vec(&(nec_vars[0]), &(nec_vars[2]));
 	std::cout << "check: " << config.checkNecessaryKeys(vec) << "\n";
+
+	int port;
+	int necessary;
+	int & ints[] = {port, necessary};
+	config.readIntVars(nec_vars, ints, 2);
+
 
 	/* SIMPLE SOCKET */
 	//Define address structure

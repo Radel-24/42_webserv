@@ -25,11 +25,6 @@ void	Config::buildMap(std::string file, std::string divide, char separate, std::
 		//else if (line.find("server_name") != std::string::npos) { sin >> config.server_name; }
 
 
-void	Config::printMap() {
-	for (std::map<std::string, std::string>::iterator iter = map.begin(); iter != map.end(); ++iter) {
-		std::cout << iter->first << " | " << iter->second << "\n";
-	}
-}
 
 bool	Config::checkNecessaryKeys(std::vector<std::string> vec) {
 	for (std::vector<std::string>::iterator iter = vec.begin(); iter != vec.end(); ++iter) {
@@ -38,6 +33,16 @@ bool	Config::checkNecessaryKeys(std::vector<std::string> vec) {
 			return false;
 	}
 	return true;
+}
+
+void	Config::readIntVars(std::string names[], int & (&ints)[], int size) {
+	std::map<std::string, std::string>::iterator iter;
+	for (int i = 0; i < size; ++i) {
+		iter = map.find(names[i]);
+		if (iter != map.end()) {
+			ints[i] = atoi((iter->second).c_str());
+		}
+	}
 }
 
 void	loadConfig(Config & config) {
@@ -56,4 +61,11 @@ void	loadConfig(Config & config) {
 void	printConfig(Config & config) {
 	std::cout << "port: " << config.port << "\n";
 	std::cout << "server name: " << config.server_name << "\n";
+}
+
+
+void	Config::printMap() {
+	for (std::map<std::string, std::string>::iterator iter = map.begin(); iter != map.end(); ++iter) {
+		std::cout << iter->first << " | " << iter->second << "\n";
+	}
 }

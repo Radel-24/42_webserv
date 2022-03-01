@@ -24,6 +24,8 @@ class Config {
 	void	printMap();
 
 	bool	checkNecessaryKeys(std::vector<std::string> vec);
+
+	void	readIntVars(std::string names[], int & (&ints)[], int size);
 };
 
 void	loadConfig(Config & config);
