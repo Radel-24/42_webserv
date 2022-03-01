@@ -5,10 +5,11 @@ CPPFLAGS = -Wall -Wextra -Werror -std=c++98 -Wshadow -Wno-shadow
 
 SRC =	bigMain.cpp		\
 		Request.cpp		\
-		utils.cpp
+		utils.cpp		\
+		PostResponder.cpp
 
 
-HEADER = Request.hpp utils.hpp
+HEADER = Request.hpp utils.hpp PostResponder.hpp
 
 INC = -Iinc
 

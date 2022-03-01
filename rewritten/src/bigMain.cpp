@@ -10,6 +10,8 @@
 #include "Request.hpp"
 #include "utils.hpp"
 
+#include "PostResponder.hpp"
+
 /* LISTENING SOCKET */
 int					backlog = 10;
 int					listening;
@@ -40,16 +42,33 @@ void test_connection(int item_to_test)
 void accepter()
 {
 	struct sockaddr_in address = g_address;
+
 	int addrlen = sizeof(address);
+
 	new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+
 	read(new_socket, buffer, 3000);
+
 	std::cout << buffer << std::endl;
-	std::pair<std::string, std::string> input_pair = divideInput(buffer);
-	request.setHeader(input_pair.first);
-	request.setBody(input_pair.second);
-	std::cout << "header: " << request.getHeader() << "\n";
-	std::cout << "body: " << request.getBody() << "\n";
+
+	request.setHeader(buffer);
+
 	request.setRequestKey();
+
+	LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
+
+	if (request.getRequestKey() == POST)
+	{
+		sleep(1);
+
+		read(new_socket, buffer, 3000);
+
+		std::cout << buffer << std::endl;
+
+		request.setBody(buffer);
+	}
+
+	std::pair<std::string, std::string> input_pair = divideInput(buffer);
 }
 
 void	createFile()
@@ -77,7 +96,7 @@ std::string	readFile( std::string filename )
 	char			c;
 	newFile.open(filename, std::ios::in);
 	if (!newFile)
-		return "eror: opening file: " + filename;
+		return "error: opening file: " + filename;
 	while (!newFile.eof())
 	{
 		newFile >> std::noskipws >> c;
@@ -93,7 +112,7 @@ std::string	formatString( std::string file_content )
 	std::string	length;
 	std::string	full_header;
 	std::string	ret;
-	header = "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: ";
+	header = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
 	length = std::to_string(file_content.length()) + "\n\n";
 	full_header = header.append(length);
 	ret = full_header.append(file_content);
@@ -106,22 +125,29 @@ void responder()
 	std::string	file_content;
 	std::string	formatted;
 	filename = getFilename();
+
 	if (filename.empty())
+	{
 		file_content = "alex ist sehr toll und du leider nicht so :(\n";
+	}
 	else
+	{
 		file_content = readFile(filename);
+	}
 	formatted = formatString(file_content);
+
 	write(new_socket, formatted.c_str(), formatted.length());
 	close(new_socket);
 }
-/* END RESPONDER */
 
 void handler()
 {
 	if (request.getRequestKey() == GET)
+	{
 		responder();
+	}
 	else if (request.getRequestKey() == POST)
-		createFile();
+		PostResponder pR(request.getHeader(), request.getBody(), new_socket);
 }
 
 int	main( void )
@@ -157,7 +183,6 @@ int	main( void )
 		bzero(buffer, 3000);
 		accepter();
 		handler();
-		//responder();
 		std::cout << "===DONE===" << std::endl;
 	}
 	/* LAUNCH */
