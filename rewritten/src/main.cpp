@@ -10,6 +10,8 @@
 #include "../inc/Request.hpp"
 #include "../inc/utils.hpp"
 
+#include "Config.hpp"
+
 /* LISTENING SOCKET */
 int					backlog = 10;
 int					listening;
@@ -142,6 +144,15 @@ void handler()
 
 int	main( void )
 {
+	//loadConfig(config);
+	//printConfig(config);
+	Config config;
+	config.buildMap("setup.conf");
+	config.printMap();
+	std::string nec_vars[] = {"port", "necessary", "fail"};
+	std::vector<std::string> vec(&(nec_vars[0]), &(nec_vars[3]));
+	std::cout << "check: " << config.checkNecessaryKeys(vec) << "\n";
+
 	/* SIMPLE SOCKET */
 	//Define address structure
 	g_address.sin_family = AF_INET;

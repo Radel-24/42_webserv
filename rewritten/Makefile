@@ -6,7 +6,8 @@ CPPFLAGS = -Wall -Wextra -Werror -std=c++98
 
 SRC =	main.cpp		\
 		Request.cpp		\
-		utils.cpp
+		utils.cpp		\
+		Config.cpp
 
 
 HEADER = Request.hpp utils.hpp

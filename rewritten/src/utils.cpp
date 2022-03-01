@@ -1,4 +1,4 @@
-#include "../inc/utils.hpp"
+#include "utils.hpp"
 
 std::pair<std::string, std::string>	divideString(std::string input, std::string divide) {
 	size_t	break_pos = input.find(divide);
