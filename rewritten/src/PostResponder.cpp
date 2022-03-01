@@ -1,9 +1,11 @@
 #include "PostResponder.hpp"
+std::string ToHex(const std::string & s, bool upper_case /* = true */);
 
 void	PostResponder::createUploadFile( std::string filename, std::string content )
 {
 	std::ofstream	file;
 	file.open(filename);
+	std::cout << "HEX\n" << ToHex(content, 0) << "\n";
 	file << content;
 	file.close();
 }

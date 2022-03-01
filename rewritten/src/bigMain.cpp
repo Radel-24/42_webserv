@@ -10,6 +10,12 @@
 #include "Request.hpp"
 #include "utils.hpp"
 
+#include <stdexcept>
+#include <sstream>
+#include <iomanip>
+#include <string>
+#include <cstdint>
+
 #include "PostResponder.hpp"
 
 /* LISTENING SOCKET */
@@ -24,7 +30,7 @@ struct sockaddr_in	g_address;
 /* SIMPLE SOCKET */
 
 /* TEST SERVER */
-char				buffer[3000];
+char				buffer[500];
 int					new_socket;
 Request				request;
 /* TEST SERVER */
@@ -39,6 +45,22 @@ void test_connection(int item_to_test)
 	}
 }
 
+std::string ToHex(const std::string & s, bool upper_case /* = true */)
+{
+	std::stringstream ret;
+
+	for (std::string::size_type i = 0; i < s.length(); ++i)
+	{
+		if (i % 2 == 0)
+			ret << " ";
+		if (i % 16 == 0)
+			ret << "\n";
+		ret << std::hex << std::setfill('0') << std::setw(2) << (upper_case ? std::uppercase : std::nouppercase) << (int)s[i];
+	}
+
+	return ret.str();
+}
+
 void accepter()
 {
 	struct sockaddr_in address = g_address;
@@ -46,37 +68,46 @@ void accepter()
 	int addrlen = sizeof(address);
 
 	new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-
-	read(new_socket, buffer, 3000);
-
-	std::cout << buffer << std::endl;
-
-	request.setHeader(buffer);
-
-	request.setRequestKey();
-
-	LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
-
-	if (request.getRequestKey() == POST)
+	int i = 0;
+	while (read(new_socket, buffer, 500) == 500)
 	{
-		sleep(1);
-
-		read(new_socket, buffer, 3000);
-
-		std::cout << buffer << std::endl;
-
-		request.setBody(buffer);
+		if (i == 0)
+		{
+			usleep(100);
+			request.setHeader(buffer);
+			request.setRequestKey();
+			LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
+			std::cout << request.getHeader() << std::endl;
+			std::cout << "HEADER END" << std::endl;
+		}
+		if (i > 0)
+			request.setBody(buffer);
+		bzero(buffer, 500);
+		std::cout << i << "READ with 500 chars done!" << std::endl;
+		i++;
 	}
-
+	std::cout << "END READLOOP" << std::endl;
+	if (i == 0)
+	{
+		std::cout << "EDGE CASE i == 0" << std::endl;
+		request.setHeader(buffer);
+		request.setRequestKey();
+		LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
+		std::cout << request.getHeader() << std::endl;
+		std::cout << "HEADER END" << std::endl;
+		usleep(100);
+		while (read(new_socket, buffer, 500) == 500)
+		{
+			request.setBody(buffer);
+			bzero(buffer, 500);
+			std::cout << i << "EDGE READ with 500 chars done!" << std::endl;
+			i++;
+		}
+	}
+	if (i > 0)
+		request.setBody(buffer);
+	std::cout << request.getBody() << std::endl;
 	std::pair<std::string, std::string> input_pair = divideInput(buffer);
-}
-
-void	createFile()
-{
-	std::ofstream	file;
-	file.open("testfile.txt");
-	file << request.getBody();
-	file.close();
 }
 
 /* START RESPONDER */
@@ -180,7 +211,7 @@ int	main( void )
 	while (1)
 	{
 		std::cout << "===WAITING===" << std::endl;
-		bzero(buffer, 3000);
+		bzero(buffer, 500);
 		accepter();
 		handler();
 		std::cout << "===DONE===" << std::endl;
