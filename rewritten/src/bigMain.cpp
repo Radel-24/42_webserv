@@ -47,36 +47,36 @@ void accepter()
 
 	new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
 
+	bzero(buffer, 3000);
 	read(new_socket, buffer, 3000);
 
+
+	LOG_GREEN("---------------- START HEADER: ----------------");
 	std::cout << buffer << std::endl;
+	LOG_GREEN("----------------- END HEADER: -----------------");
 
 	request.setHeader(buffer);
 
 	request.setRequestKey();
 
-	LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
+	// LOG("\033[1;32m" << "------- REQUEST KEY: " << request.getRequestKey() << " -------" << "\033[0m");
 
 	if (request.getRequestKey() == POST)
 	{
 		sleep(1);
 
+		bzero(buffer, 3000);
 		read(new_socket, buffer, 3000);
 
+		LOG_RED("---------------- START BODY: ----------------");
 		std::cout << buffer << std::endl;
+		LOG_RED("----------------- END BODY: -----------------");
 
 		request.setBody(buffer);
+		bzero(buffer, 3000);
 	}
 
 	std::pair<std::string, std::string> input_pair = divideInput(buffer);
-}
-
-void	createFile()
-{
-	std::ofstream	file;
-	file.open("testfile.txt");
-	file << request.getBody();
-	file.close();
 }
 
 /* START RESPONDER */
@@ -142,6 +142,7 @@ void responder()
 
 void handler()
 {
+	LOG_RED("REQUEST TYPE:		" << request.getRequestKey());
 	if (request.getRequestKey() == GET)
 	{
 		responder();
@@ -179,11 +180,11 @@ int	main( void )
 	/* LAUNCH */
 	while (1)
 	{
-		std::cout << "===WAITING===" << std::endl;
+		LOG_BLUE("==========================WAITING==========================");
 		bzero(buffer, 3000);
 		accepter();
 		handler();
-		std::cout << "===DONE===" << std::endl;
+		LOG_BLUE("============================DONE===========================");
 	}
 	/* LAUNCH */
 

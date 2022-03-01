@@ -18,6 +18,9 @@ void	PostResponder::uploadFiles( void )
 	std::string		content_type;
 	std::string		bodyContent;
 
+	LOG_RED("_numOfBoundaries :	" << _numOfBoundaries);
+	LOG_RED("_boundary :		" << _boundary);
+
 	while (_numOfBoundaries > 1)
 	{
 		pos = _body.find(_boundary, pos2 + 1) + _boundary.length() + 2;
@@ -41,7 +44,7 @@ void	PostResponder::uploadFiles( void )
 		size_t	name_end = name_start;
 		while(cutBody[name_end] != ';')
 			name_end++;
-		name = cutBody.substr(name_start, name_end - name_start - 2);
+		name = cutBody.substr(name_start, name_end - name_start - 1);
 
 
 		size_t	type_start = cutBody.find("Content-Type: ") + strlen("Content-Type: ");
@@ -53,6 +56,10 @@ void	PostResponder::uploadFiles( void )
 
 		size_t	dblNewline = cutBody.find("\n\r\n");
 		bodyContent = cutBody.substr(dblNewline + 3, cutBody.length() - dblNewline - 3);
+
+		LOG_RED("content_type :		" << content_type);
+		LOG_RED("filename :		" << filename);
+		LOG_RED("name :			" << name);
 
 		// remove new
 		createUploadFile(filename + "_new", bodyContent);
@@ -96,7 +103,7 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 	if (_boundary == "error")
 	{
 		// es gibt kein boundary, also wuden keine files geschickt und ich muss irgendwas anderes tun
-		write(new_socket, "error: PostResponder: extractBoundary", 37);
+		write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: extractBoundary", 101);
 		close(new_socket);
 		return ;
 	}
@@ -105,7 +112,7 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 	if (!_numOfBoundaries)
 	{
 		// kann eigentlich nicht sein, keine ahnung was dann passieren soll mrrrrrrkkk
-		write(new_socket, "error: PostResponder: countBoundaries", 37);
+		write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries", 101);
 		close(new_socket);
 		return ;
 	}
@@ -113,6 +120,6 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 	if (_numOfBoundaries > 0)
 		uploadFiles();
 
-	write(new_socket, "file was created", 16);
+	write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 16\n\nfile was created", 80);
 	close(new_socket);
 }
