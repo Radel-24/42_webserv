@@ -151,7 +151,16 @@ void handler()
 		PostResponder pR(request.getHeader(), request.getBody(), new_socket);
 }
 
-int	main( void )
+void	updateFilesHTML()
+{
+	if (!chdir("./files")) // else irgendein error
+	{
+		system("tree -H './files' -T 'Your Files' -L 1 --noreport --charset utf-8 -o ../files.html"); // if == -1 error happened
+		chdir("..");
+	}
+}
+
+int	main( )
 {
 	/* SIMPLE SOCKET */
 	//Define address structure
@@ -176,11 +185,11 @@ int	main( void )
 	test_connection(listening);
 	/* LISTENING SOCKET */
 
-
 	/* LAUNCH */
 	while (1)
 	{
 		LOG_BLUE("==========================WAITING==========================");
+		updateFilesHTML();
 		bzero(buffer, 3000);
 		accepter();
 		handler();
