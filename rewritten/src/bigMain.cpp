@@ -6,6 +6,7 @@
 #include <unistd.h>
 #include <string>
 #include <fstream>
+#include <fcntl.h>
 
 #include "Request.hpp"
 #include "utils.hpp"
@@ -30,7 +31,7 @@ struct sockaddr_in	g_address;
 /* SIMPLE SOCKET */
 
 /* TEST SERVER */
-char				buffer[500];
+char				buffer;
 int					new_socket;
 Request				request;
 /* TEST SERVER */
@@ -61,6 +62,8 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */)
 	return ret.str();
 }
 
+
+
 void accepter()
 {
 	struct sockaddr_in address = g_address;
@@ -68,52 +71,48 @@ void accepter()
 	int addrlen = sizeof(address);
 
 	new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+
+	//START READING HEADER -> needs to be changed because in normal post request can be header and body in one
 	int i = 0;
-	while (read(new_socket, buffer, 500) == 500)
+	std::cout << "START READLOOP HEADER" << std::endl;
+	while (request.checkHeader() == 0)
 	{
-		if (i == 0)
-		{
-			usleep(100);
-			request.setHeader(buffer);
-			request.setRequestKey();
-			LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
-			std::cout << request.getHeader() << std::endl;
-			std::cout << "HEADER END" << std::endl;
-		}
-		if (i > 0)
-			request.setBody(buffer);
-		bzero(buffer, 500);
-		std::cout << i << "READ with 500 chars done!" << std::endl;
-		i++;
+		read(new_socket, &buffer, 1);
+		request.setHeader(&buffer);
 	}
-	std::cout << "END READLOOP" << std::endl;
+	request.setRequestKey();
+	LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
+	std::cout << request.getHeader() << std::endl;
+	std::cout << "HEADER END" << std::endl;
+	if (request.getRequestKey() == POST)
+		usleep(100);
+	std::cout << "START READLOOP" << std::endl;
+	FILE * fd = fopen("test.felix", "wb");
 	if (i == 0)
 	{
-		std::cout << "EDGE CASE i == 0" << std::endl;
-		request.setHeader(buffer);
-		request.setRequestKey();
-		LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
-		std::cout << request.getHeader() << std::endl;
-		std::cout << "HEADER END" << std::endl;
-		usleep(100);
-		while (read(new_socket, buffer, 500) == 500)
+		int max_size = request.checkBodySize();
+		while (i < max_size)
 		{
-			request.setBody(buffer);
-			bzero(buffer, 500);
-			std::cout << i << "EDGE READ with 500 chars done!" << std::endl;
+			read(new_socket, &buffer, 1);
+			request.setBody(&buffer);
+			fwrite (&buffer , sizeof(char), sizeof(buffer), fd);
+			buffer = 0;
+			std::cout << i << " READ with 1 chars done!\n";
+			std::cout << "\nBUFFER: >" << buffer << "<\n";
 			i++;
 		}
 	}
-	if (i > 0)
-		request.setBody(buffer);
+	fclose(fd);
+	std::cout << "END READLOOP" << std::endl;
 	std::cout << request.getBody() << std::endl;
-	std::pair<std::string, std::string> input_pair = divideInput(buffer);
+	std::cout << "END BODY" << std::endl;
+	std::pair<std::string, std::string> input_pair = divideInput(&buffer);
 }
 
 /* START RESPONDER */
 std::string	getFilename( void )
 {
-	std::string	converted = std::string(buffer);
+	std::string	converted = std::string(&buffer);
 	int			start = converted.find("/") + 1;
 	int			end = converted.find("HTTP") - 1;
 	std::string	file = converted.substr(start, end - start);
@@ -211,7 +210,7 @@ int	main( void )
 	while (1)
 	{
 		std::cout << "===WAITING===" << std::endl;
-		bzero(buffer, 500);
+		//bzero(buffer, 1);
 		accepter();
 		handler();
 		std::cout << "===DONE===" << std::endl;

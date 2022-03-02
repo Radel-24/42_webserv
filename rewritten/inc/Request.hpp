@@ -20,6 +20,8 @@ class	Request {
 		int		getRequestKey() const;
 		std::string	getHeader() const;
 		std::string	getBody() const;
+		int			checkHeader(void);
+		int			checkBodySize(void);
 
 		void	setHeader(std::string input);
 		void	setBody(std::string body);
