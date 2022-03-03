@@ -11,19 +11,34 @@ std::pair<std::string, std::string>	divideString(std::string input, std::string 
 	return (std::pair<std::string, std::string>(key, value));
 }
 
-std::map<std::string, std::string>	stringToMap(std::string input, std::string separate, std::string divide) {
+std::map<std::string, std::string>	stringToMap(std::string input, std::string divide,
+												char separate, std::string comment) {
 	std::map<std::string, std::string> map;
-	std::string substr;
-	size_t found_pos = 0;
-	size_t	start_pos = 0;
-	while (found_pos != std::string::npos) {
-		found_pos = input.find(separate, start_pos);
-		substr = input.substr(start_pos, found_pos - start_pos);
-		std::pair<std::string, std::string> pair;
-		pair = divideString(substr, divide);
-		if (pair.first != "")
-			map.insert(pair);
-		start_pos = found_pos + separate.length();
+	std::istringstream	istr(input);
+	std::string		line;
+
+	while (std::getline(istr, line, separate)) {
+		if (size_t pos = line.find(comment) != std::string::npos)
+			line = line.substr(0, pos);
+		std::string key = line.substr(0, line.find(divide));
+		std::string value = line.substr(line.find(divide) + divide.length(), std::string::npos);
+		if (key != "" && value != "")
+			map.insert(std::pair<std::string, std::string>(key, value));
 	}
 	return map;
+}
+
+std::string findBlock(std::string input, std::string blockBegin, std::string blockEnd) {
+	std::string blockContent;
+
+	if (size_t posBegin = input.find(blockBegin) != std::string::npos) {
+		if (size_t posEnd = input.find(blockEnd) != std::string::npos) {
+			return input.substr(posBegin, posEnd);
+		}
+		else {
+			// TODO error handling syntax error
+			std::cout << "Syntax error near " << blockBegin << "\n";
+		}
+	}
+	return NULL;
 }

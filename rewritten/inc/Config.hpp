@@ -14,18 +14,15 @@ class Config {
 		std::map<std::string, std::string>	map;
 
 	public:
-		std::string	server_name;
-		std::string	root;
-		std::string	index;
-		std::string	try_files;
-		int	port;
 
-	void	buildMap(std::string file, std::string divide = ": ", char separate = '\n', std::string comment = "#");
-	void	printMap();
+		void	buildMap(std::string file, std::string divide = ": ", char separate = '\n', std::string comment = "#");
+		void	printMap();
 
-	bool	checkNecessaryKeys(std::vector<std::string> vec);
+		bool	checkNecessaryKeys(std::vector<std::string> vec);
 
-	void	readIntVars(std::string names[], int & (&ints)[], int size);
+		void	readIntVars(std::string names[], int ** ints, int size);
+		void	readDoubleVars(std::string names[], double ** doubles, int size);
+		void	readStrVars(std::string names[], std::string ** strs, int size);
 };
 
 void	loadConfig(Config & config);

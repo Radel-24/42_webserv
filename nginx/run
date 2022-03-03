@@ -1,0 +1,3 @@
+#!/bin/sh
+docker build -t nginx_docker .
+docker run -it -v $PWD:/datas -p 3000:3000 nginx_docker

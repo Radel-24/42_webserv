@@ -65,7 +65,7 @@ void accepter()
 	std::cout << "body: \n" << request.getBody() << "\n";
 	std::string headerValues = request.getHeader().substr(request.getHeader().find("\n") + 1, std::string::npos);
 	std::cout << "header values:\n" << headerValues << "\n";
-	request.setHeaderValues(stringToMap(headerValues, "\n", ": "));
+	request.setHeaderValues(stringToMap(headerValues, ": ", '\n', "\0"));
 	request.printHeaderValues();
 	findRequestType(request.getHeader());
 }
@@ -142,23 +142,26 @@ void handler()
 		createFile();
 }
 
-int	main( void )
-{
-	//loadConfig(config);
-	//printConfig(config);
+void	readConfigFile() {
 	Config config;
 	config.buildMap("setup.conf");
+
 	config.printMap();
+
 	std::string nec_vars[] = {"port", "necessary"};
 	std::vector<std::string> vec(&(nec_vars[0]), &(nec_vars[2]));
-	std::cout << "check: " << config.checkNecessaryKeys(vec) << "\n";
+	//std::cout << "check: " << config.checkNecessaryKeys(vec) << "\n";
 
-	int port;
-	int necessary;
-	int & ints[] = {port, necessary};
+	int port = 0;
+	int necessary = 0;
+	int * ints[] = {&port, &necessary};
 	config.readIntVars(nec_vars, ints, 2);
+	//std::cout << "port: " << port << " necessary: " << necessary << "\n";
+}
 
-
+int	main( void )
+{
+	readConfigFile();
 	/* SIMPLE SOCKET */
 	//Define address structure
 	g_address.sin_family = AF_INET;
