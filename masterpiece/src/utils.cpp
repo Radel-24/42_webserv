@@ -6,7 +6,7 @@ std::pair<std::string, std::string>	divideInput(std::string input) {
 	std::string	body;
 	if (break_pos != std::string::npos) {
 		header = input.substr(0, break_pos);
-		body = input.substr(break_pos, std::string::npos);
+		body = input.substr(break_pos + 2, std::string::npos);
 	}
 	return (std::pair<std::string, std::string>(header, body));
 }

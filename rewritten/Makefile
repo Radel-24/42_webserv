@@ -1,12 +1,14 @@
 NAME = webserv
 
 CC = c++
-CPPFLAGS = -Wall -Wextra -Werror -std=c++98 -Wshadow -Wno-shadow
+CPPFLAGS = -Wall -Wextra -Werror -std=c++98
+# -Wshadow -Wno-shadow
 
-SRC =	bigMain.cpp		\
+SRC =	main.cpp		\
 		Request.cpp		\
 		utils.cpp		\
-		PostResponder.cpp
+		PostResponder.cpp \
+		Config.cpp
 
 
 HEADER = Request.hpp utils.hpp PostResponder.hpp
@@ -35,4 +37,4 @@ fclean: clean
 	$(RM) $(NAME)
 
 #removes executable and rebuild it
-re: clean all
+re: fclean all

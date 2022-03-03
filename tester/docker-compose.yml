@@ -1,0 +1,11 @@
+version: '3.5'
+
+services:
+  web:
+    build:
+      context: ./
+    command: python3 tester.py
+    volumes:
+      - ./testscripts:/
+    expose:
+      - 7000

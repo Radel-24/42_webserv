@@ -8,8 +8,10 @@
 #include <fstream>
 #include <fcntl.h>
 
-#include "Request.hpp"
-#include "utils.hpp"
+#include "../inc/Request.hpp"
+#include "../inc/utils.hpp"
+
+#include "Config.hpp"
 
 #include <stdexcept>
 #include <sstream>
@@ -64,6 +66,14 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */)
 
 
 
+//oid	findRequestType(std::string header) {
+//	if (header.length() < 3) { request.setRequestKey(NIL); }
+//	else if (header.find("GET") != std::string::npos) { request.setRequestKey(GET); } // if keyword not always at the beginning, us find("GET")
+//	else if (header.find("POST") != std::string::npos) { request.setRequestKey(POST); }
+//	else if (header.find("PUT") != std::string::npos) { request.setRequestKey(PUT); }
+//	else if (header.find("DELETE") != std::string::npos) { request.setRequestKey(DELETE); }
+//
+
 void accepter()
 {
 	struct sockaddr_in address = g_address;
@@ -80,7 +90,7 @@ void accepter()
 		read(new_socket, &buffer, 1);
 		request.setHeader(&buffer);
 	}
-	request.setRequestKey();
+	//request.setRequestKey();
 	LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
 	std::cout << request.getHeader() << std::endl;
 	std::cout << "HEADER END" << std::endl;
@@ -106,7 +116,7 @@ void accepter()
 	std::cout << "END READLOOP" << std::endl;
 	std::cout << request.getBody() << std::endl;
 	std::cout << "END BODY" << std::endl;
-	std::pair<std::string, std::string> input_pair = divideInput(&buffer);
+	//std::pair<std::string, std::string> input_pair = divideInput(&buffer);
 }
 
 /* START RESPONDER */
@@ -180,8 +190,26 @@ void handler()
 		PostResponder pR(request.getHeader(), request.getBody(), new_socket);
 }
 
+void	readConfigFile() {
+	Config config;
+	config.buildMap("setup.conf");
+
+	config.printMap();
+
+	std::string nec_vars[] = {"port", "necessary"};
+	std::vector<std::string> vec(&(nec_vars[0]), &(nec_vars[2]));
+	//std::cout << "check: " << config.checkNecessaryKeys(vec) << "\n";
+
+	int port = 0;
+	int necessary = 0;
+	int * ints[] = {&port, &necessary};
+	config.readIntVars(nec_vars, ints, 2);
+	//std::cout << "port: " << port << " necessary: " << necessary << "\n";
+}
+
 int	main( void )
 {
+	readConfigFile();
 	/* SIMPLE SOCKET */
 	//Define address structure
 	g_address.sin_family = AF_INET;
@@ -213,6 +241,7 @@ int	main( void )
 		//bzero(buffer, 1);
 		accepter();
 		handler();
+		responder();
 		std::cout << "===DONE===" << std::endl;
 	}
 	/* LAUNCH */
