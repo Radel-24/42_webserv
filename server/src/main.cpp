@@ -110,13 +110,14 @@ void accepter()
 			fwrite (&buffer , sizeof(char), sizeof(buffer), fd);
 			buffer = 0;
 			std::cout << i << " READ with 1 chars done!\n";
-			std::cout << "\nBUFFER: >" << buffer << "<\n";
+			//std::cout << "\nBUFFER: >" << buffer << "<\n";
 			i++;
 		}
 	}
 	fclose(fd);
 	std::cout << "END READLOOP" << std::endl;
 	LOG_GREEN(request.getBody());
+	request.getBodyFlex();
 	std::cout << "END BODY" << std::endl;
 	//std::pair<std::string, std::string> input_pair = divideInput(&buffer);
 }

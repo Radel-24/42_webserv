@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <vector>
 enum ReqKeys {
 	NIL,
 	GET,
@@ -15,6 +16,7 @@ class	Request {
 	private:
 		std::string	header;
 		std::string	body;
+		std::vector<char>	body_flex;
 		std::map<std::string, std::string>	headerValues;
 		unsigned int			requestKey;
 
@@ -22,6 +24,7 @@ class	Request {
 		int		getRequestKey() const;
 		std::string	getHeader() const;
 		std::string	getBody() const;
+		void	getBodyFlex() const;
 		int			checkHeader(void);
 		int			checkBodySize(void);
 
@@ -33,6 +36,8 @@ class	Request {
 		void	setHeader();
 
 		void	setRequestKey(unsigned int);
+		int		checkBoundaryStart() const;
+		int		checkBoundaryEnd() const;
 
 		void	printHeaderValues() {
 			std::map<std::string, std::string>::iterator iter = headerValues.begin();
@@ -41,4 +46,6 @@ class	Request {
 				++iter;
 			}
 		}
+
+
 };
