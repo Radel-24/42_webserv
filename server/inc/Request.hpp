@@ -47,6 +47,7 @@ class	Request {
 		void	createFileFlex() const;
 		int		checkBoundaryStart() const;
 		int		checkBoundaryEnd() const;
+		void	vector_to_string();
 
 
 };
