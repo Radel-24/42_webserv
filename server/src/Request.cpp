@@ -39,17 +39,17 @@ int	Request::checkBodySize(void)
 
 void	Request::appendBody(std::string body_in)
 {
-	if (this->body.empty())
-	{
-		this->body = body_in;
-	}
-	else
-	{
-		//body_in = body_in.substr(0, body_in.size()-1);
-		//if (body_in.empty())
-		//	body_in = "NULL";
-		this->body = this->body + body_in;
-	}
+	//if (this->body.empty())
+	//{
+	//	this->body = body_in;
+	//}
+	//else
+	//{
+	//	//body_in = body_in.substr(0, body_in.size()-1);
+	//	//if (body_in.empty())
+	//	//	body_in = "NULL";
+	//	this->body = this->body + body_in;
+	//}
 	const char *tmp = body_in.c_str();
 	this->body_flex.push_back(tmp[0]);
 }
@@ -115,4 +115,10 @@ void	Request::createFileFlex() const
 	LOG_BLUE("END BODY FLEX");
 
 	fclose(fd);
+}
+
+void	Request::vector_to_string()
+{
+	std::string tmp(this->body_flex.begin(), this->body_flex.end());
+	this->body = tmp;
 }
