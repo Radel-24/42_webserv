@@ -31,6 +31,8 @@ $(NAME): $(SOURCES) $(addprefix inc/, $(HEADER))
 
 clean:
 	$(RM) obj
+	$(RM) files/*
+	$(RM) binary.file
 
 #removes executable
 fclean: clean

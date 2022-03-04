@@ -3,6 +3,7 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <vector>
 enum ReqKeys {
 	NIL,
 	GET,
@@ -15,6 +16,7 @@ class	Request {
 	private:
 		std::string	header;
 		std::string	body;
+		std::vector<char>	body_flex;
 		std::map<std::string, std::string>	headerValues;
 		unsigned int			requestKey;
 
@@ -41,4 +43,11 @@ class	Request {
 				++iter;
 			}
 		}
+
+		void	createFileFlex() const;
+		int		checkBoundaryStart() const;
+		int		checkBoundaryEnd() const;
+		void	vector_to_string();
+
+
 };
