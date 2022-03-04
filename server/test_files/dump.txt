@@ -1,7 +1,3 @@
-== Info:   Trying ::1...
-== Info: TCP_NODELAY set
-== Info: Connection failed
-== Info: connect to ::1 port 7000 failed: Connection refused
 == Info:   Trying 127.0.0.1...
 == Info: TCP_NODELAY set
 == Info: Connected to localhost (127.0.0.1) port 7000 (#0)

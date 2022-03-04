@@ -97,9 +97,9 @@ int Request::checkBoundaryEnd() const
 	return (i - 2);
 }
 
-void	Request::getBodyFlex() const
+void	Request::createFileFlex() const
 {
-	FILE * fd = fopen("felix.jpg", "wb");
+	FILE * fd = fopen("binary_boundary.file", "wb");
 	LOG_BLUE("START BODY FLEX");
 	int max_size = this->body_flex.size();
 	char tmp;

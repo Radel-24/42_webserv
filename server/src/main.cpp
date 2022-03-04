@@ -99,7 +99,7 @@ void accepter()
 	if (request.getRequestKey() == POST)
 		usleep(100);
 	std::cout << "START READLOOP" << std::endl;
-	FILE * fd = fopen("test.felix", "wb");
+	FILE * fd = fopen("binary.file", "wb");
 	if (i == 0 && request.getRequestKey() == POST)
 	{
 		int max_size = request.checkBodySize();
@@ -117,7 +117,8 @@ void accepter()
 	fclose(fd);
 	std::cout << "END READLOOP" << std::endl;
 	LOG_GREEN(request.getBody());
-	request.getBodyFlex();
+	if (request.getHeader().find("boundary=") != std::string::npos)
+		request.createFileFlex();
 	std::cout << "END BODY" << std::endl;
 	//std::pair<std::string, std::string> input_pair = divideInput(&buffer);
 }
