@@ -64,7 +64,7 @@ void	PostResponder::uploadFiles( void )
 		LOG_RED("name :			" << name);
 
 		// remove new
-		createUploadFile(filename + "_new", bodyContent);
+		createUploadFile(filename, bodyContent);
 
 		_numOfBoundaries--;
 	}

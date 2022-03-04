@@ -95,7 +95,7 @@ void accepter()
 	LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
 	LOG_RED(request.getHeader());
 	//std::cout << request.getHeader() << std::endl;
-	//std::cout << "HEADER END" << std::endl;
+	std::cout << "HEADER END" << std::endl;
 	if (request.getRequestKey() == POST)
 		usleep(100);
 	std::cout << "START READLOOP" << std::endl;
@@ -109,7 +109,7 @@ void accepter()
 			request.appendBody(&buffer);
 			fwrite (&buffer , sizeof(char), sizeof(buffer), fd);
 			buffer = 0;
-			std::cout << i << " READ with 1 chars done!\n";
+			//std::cout << i << " READ with 1 chars done!\n";
 			//std::cout << "\nBUFFER: >" << buffer << "<\n";
 			i++;
 		}
@@ -120,7 +120,7 @@ void accepter()
 	//	request.createFileFlex();
 	request.vector_to_string();
 	//LOG_GREEN(request.getBody());
-	std::cout << "END BODY" << std::endl;
+	//std::cout << "END BODY" << std::endl;
 	//std::pair<std::string, std::string> input_pair = divideInput(&buffer);
 }
 
