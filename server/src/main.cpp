@@ -33,7 +33,8 @@ struct sockaddr_in	g_address;
 /* SIMPLE SOCKET */
 
 /* TEST SERVER */
-char				buffer;
+char				buffer[4096];
+char				*read_body;
 int					new_socket;
 Request				request;
 /* TEST SERVER */
@@ -84,41 +85,35 @@ void accepter()
 	new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
 
 	//START READING HEADER -> needs to be changed because in normal post request can be header and body in one
-	int i = 0;
 	std::cout << "START READLOOP HEADER" << std::endl;
 	while (request.checkHeader() == 0)
 	{
-		read(new_socket, &buffer, 1);
-		request.appendHeader(&buffer);
+		recv(new_socket, buffer, 4096, MSG_TRUNC);
+		request.appendHeader(buffer);
 	}
 	setRequestType(request.getHeader());
 	LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
 	LOG_RED(request.getHeader());
 	//std::cout << request.getHeader() << std::endl;
 	std::cout << "HEADER END" << std::endl;
-	if (request.getRequestKey() == POST)
-		usleep(100);
 	std::cout << "START READLOOP" << std::endl;
-	if (i == 0 && request.getRequestKey() == POST)
+	if (request.getRequestKey() == POST)
 	{
-		FILE * fd = fopen("binary.file", "wb");
+		usleep(100);
+		//FILE * fd = fopen("binary.file", "wb");
 		int max_size = request.checkBodySize();
-		while (i < max_size)
-		{
-			read(new_socket, &buffer, 1);
-			request.appendBody(&buffer);
-			fwrite (&buffer , sizeof(char), sizeof(buffer), fd);
-			buffer = 0;
-			//std::cout << i << " READ with 1 chars done!\n";
-			//std::cout << "\nBUFFER: >" << buffer << "<\n";
-			i++;
-		}
-		fclose(fd);
+		std::cout << max_size << std::endl;
+		read_body = NULL;
+		read_body = (char *)malloc(max_size);
+		recv(new_socket, read_body, max_size, MSG_WAITALL);
+		request.appendBody(read_body, max_size);
+		//fwrite (read_body , sizeof(char), max_size, fd);
+		free(read_body);
+		//fclose(fd);
 	}
 	std::cout << "END READLOOP" << std::endl;
 	//if (request.getHeader().find("boundary=") != std::string::npos)
 	//	request.createFileFlex();
-	request.vector_to_string();
 	//LOG_GREEN(request.getBody());
 	//std::cout << "END BODY" << std::endl;
 	//std::pair<std::string, std::string> input_pair = divideInput(&buffer);
@@ -254,11 +249,11 @@ int	main( )
 	while (1)
 	{
 		LOG_BLUE("==========================WAITING==========================");
+		request.clearHeader();
+		request.clearBody();
 		updateFilesHTML();
 		accepter();
 		handler();
-		request.setHeader();
-		request.setBody();
 		//responder();
 		LOG_BLUE("============================DONE===========================");
 	}

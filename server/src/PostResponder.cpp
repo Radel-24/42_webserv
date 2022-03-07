@@ -123,7 +123,7 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 	if (_numOfBoundaries > 0)
 		uploadFiles();
 
-	// write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 16\n\nfile was created", 80);
+	//write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 16\n\nfile was created", 80);
 	char redirection[] = "HTTP/1.1 301 Moved Permanently\nLocation: http://127.0.0.1:7000/index.html\n\n";
 	write(new_socket, redirection, strlen(redirection));
 	close(new_socket);

@@ -16,38 +16,32 @@ class	Request {
 	private:
 		std::string	header;
 		std::string	body;
-		std::vector<char>	body_flex;
 		std::map<std::string, std::string>	headerValues;
 		unsigned int			requestKey;
 
 	public:
-		int		getRequestKey() const;
+		int			getRequestKey() const;
 		std::string	getHeader() const;
 		std::string	getBody() const;
 		int			checkHeader(void);
 		int			checkBodySize(void);
 
 		void	appendHeader(std::string input);
-		void	appendBody(std::string body);
+		void	appendBody(char *, int);
 		void	setHeaderValues(std::map<std::string, std::string> mappe);
 
-		void	setBody();
-		void	setHeader();
+		void	clearBody();
+		void	clearHeader();
 
 		void	setRequestKey(unsigned int);
 
-		void	printHeaderValues() {
+		void	printHeaderValues()
+		{
 			std::map<std::string, std::string>::iterator iter = headerValues.begin();
 			while (iter != headerValues.end()) {
 				std::cout << iter->first << " | " << iter->second << "\n";
 				++iter;
 			}
 		}
-
-		void	createFileFlex() const;
-		int		checkBoundaryStart() const;
-		int		checkBoundaryEnd() const;
-		void	vector_to_string();
-
 
 };

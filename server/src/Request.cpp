@@ -37,21 +37,11 @@ int	Request::checkBodySize(void)
 	return (std::stoi(content_length));
 }
 
-void	Request::appendBody(std::string body_in)
+void	Request::appendBody(char *body_in, int size)
 {
-	//if (this->body.empty())
-	//{
-	//	this->body = body_in;
-	//}
-	//else
-	//{
-	//	//body_in = body_in.substr(0, body_in.size()-1);
-	//	//if (body_in.empty())
-	//	//	body_in = "NULL";
-	//	this->body = this->body + body_in;
-	//}
-	const char *tmp = body_in.c_str();
-	this->body_flex.push_back(tmp[0]);
+	std::string tmp(body_in, size);
+	this->body = tmp;
+	//std::cout << this->body << std::endl;
 }
 
 void	Request::setRequestKey(unsigned int KeyIn)
@@ -59,66 +49,12 @@ void	Request::setRequestKey(unsigned int KeyIn)
 	this->requestKey = KeyIn;
 }
 
-void	Request::setBody()
+void	Request::clearBody()
 {
 	this->body = "";
-	this->body_flex.clear();
 }
 
-void	Request::setHeader()
+void	Request::clearHeader()
 {
 	this->header = "";
-}
-
-int Request::checkBoundaryStart() const
-{
-	int i = 0, count = 0;
-	while (count <= 26)
-	{
-		if (this->body_flex[i] == '\r' && this->body_flex[i + 1] == '\n'
-			&& this->body_flex[i + 2] == '\r' && this->body_flex[i + 3] == '\n')
-		return (i + 3);
-		i++;
-	}
-	return (0);
-}
-
-//calculate boundary from the end and return the offset to write my file
-int Request::checkBoundaryEnd() const
-{
-	int max_size = this->body_flex.size();
-	int i = max_size - 1, count = 0;
-	while (count <= 26)
-	{
-		if (this->body_flex[i] == '-')
-			count++;
-		i--;
-	}
-	return (i - 2);
-}
-
-void	Request::createFileFlex() const
-{
-	FILE * fd = fopen("binary_boundary.file", "wb");
-	LOG_BLUE("START BODY FLEX");
-	int max_size = this->body_flex.size();
-	char tmp;
-	int minimum = checkBoundaryStart();
-	int maximum = checkBoundaryEnd();
-	for (int i = 0; i < max_size; i++)
-	{
-		std ::cout << body_flex[i];
-		tmp = body_flex[i];
-		if (i > minimum && i < maximum)
-			fwrite (&tmp , 1, 1, fd);
-	}
-	LOG_BLUE("END BODY FLEX");
-
-	fclose(fd);
-}
-
-void	Request::vector_to_string()
-{
-	std::string tmp(this->body_flex.begin(), this->body_flex.end());
-	this->body = tmp;
 }
