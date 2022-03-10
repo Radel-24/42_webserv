@@ -20,7 +20,7 @@
 #include <cstdint>
 
 #include "PostResponder.hpp"
-
+#include "ConfigToken.hpp"
 /* LISTENING SOCKET */
 int					backlog = 10;
 int					listening;
@@ -223,6 +223,7 @@ void	updateFilesHTML()
 
 int	main( )
 {
+	ConfigToken config;
 	readConfigFile();
 	/* SIMPLE SOCKET */
 	//Define address structure

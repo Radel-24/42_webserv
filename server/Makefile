@@ -8,7 +8,8 @@ SRC =	main.cpp		\
 		Request.cpp		\
 		utils.cpp		\
 		PostResponder.cpp \
-		Config.cpp
+		Config.cpp		\
+		ConfigToken.cpp
 
 
 HEADER = Request.hpp utils.hpp PostResponder.hpp
