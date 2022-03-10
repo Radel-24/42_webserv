@@ -1,4 +1,5 @@
 #include "../inc/Request.hpp"
+#include "../inc/PostResponder.hpp"
 #include <iostream>
 int	Request::getRequestKey() const { return requestKey; }
 
@@ -36,20 +37,11 @@ int	Request::checkBodySize(void)
 	return (std::stoi(content_length));
 }
 
-void	Request::appendBody(std::string body_in)
+void	Request::appendBody(char *body_in, int size)
 {
-	if (this->body.empty())
-	{
-		//body_in = body_in.substr(0, body_in.size()-1);
-		this->body = body_in;
-	}
-	else
-	{
-		//body_in = body_in.substr(0, body_in.size()-1);
-		if (body_in.empty())
-			body_in = "NULL";
-		this->body = this->body + body_in;
-	}
+	std::string tmp(body_in, size);
+	this->body = tmp;
+	//std::cout << this->body << std::endl;
 }
 
 void	Request::setRequestKey(unsigned int KeyIn)
@@ -57,12 +49,12 @@ void	Request::setRequestKey(unsigned int KeyIn)
 	this->requestKey = KeyIn;
 }
 
-void	Request::setBody()
+void	Request::clearBody()
 {
 	this->body = "";
 }
 
-void	Request::setHeader()
+void	Request::clearHeader()
 {
 	this->header = "";
 }
