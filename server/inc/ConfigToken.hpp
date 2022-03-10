@@ -3,34 +3,34 @@
 #include <string>
 #include <vector>
 
-enum GeneralTokens{
-	COMMENT,
-	SCOPE_BEGIN,
-	SCOPE_END,
-	LOCATION,
-	LISTEN,
-	SERVER_NAME
-};
+//enum GeneralTokens{
+//	COMMENT,
+//	SCOPE_BEGIN,
+//	SCOPE_END,
+//	LOCATION,
+//	LISTEN,
+//	SERVER_NAME
+//};
 
-struct Location {
-	private:
-		std::string path;
-		std::string root;
+//struct Location {
+//	private:
+//		std::string path;
+//		std::string root;
 
 
-};
+//};
 
-class ConfigToken {
-	public:
-		static const std::string general_tokens[];
-		static const std::string location_tokens[];
-		std::vector<Location> locations;
-		std::vector<
+//class ConfigToken {
+//	public:
+//		static const std::string general_tokens[];
+//		static const std::string location_tokens[];
+//		std::vector<Location> locations;
+//		std::vector<
 
-		ConfigToken();
-		~ConfigToken();
+//		ConfigToken();
+//		~ConfigToken();
 
-};
+//};
 
 //enum Tokens {
 //	NIL,

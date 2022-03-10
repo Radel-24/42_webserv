@@ -233,22 +233,22 @@ void handler()
 		PostResponder pR(request.getHeader(), request.getBody(), new_socket);
 }
 
-void	readConfigFile() {
-	Config config;
-	config.buildMap("setup.conf");
+//void	readConfigFile() {
+//	Config config;
+//	config.buildMap("setup.conf");
 
-	config.printMap();
+//	config.printMap();
 
-	std::string nec_vars[] = {"port", "necessary"};
-	std::vector<std::string> vec(&(nec_vars[0]), &(nec_vars[2]));
-	//std::cout << "check: " << config.checkNecessaryKeys(vec) << "\n";
+//	std::string nec_vars[] = {"port", "necessary"};
+//	std::vector<std::string> vec(&(nec_vars[0]), &(nec_vars[2]));
+//	//std::cout << "check: " << config.checkNecessaryKeys(vec) << "\n";
 
-	int port = 0;
-	int necessary = 0;
-	int * ints[] = {&port, &necessary};
-	config.readIntVars(nec_vars, ints, 2);
-	//std::cout << "port: " << port << " necessary: " << necessary << "\n";
-}
+//	int port = 0;
+//	int necessary = 0;
+//	int * ints[] = {&port, &necessary};
+//	config.readIntVars(nec_vars, ints, 2);
+//	//std::cout << "port: " << port << " necessary: " << necessary << "\n";
+//}
 
 void	updateFilesHTML()
 {
@@ -261,8 +261,9 @@ void	updateFilesHTML()
 
 int	main( )
 {
-	ConfigToken config;
-	readConfigFile();
+	//ConfigToken config;
+	//readConfigFile();
+	read_config("setup.conf");
 	/* SIMPLE SOCKET */
 	//Define address structure
 	g_address.sin_family = AF_INET;

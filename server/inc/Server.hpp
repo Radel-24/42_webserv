@@ -2,10 +2,41 @@
 
 #include <string>
 #include <map>
+#include <vector>
+
+
+
+struct Location {
+	public:
+		int	port;
+		std::string path;
+		std::vector<std::string> methods;
+		std::string	redirect;
+		bool	directory_listing;
+		std::string	default_file;
+		std::string	cgi_extension;
+		std::string	cgi_path;
+
+		struct Location *	sub_location;
+
+	private:
+		void	default_init();
+
+	public:
+		Location();
+		Location(std::string path);
+};
 
 class Server {
-	private:
+	public:
 		int port;
 		std::string server_name;
-		std::map<std::string, std::string> locations;
+		std::map<std::string, Location> locations;
+		double client_max_body_size;
+
+	private:
+		void	default_init();
+
+	public:
+		Server();
 };

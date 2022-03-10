@@ -8,22 +8,29 @@
 #include <vector>
 #include "utils.hpp"
 
+#include "Server.hpp"
 
-class Config {
-	private:
-		std::map<std::string, std::string>	map;
+#define SUCCESS 0
+#define FAILURE 1
+#define STR_END std::string::npos
 
-	public:
+//class Config {
+//	private:
+//		std::map<std::string, std::string>	map;
 
-		void	buildMap(std::string file, std::string divide = ": ", char separate = '\n', std::string comment = "#");
-		void	printMap();
+//	public:
 
-		bool	checkNecessaryKeys(std::vector<std::string> vec);
+//		void	buildMap(std::string file, std::string divide = ": ", char separate = '\n', std::string comment = "#");
+//		void	printMap();
 
-		void	readIntVars(std::string names[], int ** ints, int size);
-		void	readDoubleVars(std::string names[], double ** doubles, int size);
-		void	readStrVars(std::string names[], std::string ** strs, int size);
-};
+//		bool	checkNecessaryKeys(std::vector<std::string> vec);
 
-void	loadConfig(Config & config);
-void	printConfig(Config & config);
+//		void	readIntVars(std::string names[], int ** ints, int size);
+//		void	readDoubleVars(std::string names[], double ** doubles, int size);
+//		void	readStrVars(std::string names[], std::string ** strs, int size);
+//};
+
+//void	loadConfig(Config & config);
+//void	printConfig(Config & config);
+
+int		read_config(std::string file);
