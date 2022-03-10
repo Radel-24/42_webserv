@@ -7,6 +7,11 @@
 #include <string>
 #include <fstream>
 #include <fcntl.h>
+#include <poll.h>
+#include <sys/select.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "../inc/Request.hpp"
 #include "../inc/utils.hpp"
@@ -30,14 +35,21 @@ int					listening;
 int					connection;
 int					sock;
 struct sockaddr_in	g_address;
+struct pollfd		fds;
 /* SIMPLE SOCKET */
 
 /* TEST SERVER */
-char				buffer[4096];
+char				buffer;
 char				*read_body;
 int					new_socket;
 Request				request;
 /* TEST SERVER */
+
+/* SELECT */
+fd_set current_socket;
+fd_set ready_sockets;
+/* SELECT */
+
 
 //check if socket or connection has been properly established
 void test_connection(int item_to_test)
@@ -76,47 +88,75 @@ void	setRequestType(std::string header) {
 	}
 
 
+void readHeader()
+{
+	std::cout << "HEADER START" << std::endl;
+	while (request.checkHeader() == 0)
+	{
+		recv(new_socket, &buffer, 1, 0);
+		request.appendHeader(&buffer);
+	}
+	setRequestType(request.getHeader());
+	LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
+	LOG_RED(request.getHeader());
+	std::cout << "HEADER END" << std::endl;
+}
+
+void readBody()
+{
+	std::cout << "BODY START" << std::endl;
+	if (request.getRequestKey() == POST)
+	{
+		//usleep(100);
+		//FILE * fd = fopen("binary.file", "wb");
+		int max_size = request.checkBodySize();
+		std::cout << max_size << std::endl;
+		read_body = NULL;
+		read_body = new char[max_size];
+		recv(new_socket, read_body, max_size, MSG_WAITALL);
+		request.appendBody(read_body, max_size);
+		//fwrite (read_body , sizeof(char), max_size, fd);
+		delete read_body;
+		//fclose(fd);
+	}
+	std::cout << "BODY END" << std::endl;
+}
+
 void accepter()
 {
 	struct sockaddr_in address = g_address;
 
 	int addrlen = sizeof(address);
 
-	new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+	//new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
 
-	//START READING HEADER -> needs to be changed because in normal post request can be header and body in one
-	std::cout << "START READLOOP HEADER" << std::endl;
-	while (request.checkHeader() == 0)
+	//readHeader();
+	//readBody();
+
+	ready_sockets = current_socket;
+	if (select(FD_SETSIZE, &ready_sockets, NULL, NULL, NULL) < 0)
 	{
-		recv(new_socket, buffer, 4096, MSG_TRUNC);
-		request.appendHeader(buffer);
+		perror("select error");
+		exit(EXIT_FAILURE);
 	}
-	setRequestType(request.getHeader());
-	LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
-	LOG_RED(request.getHeader());
-	//std::cout << request.getHeader() << std::endl;
-	std::cout << "HEADER END" << std::endl;
-	std::cout << "START READLOOP" << std::endl;
-	if (request.getRequestKey() == POST)
+	for (int i = 0; i < FD_SETSIZE; i++)
 	{
-		usleep(100);
-		//FILE * fd = fopen("binary.file", "wb");
-		int max_size = request.checkBodySize();
-		std::cout << max_size << std::endl;
-		read_body = NULL;
-		read_body = (char *)malloc(max_size);
-		recv(new_socket, read_body, max_size, MSG_WAITALL);
-		request.appendBody(read_body, max_size);
-		//fwrite (read_body , sizeof(char), max_size, fd);
-		free(read_body);
-		//fclose(fd);
+		if (FD_ISSET(i, &ready_sockets))
+		{
+			if (i == sock)
+			{
+				new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+				FD_SET(new_socket, &current_socket);
+			}
+			else
+			{
+				//handle
+				readHeader();
+				readBody();
+				FD_CLR(i, &current_socket);
+			}
+		}
 	}
-	std::cout << "END READLOOP" << std::endl;
-	//if (request.getHeader().find("boundary=") != std::string::npos)
-	//	request.createFileFlex();
-	//LOG_GREEN(request.getBody());
-	//std::cout << "END BODY" << std::endl;
-	//std::pair<std::string, std::string> input_pair = divideInput(&buffer);
 }
 
 /* START RESPONDER */
@@ -189,7 +229,7 @@ void handler()
 	{
 		responder();
 	}
-	else if (request.getRequestKey() == POST)
+	else if (request.getRequestKey() == POST && request.getBody().size() > 0)
 		PostResponder pR(request.getHeader(), request.getBody(), new_socket);
 }
 
@@ -233,7 +273,6 @@ int	main( )
 	test_connection(sock);
 	/* SIMPLE SOCKET */
 
-
 	/* BINDING SOCKET */
 	connection = bind(sock, (struct sockaddr *) &g_address, sizeof(g_address));
 	test_connection(connection);
@@ -245,6 +284,12 @@ int	main( )
 	test_connection(listening);
 	/* LISTENING SOCKET */
 
+	/* SELECT */
+	//innit sockets sets
+	FD_ZERO(&current_socket);
+	FD_SET(sock, &current_socket);
+	/* SELECT */
+
 	/* LAUNCH */
 	while (1)
 	{
@@ -254,7 +299,6 @@ int	main( )
 		updateFilesHTML();
 		accepter();
 		handler();
-		//responder();
 		LOG_BLUE("============================DONE===========================");
 	}
 	/* LAUNCH */
