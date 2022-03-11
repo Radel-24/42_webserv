@@ -104,6 +104,7 @@ void readHeader()
 
 void readBody()
 {
+	static ssize_t total_bytes_read = 0;
 	std::cout << "BODY START" << std::endl;
 	if (request.getRequestKey() == POST)
 	{
@@ -113,8 +114,23 @@ void readBody()
 		std::cout << max_size << std::endl;
 		read_body = NULL;
 		read_body = new char[max_size];
-		recv(new_socket, read_body, max_size, MSG_WAITALL);
-		request.appendBody(read_body, max_size);
+		write(new_socket, "HTTP/1.1 100 Continue\r\n\r\n", 25); // much faster when sending huge files with curl
+		while (total_bytes_read < max_size) {
+			ssize_t bytes_read = recv(new_socket, read_body, max_size, 0);
+			if (bytes_read > 0) {
+				request.appendBody(read_body, bytes_read);
+				total_bytes_read += bytes_read;
+				std::cout << "bytes read: " << bytes_read << std::endl;
+			}
+		}
+		std::cout << request.getBody() << std::endl;
+		//if (bytes_read == 0) {
+		//	std::cout << "socket gets closed\n";
+		//	close(new_socket);
+		//}
+		//request.appendBody(read_body, max_size);
+		//std::cout << "debug: " << request.getBody() << std::endl;
+		//close(new_socket);
 		//fwrite (read_body , sizeof(char), max_size, fd);
 		delete read_body;
 		//fclose(fd);
@@ -134,6 +150,7 @@ void accepter()
 	//readBody();
 
 	ready_sockets = current_socket;
+	//if (select(FD_SETSIZE, &ready_sockets, NULL, NULL, NULL) < 0)
 	if (select(FD_SETSIZE, &ready_sockets, NULL, NULL, NULL) < 0)
 	{
 		perror("select error");
@@ -153,6 +170,9 @@ void accepter()
 				//handle
 				readHeader();
 				readBody();
+				//char * place = new char[3000];
+				//recv(i, place, 3000, 0);
+				//write(STDOUT_FILENO, place, 3000);
 				FD_CLR(i, &current_socket);
 			}
 		}
@@ -229,8 +249,9 @@ void handler()
 	{
 		responder();
 	}
-	else if (request.getRequestKey() == POST && request.getBody().size() > 0)
+	else if (request.getRequestKey() == POST && request.getBody().size() > 0) // TODO after && quick fix!!!
 		PostResponder pR(request.getHeader(), request.getBody(), new_socket);
+	LOG_GREEN(request.getBody());
 }
 
 //void	readConfigFile() {
@@ -275,6 +296,8 @@ int	main( )
 	test_connection(sock);
 	/* SIMPLE SOCKET */
 
+	fcntl(sock, F_SETFL, O_NONBLOCK);
+
 	/* BINDING SOCKET */
 	connection = bind(sock, (struct sockaddr *) &g_address, sizeof(g_address));
 	test_connection(connection);
@@ -295,6 +318,7 @@ int	main( )
 	/* LAUNCH */
 	while (1)
 	{
+
 		LOG_BLUE("==========================WAITING==========================");
 		request.clearHeader();
 		request.clearBody();

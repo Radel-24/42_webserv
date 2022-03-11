@@ -40,7 +40,7 @@ int	Request::checkBodySize(void)
 void	Request::appendBody(char *body_in, int size)
 {
 	std::string tmp(body_in, size);
-	this->body = tmp;
+	this->body += tmp;
 	//std::cout << this->body << std::endl;
 }
 
