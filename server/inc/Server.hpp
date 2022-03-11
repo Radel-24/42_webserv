@@ -17,7 +17,7 @@ struct Location {
 		std::string	cgi_extension;
 		std::string	cgi_path;
 
-		struct Location *	sub_location;
+		std::map<std::string, Location*> sub_locations;
 
 	private:
 		void	default_init();
@@ -31,7 +31,7 @@ class Server {
 	public:
 		int port;
 		std::string server_name;
-		std::map<std::string, Location> locations;
+		std::map<std::string, Location*> locations;
 		double client_max_body_size;
 
 	private:

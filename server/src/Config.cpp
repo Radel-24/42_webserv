@@ -100,38 +100,65 @@ int	location_parser(std::ifstream &fin, Location &location) {
 		remove_comments(line);
 		remove_whitespace(line);
 		if (line.find("}") != STR_END) { break; }
+		else if (size_t pos = is_parameter("cgi_extension: ", line)) { location.cgi_extension = line.substr(pos, STR_END); }
+		else if (size_t pos = is_parameter("cgi_path: ", line)) { location.cgi_path = line.substr(pos, STR_END); }
+		else if (size_t pos = is_parameter("default_file: ", line)) { location.default_file = line.substr(pos, STR_END); }
 		else if (line.find("directory_listing: ") == 0) {
 			line = line.substr(strlen("directory_listing: "), std::string::npos);
 			if (line == "on") { location.directory_listing = true; }
 			else if (line == "off") { location.directory_listing = false; }
 			else { return FAILURE; }
 		}
+		else if (size_t pos = is_parameter("methods: ", line)) {
+			location.methods = stringSplit(", ", line.substr(pos, STR_END));
+			//for (std::vector<std::string>::iterator iter = location.methods.begin(); iter != location.methods.end(); ++iter) {
+			//	std::cout << "debug: " << *iter << "\n";
+			//}
+		}
+		else if (is_parameter("location ", line)) {
+			std::string var = "location ";
+			std::string path = line.substr(var.length(), line.find(" {") - var.length());
+			if (line.find("{") != line.length() - 1) {
+				std::cout << "Wrong formatting\n";
+				// TODO error handling or in calling function/
+				return FAILURE;
+			}
+			Location *sub_location = new Location(path);
+			location.sub_locations.insert(std::pair<std::string, Location*>(path, sub_location));
+			location_parser(fin, *sub_location);
+		}
+		else {
+			std::cout << "Not a valid parameter in location scope\n";
+			// TODO error handling
+			exit(EXIT_SUCCESS);
+		}
 	}
 	return SUCCESS;
 }
 
-int	server_parser(std::ifstream &fin) {
-	Server server;
+int	server_parser(std::ifstream &fin, Server &server) {
 	// TODO add server to main data struct or something else
 	std::string line;
-
+	std::cout << "server parser start\n";
 	while (getline(fin, line)) {
 		remove_comments(line);
 		remove_whitespace(line);
 		if (line.find("}") != STR_END) { break; }
-		else if (size_t pos = is_parameter("server_name: ", line)) {server.server_name = line.substr(pos, STR_END); }
-		else if (size_t pos = is_parameter("client_max_body_size: ", line)) {server.client_max_body_size = atof(line.substr(pos).c_str()); }
-		else if (is_parameter("location: ", line)) {
-			std::string path = line.substr(strlen("location"), line.find("{"));
+		else if (size_t pos = is_parameter("server_name: ", line)) { server.server_name = line.substr(pos, STR_END); }
+		else if (size_t pos = is_parameter("client_max_body_size: ", line)) { server.client_max_body_size = atof(line.substr(pos).c_str()); }
+		else if (size_t pos = is_parameter("listen: ", line)) { server.port = atoi(line.substr(pos).c_str()); }
+		else if (is_parameter("location ", line)) {
+			std::string var = "location ";
+			std::string path = line.substr(var.length(), line.find(" {") - var.length());
 			if (line.find("{") != line.length() - 1) {
 				std::cout << "Wrong formatting\n";
 				// TODO error handling or in calling function/
 				return FAILURE;
 			}
 			Location *location = new Location(path);
+			server.locations.insert(std::pair<std::string, Location*>(path, location));
 			location_parser(fin, *location);
 		}
-
 	}
 	return SUCCESS; // TODO
 }
@@ -143,7 +170,8 @@ int	main_parser(std::ifstream &fin) {
 		remove_comments(line);
 		remove_whitespace(line);
 		if (is_parameter("server{", line)) {
-			server_parser(fin);
+			Server *server = new Server();
+			server_parser(fin, *server);
 		}
 
 	}

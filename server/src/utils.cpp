@@ -1,5 +1,19 @@
 #include "utils.hpp"
 
+std::vector<std::string>	stringSplit(std::string sep, std::string str) {
+	std::vector<std::string>	elems;
+
+	size_t pos_start = 0;
+	size_t pos_end = str.find(sep);
+	while (pos_end != std::string::npos) {
+		elems.push_back(str.substr(pos_start, pos_end - pos_start));
+		pos_start = pos_end + sep.length();
+		pos_end = str.find(sep, pos_start);
+	}
+	elems.push_back(str.substr(pos_start, pos_end - pos_start));
+	return elems;
+}
+
 std::pair<std::string, std::string>	divideString(std::string input, std::string divide) {
 	size_t	break_pos = input.find(divide);
 	std::string	key;
