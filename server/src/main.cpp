@@ -113,8 +113,14 @@ void readBody()
 		std::cout << max_size << std::endl;
 		read_body = NULL;
 		read_body = new char[max_size];
-		recv(new_socket, read_body, max_size, MSG_WAITALL);
+		usleep(200);
+		write(new_socket, "HTTP/1.1 100 Continue\r\n\r\n", 25);
+		usleep(200);
+		if (recv(new_socket, read_body, max_size, 0) == 0)
+			close(new_socket);
 		request.appendBody(read_body, max_size);
+		//std::cout << "debug: " << request.getBody() << std::endl;
+		//close(new_socket);
 		//fwrite (read_body , sizeof(char), max_size, fd);
 		delete read_body;
 		//fclose(fd);
@@ -153,6 +159,9 @@ void accepter()
 				//handle
 				readHeader();
 				readBody();
+				//char * place = new char[3000];
+				//recv(i, place, 3000, 0);
+				//write(STDOUT_FILENO, place, 3000);
 				FD_CLR(i, &current_socket);
 			}
 		}
@@ -229,7 +238,7 @@ void handler()
 	{
 		responder();
 	}
-	else if (request.getRequestKey() == POST && request.getBody().size() > 0)
+	else if (request.getRequestKey() == POST && request.getBody().size() > 0) // TODO after && quick fix!!!
 		PostResponder pR(request.getHeader(), request.getBody(), new_socket);
 }
 
@@ -273,6 +282,8 @@ int	main( )
 	test_connection(sock);
 	/* SIMPLE SOCKET */
 
+	fcntl(sock, F_SETFL, O_NONBLOCK);
+
 	/* BINDING SOCKET */
 	connection = bind(sock, (struct sockaddr *) &g_address, sizeof(g_address));
 	test_connection(connection);
@@ -293,6 +304,7 @@ int	main( )
 	/* LAUNCH */
 	while (1)
 	{
+
 		LOG_BLUE("==========================WAITING==========================");
 		request.clearHeader();
 		request.clearBody();

@@ -41,7 +41,7 @@ void	Request::appendBody(char *body_in, int size)
 {
 	std::string tmp(body_in, size);
 	this->body = tmp;
-	//std::cout << this->body << std::endl;
+	std::cout << this->body << std::endl;
 }
 
 void	Request::setRequestKey(unsigned int KeyIn)
