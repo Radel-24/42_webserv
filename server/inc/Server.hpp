@@ -3,6 +3,8 @@
 #include <string>
 #include <map>
 #include <vector>
+#include "Request.hpp"
+#include "Client.hpp"
 
 
 
@@ -32,6 +34,7 @@ class Server {
 		int port;
 		std::string server_name;
 		std::map<std::string, Location*> locations;
+		std::map<int, Request> requests; // TODO store clients or requests?
 		double client_max_body_size;
 
 	private:
@@ -39,4 +42,5 @@ class Server {
 
 	public:
 		Server();
+
 };

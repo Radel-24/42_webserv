@@ -1,6 +1,11 @@
 #include "../inc/Request.hpp"
 #include "../inc/PostResponder.hpp"
 #include <iostream>
+
+Request::Request() : header_read(false), body_read(false) { }
+
+Request::~Request() { }
+
 int	Request::getRequestKey() const { return requestKey; }
 
 std::string	Request::getHeader() const { return header; }

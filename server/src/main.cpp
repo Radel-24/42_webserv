@@ -39,14 +39,14 @@ struct pollfd		fds;
 /* SIMPLE SOCKET */
 
 /* TEST SERVER */
-char				buffer;
+char				buffer[9999];
 char				*read_body;
 int					new_socket;
 Request				request;
 /* TEST SERVER */
 
 /* SELECT */
-fd_set current_socket;
+fd_set current_sockets;
 fd_set ready_sockets;
 /* SELECT */
 
@@ -85,7 +85,7 @@ void	setRequestType(std::string header) {
 	else if (header.find("POST") != std::string::npos) { request.setRequestKey(POST); }
 	else if (header.find("PUT") != std::string::npos) { request.setRequestKey(PUT); }
 	else if (header.find("DELETE") != std::string::npos) { request.setRequestKey(DELETE);}
-	}
+}
 
 
 void readHeader()
@@ -93,13 +93,15 @@ void readHeader()
 	std::cout << "HEADER START" << std::endl;
 	while (request.checkHeader() == 0)
 	{
-		recv(new_socket, &buffer, 1, 0);
-		request.appendHeader(&buffer);
+		ssize_t bytes_read = recv(new_socket, buffer, 9999, 0);
+		std::cout << "header read bytes: " << bytes_read << "\n";
+		request.appendHeader(buffer);
 	}
 	setRequestType(request.getHeader());
 	LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
 	LOG_RED(request.getHeader());
 	std::cout << "HEADER END" << std::endl;
+	request.header_read = true;
 }
 
 void readBody()
@@ -123,6 +125,8 @@ void readBody()
 				std::cout << "bytes read: " << bytes_read << std::endl;
 			}
 		}
+		if (total_bytes_read == max_size)
+			request.body_read = true;
 		std::cout << request.getBody() << std::endl;
 		//if (bytes_read == 0) {
 		//	std::cout << "socket gets closed\n";
@@ -144,13 +148,8 @@ void accepter()
 
 	int addrlen = sizeof(address);
 
-	//new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+	ready_sockets = current_sockets;
 
-	//readHeader();
-	//readBody();
-
-	ready_sockets = current_socket;
-	//if (select(FD_SETSIZE, &ready_sockets, NULL, NULL, NULL) < 0)
 	if (select(FD_SETSIZE, &ready_sockets, NULL, NULL, NULL) < 0)
 	{
 		perror("select error");
@@ -163,7 +162,7 @@ void accepter()
 			if (i == sock)
 			{
 				new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-				FD_SET(new_socket, &current_socket);
+				FD_SET(new_socket, &current_sockets);
 			}
 			else
 			{
@@ -173,7 +172,7 @@ void accepter()
 				//char * place = new char[3000];
 				//recv(i, place, 3000, 0);
 				//write(STDOUT_FILENO, place, 3000);
-				FD_CLR(i, &current_socket);
+				FD_CLR(i, &current_sockets);
 			}
 		}
 	}
@@ -311,8 +310,8 @@ int	main( )
 
 	/* SELECT */
 	//innit sockets sets
-	FD_ZERO(&current_socket);
-	FD_SET(sock, &current_socket);
+	FD_ZERO(&current_sockets);
+	FD_SET(sock, &current_sockets);
 	/* SELECT */
 
 	/* LAUNCH */

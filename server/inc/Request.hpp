@@ -20,6 +20,12 @@ class	Request {
 		unsigned int			requestKey;
 
 	public:
+		bool	header_read;
+		bool	body_read;
+
+	public:
+		Request();
+		~Request();
 		int			getRequestKey() const;
 		std::string	getHeader() const;
 		std::string	getBody() const;
