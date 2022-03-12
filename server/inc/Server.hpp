@@ -1,5 +1,13 @@
 #pragma once
 
+#include <sys/socket.h>
+#include <stdio.h>
+#include <netinet/in.h>
+
+#include <fcntl.h>
+#include <sys/select.h>
+
+
 #include <string>
 #include <map>
 #include <vector>
@@ -36,6 +44,14 @@ class Server {
 		std::map<std::string, Location*> locations;
 		std::map<int, Request *> requests; // TODO store clients or requests?
 		double client_max_body_size;
+		fd_set	watching_sockets;
+		int	sock;
+		struct sockaddr_in g_address;
+		int	backlog;
+
+	private:
+		int connection;
+		int listening;
 
 	private:
 		void	default_init();

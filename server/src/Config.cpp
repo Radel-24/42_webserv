@@ -163,7 +163,7 @@ int	server_parser(std::ifstream &fin, Server &server) {
 	return SUCCESS; // TODO
 }
 
-int	main_parser(std::ifstream &fin) {
+int	main_parser(std::ifstream &fin, std::vector<Server *> servers) {
 	std::string line;
 
 	while (getline(fin, line)) {
@@ -171,6 +171,7 @@ int	main_parser(std::ifstream &fin) {
 		remove_whitespace(line);
 		if (is_parameter("server{", line)) {
 			Server *server = new Server();
+			servers.push_back(server);
 			server_parser(fin, *server);
 		}
 
@@ -178,13 +179,13 @@ int	main_parser(std::ifstream &fin) {
 	return SUCCESS; // TODO
 }
 
-int	read_config(std::string file) {
+int	read_config(std::string file, std::vector<Server *> servers) {
 	std::ifstream fin(file);
 	std::string input;
 	std::string line;
 
 	if (fin.is_open()) {
-		if (main_parser(fin) != SUCCESS) {
+		if (main_parser(fin, servers) != SUCCESS) {
 			std::cout << "Reading the config file failed\n";
 			exit(EXIT_SUCCESS);
 			// TODO other exit strategy?

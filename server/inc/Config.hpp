@@ -33,4 +33,4 @@
 //void	loadConfig(Config & config);
 //void	printConfig(Config & config);
 
-int		read_config(std::string file);
+int	read_config(std::string file, std::vector<Server *> servers);

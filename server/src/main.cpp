@@ -28,53 +28,32 @@
 #include "ConfigToken.hpp"
 
 #include "general.hpp"
-/* LISTENING SOCKET */
-int					backlog = 10;
-int					listening;
-/* LISTENING SOCKET */
+///* LISTENING SOCKET */
+//int					backlog = 10;
+//int					listening;
+///* LISTENING SOCKET */
 
 /* SIMPLE SOCKET */
-int					connection;
-int					sock;
-struct sockaddr_in	g_address;
+//int					connection;
+//int					sock;
+//struct sockaddr_in	g_address;
 struct pollfd		fds;
 /* SIMPLE SOCKET */
 
-/* TEST SERVER */
-char				buffer[9999];
-//char				*read_body;
-
-
-/* TEST SERVER */
-
-/* SELECT */
-fd_set current_sockets;
-fd_set ready_sockets;
-/* SELECT */
 
 
 
 void handler(Request & request)
 {
 	LOG_RED("REQUEST TYPE:		" << request.getRequestKey());
-	if (request.getRequestKey() == GET)
-	{
+	request.getBody().size(); // needed, so that body is ready when going on with processing?
+	if (request.getRequestKey() == GET) {
 		responder(request);
 	}
-	else if (request.getRequestKey() == POST && request.getBody().size() > 0) // TODO after && quick fix!!!
+	else if (request.getRequestKey() == POST)
 		PostResponder pR(request.getHeader(), request.getBody(), request.socket);
 }
 
-
-//check if socket or connection has been properly established
-void test_connection(int item_to_test)
-{
-	if (item_to_test < 0)
-	{
-		perror("Failed to connect!");
-		exit(EXIT_FAILURE);
-	}
-}
 
 std::string ToHex(const std::string & s, bool upper_case /* = true */)
 {
@@ -106,17 +85,18 @@ void	setRequestType(std::string header, Request & request) {
 void readHeader(Request & request)
 {
 	std::cout << "HEADER START" << std::endl;
-
-	ssize_t bytes_read = recv(request.socket, buffer, 9999, 0);
+	char	buffer[1000];
+	ssize_t bytes_read = recv(request.socket, buffer, 1000, 0);
 	std::cout << "header read bytes: " << bytes_read << "\n";
 	request.appendHeader(buffer);
 
-	setRequestType(request.getHeader(), request);
-	LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
-	LOG_RED(request.getHeader());
-	std::cout << "HEADER END" << std::endl;
-	if (request.checkHeader())
+	if (request.checkHeader()) {
 		request.header_read = true;
+		setRequestType(request.getHeader(), request);
+		LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
+		LOG_RED(request.getHeader());
+		std::cout << "HEADER END" << std::endl;
+	}
 }
 
 void readBody(Request &request)
@@ -147,11 +127,11 @@ void readBody(Request &request)
 
 void accepter(Server &server)
 {
-	struct sockaddr_in address = g_address;
+	struct sockaddr_in address = server.g_address;
 
 	int addrlen = sizeof(address);
 
-	ready_sockets = current_sockets;
+	fd_set ready_sockets = server.watching_sockets;
 
 	std::cout << "before select\n";
 	int amount_ready_socks = select(FD_SETSIZE, &ready_sockets, NULL, NULL, NULL);
@@ -163,9 +143,9 @@ void accepter(Server &server)
 	}
 	for (int i = 0; i < FD_SETSIZE; i++) {
 		if (FD_ISSET(i, &ready_sockets)) {
-			if (i == sock) {
-				int new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-				FD_SET(new_socket, &current_sockets);
+			if (i == server.sock) {
+				int new_socket = accept(server.sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+				FD_SET(new_socket, &server.watching_sockets);
 				server.requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket)));
 			}
 			else {
@@ -177,7 +157,7 @@ void accepter(Server &server)
 					readBody(request);
 
 				if (request.body_read) {
-					FD_CLR(request.socket, &current_sockets);
+					FD_CLR(request.socket, &server.watching_sockets);
 					handler(request);
 					close(request.socket);
 					delete &request;
@@ -257,38 +237,8 @@ void	updateFilesHTML() {
 
 int	main( )
 {
-	//ConfigToken config;
-	//readConfigFile();
-	read_config("setup.conf");
-	/* SIMPLE SOCKET */
-	//Define address structure
-	g_address.sin_family = AF_INET;
-	g_address.sin_port = htons(7000);
-	g_address.sin_addr.s_addr = htonl(INADDR_ANY);
-
-	//Establish socket and test
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	test_connection(sock);
-	/* SIMPLE SOCKET */
-
-	fcntl(sock, F_SETFL, O_NONBLOCK);
-
-	/* BINDING SOCKET */
-	connection = bind(sock, (struct sockaddr *) &g_address, sizeof(g_address));
-	test_connection(connection);
-	/* BINDING SOCKET */
-
-
-	/* LISTENING SOCKET */
-	listening = listen(sock, backlog);
-	test_connection(listening);
-	/* LISTENING SOCKET */
-
-	/* SELECT */
-	//innit sockets sets
-	FD_ZERO(&current_sockets);
-	FD_SET(sock, &current_sockets);
-	/* SELECT */
+	std::vector<Server *> servers;
+	read_config("setup.conf", servers);
 
 	/* LAUNCH */
 
@@ -300,8 +250,6 @@ int	main( )
 		LOG_BLUE("==========================WAITING==========================");
 		updateFilesHTML();
 		accepter(server);
-		//if (request.body_read)
-		//	handler(); // TODO after acceptor when body read
 		LOG_BLUE("============================DONE===========================");
 	}
 	/* LAUNCH */
