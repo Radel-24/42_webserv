@@ -26,6 +26,8 @@
 
 #include "PostResponder.hpp"
 #include "ConfigToken.hpp"
+
+#include "general.hpp"
 /* LISTENING SOCKET */
 int					backlog = 10;
 int					listening;
@@ -40,15 +42,28 @@ struct pollfd		fds;
 
 /* TEST SERVER */
 char				buffer[9999];
-char				*read_body;
-int					new_socket;
-Request				request;
+//char				*read_body;
+
+
 /* TEST SERVER */
 
 /* SELECT */
 fd_set current_sockets;
 fd_set ready_sockets;
 /* SELECT */
+
+
+
+void handler(Request & request)
+{
+	LOG_RED("REQUEST TYPE:		" << request.getRequestKey());
+	if (request.getRequestKey() == GET)
+	{
+		responder(request);
+	}
+	else if (request.getRequestKey() == POST && request.getBody().size() > 0) // TODO after && quick fix!!!
+		PostResponder pR(request.getHeader(), request.getBody(), request.socket);
+}
 
 
 //check if socket or connection has been properly established
@@ -79,7 +94,7 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */)
 
 
 
-void	setRequestType(std::string header) {
+void	setRequestType(std::string header, Request & request) {
 	if (header.length() < 3) { request.setRequestKey(NIL);}
 	else if (header.find("GET") != std::string::npos) { request.setRequestKey(GET); }// if keyword not always at the beginning, us find("GET")
 	else if (header.find("POST") != std::string::npos) { request.setRequestKey(POST); }
@@ -88,61 +103,49 @@ void	setRequestType(std::string header) {
 }
 
 
-void readHeader()
+void readHeader(Request & request)
 {
 	std::cout << "HEADER START" << std::endl;
-	while (request.checkHeader() == 0)
-	{
-		ssize_t bytes_read = recv(new_socket, buffer, 9999, 0);
-		std::cout << "header read bytes: " << bytes_read << "\n";
-		request.appendHeader(buffer);
-	}
-	setRequestType(request.getHeader());
+
+	ssize_t bytes_read = recv(request.socket, buffer, 9999, 0);
+	std::cout << "header read bytes: " << bytes_read << "\n";
+	request.appendHeader(buffer);
+
+	setRequestType(request.getHeader(), request);
 	LOG("------- REQUEST KEY: " << request.getRequestKey() << " -------");
 	LOG_RED(request.getHeader());
 	std::cout << "HEADER END" << std::endl;
-	request.header_read = true;
+	if (request.checkHeader())
+		request.header_read = true;
 }
 
-void readBody()
+void readBody(Request &request)
 {
-	static ssize_t total_bytes_read = 0;
 	std::cout << "BODY START" << std::endl;
 	if (request.getRequestKey() == POST)
 	{
-		//usleep(100);
-		//FILE * fd = fopen("binary.file", "wb");
 		int max_size = request.checkBodySize();
-		std::cout << max_size << std::endl;
-		read_body = NULL;
+		std::cout << "body size: " << max_size << std::endl;
+		char * read_body = NULL;
 		read_body = new char[max_size];
-		write(new_socket, "HTTP/1.1 100 Continue\r\n\r\n", 25); // much faster when sending huge files with curl
-		while (total_bytes_read < max_size) {
-			ssize_t bytes_read = recv(new_socket, read_body, max_size, 0);
+		write(request.socket, "HTTP/1.1 100 Continue\r\n\r\n", 25); // much faster when sending huge files with curl
+			ssize_t bytes_read = recv(request.socket, read_body, max_size, 0);
+			std::cout << "bytes read: " << bytes_read << std::endl;
 			if (bytes_read > 0) {
 				request.appendBody(read_body, bytes_read);
-				total_bytes_read += bytes_read;
-				std::cout << "bytes read: " << bytes_read << std::endl;
+				request.bytes_read += bytes_read;
 			}
-		}
-		if (total_bytes_read == max_size)
+		if (request.bytes_read == max_size) {
 			request.body_read = true;
-		std::cout << request.getBody() << std::endl;
-		//if (bytes_read == 0) {
-		//	std::cout << "socket gets closed\n";
-		//	close(new_socket);
-		//}
-		//request.appendBody(read_body, max_size);
-		//std::cout << "debug: " << request.getBody() << std::endl;
-		//close(new_socket);
-		//fwrite (read_body , sizeof(char), max_size, fd);
+			std::cout << request.getBody() << std::endl;
+			LOG_YELLOW("body read true");
+		}
 		delete read_body;
-		//fclose(fd);
 	}
 	std::cout << "BODY END" << std::endl;
 }
 
-void accepter()
+void accepter(Server &server)
 {
 	struct sockaddr_in address = g_address;
 
@@ -150,36 +153,44 @@ void accepter()
 
 	ready_sockets = current_sockets;
 
-	if (select(FD_SETSIZE, &ready_sockets, NULL, NULL, NULL) < 0)
+	std::cout << "before select\n";
+	int amount_ready_socks = select(FD_SETSIZE, &ready_sockets, NULL, NULL, NULL);
+	std::cout << "after select; amount ready socks: " << amount_ready_socks << "\n";
+	if (amount_ready_socks < 0)
 	{
 		perror("select error");
 		exit(EXIT_FAILURE);
 	}
-	for (int i = 0; i < FD_SETSIZE; i++)
-	{
-		if (FD_ISSET(i, &ready_sockets))
-		{
-			if (i == sock)
-			{
-				new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+	for (int i = 0; i < FD_SETSIZE; i++) {
+		if (FD_ISSET(i, &ready_sockets)) {
+			if (i == sock) {
+				int new_socket = accept(sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
 				FD_SET(new_socket, &current_sockets);
+				server.requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket)));
 			}
-			else
-			{
-				//handle
-				readHeader();
-				readBody();
-				//char * place = new char[3000];
-				//recv(i, place, 3000, 0);
-				//write(STDOUT_FILENO, place, 3000);
-				FD_CLR(i, &current_sockets);
+			else {
+				Request &	request = *(server.requests[i]);
+
+				if (!request.header_read)
+					readHeader(request);
+				else if (request.header_read)
+					readBody(request);
+
+				if (request.body_read) {
+					FD_CLR(request.socket, &current_sockets);
+					handler(request);
+					close(request.socket);
+					delete &request;
+					server.requests.erase(server.requests.find(i));
+					LOG_YELLOW("request removed from map");
+				}
 			}
 		}
 	}
 }
 
 /* START RESPONDER */
-std::string	getFilename( void )
+std::string	getFilename(Request & request)
 {
 	LOG("FILENAME START");
 	std::string	converted = std::string(request.getHeader());
@@ -190,8 +201,7 @@ std::string	getFilename( void )
 	return file;
 }
 
-std::string	readFile( std::string filename )
-{
+std::string	readFile( std::string filename ) {
 	std::ifstream	newFile;
 	std::string		ret;
 	char			c;
@@ -207,8 +217,7 @@ std::string	readFile( std::string filename )
 	return ret;
 }
 
-std::string	formatString( std::string file_content )
-{
+std::string	formatString( std::string file_content ) {
 	std::string	header;
 	std::string	length;
 	std::string	full_header;
@@ -220,58 +229,25 @@ std::string	formatString( std::string file_content )
 	return ret;
 }
 
-void responder()
-{
+void responder(Request & request) {
 	std::string	filename;
 	std::string	file_content;
 	std::string	formatted;
-	filename = getFilename();
+	filename = getFilename(request);
 
-	if (filename.empty())
-	{
+	if (filename.empty()) {
 		file_content = "alex ist sehr toll und du leider nicht so :(\n";
 	}
-	else
-	{
+	else {
 		file_content = readFile(filename);
 	}
 	formatted = formatString(file_content);
 
-	write(new_socket, formatted.c_str(), formatted.length());
-	close(new_socket);
+	write(request.socket, formatted.c_str(), formatted.length());
+	close(request.socket); // TODO is this good?
 }
 
-void handler()
-{
-	LOG_RED("REQUEST TYPE:		" << request.getRequestKey());
-	if (request.getRequestKey() == GET)
-	{
-		responder();
-	}
-	else if (request.getRequestKey() == POST && request.getBody().size() > 0) // TODO after && quick fix!!!
-		PostResponder pR(request.getHeader(), request.getBody(), new_socket);
-	LOG_GREEN(request.getBody());
-}
-
-//void	readConfigFile() {
-//	Config config;
-//	config.buildMap("setup.conf");
-
-//	config.printMap();
-
-//	std::string nec_vars[] = {"port", "necessary"};
-//	std::vector<std::string> vec(&(nec_vars[0]), &(nec_vars[2]));
-//	//std::cout << "check: " << config.checkNecessaryKeys(vec) << "\n";
-
-//	int port = 0;
-//	int necessary = 0;
-//	int * ints[] = {&port, &necessary};
-//	config.readIntVars(nec_vars, ints, 2);
-//	//std::cout << "port: " << port << " necessary: " << necessary << "\n";
-//}
-
-void	updateFilesHTML()
-{
+void	updateFilesHTML() {
 	if (!chdir("./files")) // else irgendein error
 	{
 		system("tree -H './files' -T 'Your Files' -L 1 --noreport --charset utf-8 -o ../files.html"); // if == -1 error happened
@@ -315,15 +291,17 @@ int	main( )
 	/* SELECT */
 
 	/* LAUNCH */
+
+	Server server;
+
 	while (1)
 	{
 
 		LOG_BLUE("==========================WAITING==========================");
-		request.clearHeader();
-		request.clearBody();
 		updateFilesHTML();
-		accepter();
-		handler();
+		accepter(server);
+		//if (request.body_read)
+		//	handler(); // TODO after acceptor when body read
 		LOG_BLUE("============================DONE===========================");
 	}
 	/* LAUNCH */

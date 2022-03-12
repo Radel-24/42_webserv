@@ -2,7 +2,16 @@
 #include "../inc/PostResponder.hpp"
 #include <iostream>
 
-Request::Request() : header_read(false), body_read(false) { }
+void	Request::init() {
+	header_read = false;
+	body_read = false;
+	header = "";
+	body = "";
+}
+
+Request::Request() { init(); }
+
+Request::Request(int socket) : socket(socket) { init(); }
 
 Request::~Request() { }
 

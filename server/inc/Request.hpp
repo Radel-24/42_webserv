@@ -20,11 +20,17 @@ class	Request {
 		unsigned int			requestKey;
 
 	public:
+		int		socket;
+		ssize_t		bytes_read;
 		bool	header_read;
 		bool	body_read;
 
+	private:
+		void	init();
+
 	public:
 		Request();
+		Request(int);
 		~Request();
 		int			getRequestKey() const;
 		std::string	getHeader() const;
