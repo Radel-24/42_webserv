@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sys/socket.h>
 #include <string>
 #include <map>
 #include <iostream>
@@ -42,13 +43,22 @@ class	Request {
 		void	appendBody(char *, int);
 		void	setHeaderValues(std::map<std::string, std::string> mappe);
 
-		void	clearBody();
-		void	clearHeader();
+		//void	clearBody();
+		//void	clearHeader();
 
 		void	setRequestKey(unsigned int);
 
-		void	printHeaderValues()
-		{
+		void	process();
+
+		void	setType();
+		void	readHeader();
+		void	readBody();
+
+		void	handler();
+		void	responder();
+		std::string	getFilename();
+
+		void	printHeaderValues() {
 			std::map<std::string, std::string>::iterator iter = headerValues.begin();
 			while (iter != headerValues.end()) {
 				std::cout << iter->first << " | " << iter->second << "\n";
