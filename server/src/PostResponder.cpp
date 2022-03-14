@@ -57,7 +57,7 @@ void	PostResponder::uploadFiles( void )
 
 
 		size_t	dblNewline = cutBody.find("\r\n\r\n");
-		bodyContent = cutBody.substr(dblNewline + 3, cutBody.length() - dblNewline - 3);
+		bodyContent = cutBody.substr(dblNewline + 4, cutBody.length() - dblNewline - 4);
 
 		LOG_RED("content_type :		" << content_type);
 		LOG_RED("filename :		" << filename);

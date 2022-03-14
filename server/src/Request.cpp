@@ -8,6 +8,7 @@ void	Request::init() {
 	bytes_read = 0;
 	header_read = false;
 	body_read = false;
+	rounds = 0;
 }
 
 Request::Request() { init(); }
@@ -37,12 +38,20 @@ void	Request::appendHeader(std::string input) {
 	}
 }
 
-void	Request::process() {
-	if (!header_read)
+int	Request::process() {
+	if (!header_read) {
 		readHeader();
-	else if (header_read && getRequestKey() == POST)
+		return WORKING;
+	}
+	else if (header_read && getRequestKey() == POST) {
 		readBody();
-
+		return DONE;
+	}
+	else if (header_read && getRequestKey() == GET) {
+		handler();
+		return DONE;
+	}
+	return WORKING;
 }
 
 int	Request::checkBodySize(void) {
@@ -57,9 +66,9 @@ int	Request::checkBodySize(void) {
 
 void	Request::appendBody(char *body_in, int size) {
 	std::string tmp(body_in, size);
-	if (body.empty())
-		body = tmp;
-	else
+	//if (body.empty())
+	//	body = tmp;
+	//else
 		this->body += tmp;
 	//std::cout << this->body << std::endl;
 }
@@ -103,6 +112,7 @@ void Request::readBody() {
 	LOG_YELLOW("bytes read before recv: " << bytes_read);
 	ssize_t tmp_bytes_read = recv(socket, read_body, max_size, 0);
 	if (tmp_bytes_read > 0) {
+		++rounds;
 		appendBody(read_body, tmp_bytes_read);
 		bytes_read += tmp_bytes_read;
 	}
@@ -114,6 +124,7 @@ void Request::readBody() {
 		body_read = true;
 		std::cout << getBody() << std::endl;
 		LOG_YELLOW("body read true");
+		LOG_YELLOW("rounds " << rounds);
 	}
 	delete read_body;
 

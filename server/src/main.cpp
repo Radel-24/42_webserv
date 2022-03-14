@@ -82,9 +82,10 @@ void accepter(Server &server)
 				server.requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket)));
 			}
 			else {
+				Request &	request = *(server.requests[i]);
 				server.requests[i]->process();
 
-				Request &	request = *(server.requests[i]);
+
 				if (request.body_read) { // TODO other condition for erasing request, otherwise only POST requests work
 					FD_CLR(request.socket, &server.watching_sockets);
 					request.handler(); // TODO not inside the if, request.body_read only gets set for POST requests

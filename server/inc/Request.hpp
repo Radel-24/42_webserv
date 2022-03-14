@@ -13,6 +13,12 @@ enum ReqKeys {
 	DELETE
 };
 
+enum Status {
+	WORKING,
+	DONE,
+	FAILURE
+};
+
 class	Request {
 	private:
 		std::string	header;
@@ -25,6 +31,8 @@ class	Request {
 		ssize_t		bytes_read;
 		bool	header_read;
 		bool	body_read;
+		int		keep_alive;
+		int rounds;
 
 	private:
 		void	init();
@@ -48,7 +56,7 @@ class	Request {
 
 		void	setRequestKey(unsigned int);
 
-		void	process();
+		int	process();
 
 		void	setType();
 		void	readHeader();
