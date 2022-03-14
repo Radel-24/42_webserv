@@ -26,6 +26,7 @@ void test_connection(int item_to_test)
 }
 
 Server::Server() {
+	int on = 1;
 	default_init();
 
 	//Establish socket and test
@@ -42,6 +43,16 @@ Server::Server() {
 
 
 	fcntl(sock, F_SETFL, O_NONBLOCK);
+
+	/* set reusable*/
+	int tmp = setsockopt(sock, SOL_SOCKET,  SO_REUSEADDR, (char *)&on, sizeof(on));
+	if (tmp < 0)
+	{
+		perror("setsockopt() failed");
+		close(sock);
+		exit(-1);
+	}
+	/* set reusable*/
 
 	/* BINDING SOCKET */
 	connection = bind(sock, (struct sockaddr *) &g_address, sizeof(g_address));
