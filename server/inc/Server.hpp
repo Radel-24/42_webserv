@@ -14,7 +14,6 @@
 #include <map>
 #include <vector>
 #include "Request.hpp"
-#include "Client.hpp"
 
 
 
@@ -22,6 +21,7 @@ struct Location {
 	public:
 		int	port;
 		std::string path;
+		std::string root;
 		std::vector<std::string> methods;
 		std::string	redirect;
 		bool	directory_listing;
@@ -29,7 +29,7 @@ struct Location {
 		std::string	cgi_extension;
 		std::string	cgi_path;
 
-		std::map<std::string, Location*> sub_locations;
+		//std::map<std::string, Location*> sub_locations; //maybe remove this
 
 	private:
 		void	default_init();

@@ -66,6 +66,4 @@ Server::Server() {
 	listening = listen(sock, backlog);
 	test_connection(listening);
 	/* LISTENING SOCKET */
-
-
 }

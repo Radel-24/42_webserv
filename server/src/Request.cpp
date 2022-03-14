@@ -78,7 +78,7 @@ int	Request::checkBodySize(void) {
 	size_t	type_end = type_start;
 	while(header[type_end] != '\n')
 		type_end++;
-	content_length = header.substr(type_start, type_end - type_start - 1);
+	content_length = header.substr(type_start, type_end - type_start - 1); // TODO protect when content_lengt not written in header
 	return (std::stoi(content_length));
 }
 
