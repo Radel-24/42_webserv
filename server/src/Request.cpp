@@ -145,10 +145,25 @@ void Request::readBody() {
 std::string	readFile( std::string filename ) {
 	std::ifstream	newFile;
 	std::string		ret;
+	std::string		binary = "/Users/fharing/42/webserv/server/";
+	std::string		values;
+	std::string		execute = "/Users/fharing/42/webserv/server/cgi/php-cgi -f ";
 	size_t			found;
 	char			c;
-	if ((found = filename.find("?",0)) != std::string::npos)
-		filename = filename.substr(0,found);
+	if ((found = filename.find("cgi/", 0)) != std::string::npos)
+	{
+		if ((found = filename.find("?",0)) != std::string::npos)
+		{
+			binary = binary + filename.substr(0,found);
+			values = filename.substr(found + 1,filename.length());
+			std::replace(values.begin(),values.end(), '&', ' ');
+		}
+		execute = execute + binary + " " + values + " > out";
+		std::cout << execute << std::endl;
+		system(execute.c_str());
+		return "EXEC";
+	}
+
 	newFile.open(filename, std::ios::in);
 	if (!newFile)
 		return "error: opening file: " + filename;
@@ -184,6 +199,11 @@ void Request::responder() {
 	}
 	else {
 		file_content = readFile(filename);
+	}
+	if (file_content == "EXEC")
+	{
+		//print out in html and send it back
+		return;
 	}
 	formatted = formatString(file_content);
 	std::cout << formatted << std::endl;
