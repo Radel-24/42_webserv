@@ -1,0 +1,20 @@
+GET:
+
+http://localhost:7000/test.php?name=felix
+
+calls test.php file with the variable name and the value felix!
+
+http://localhost:7000/test.php?name=felix&money=0
+
+calls test.php file with the variable name and the value felix and second variable+value
+
+<?php echo $GET['name'];?>
+
+POST:
+
+http://localhost:7000/test.php
+
+Body: name=felix&money=0
+
+
+<?php echo $POST['name'];?>

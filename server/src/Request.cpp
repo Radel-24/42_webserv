@@ -141,7 +141,7 @@ void Request::readBody() {
 	LOG_YELLOW("bytes read after recv: " << bytes_read);
 	if (bytes_read == max_size) {
 		body_read = true;
-		std::cout << getBody() << std::endl;
+		//std::cout << getBody() << std::endl;
 		LOG_YELLOW("body read true");
 	}
 	delete read_body;
@@ -154,7 +154,10 @@ void Request::readBody() {
 std::string	readFile( std::string filename ) {
 	std::ifstream	newFile;
 	std::string		ret;
+	size_t			found;
 	char			c;
+	if ((found = filename.find("?",0)) != std::string::npos)
+		filename = filename.substr(0,found);
 	newFile.open(filename, std::ios::in);
 	if (!newFile)
 		return "error: opening file: " + filename;
@@ -185,7 +188,6 @@ void Request::responder() {
 	std::string	file_content;
 	std::string	formatted;
 	filename = getFilename();
-
 	if (filename.empty()) {
 		file_content = "alex ist sehr toll und du leider nicht so :(\n";
 	}
@@ -193,7 +195,7 @@ void Request::responder() {
 		file_content = readFile(filename);
 	}
 	formatted = formatString(file_content);
-
+	std::cout << formatted << std::endl;
 	write(socket, formatted.c_str(), formatted.length());
 	close(socket); // TODO is this good?
 }
