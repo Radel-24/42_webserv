@@ -38,8 +38,9 @@ Server::Server() {
 	g_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
 
-	FD_ZERO(&watching_sockets);
-	FD_SET(sock, &watching_sockets);
+	FD_ZERO(&watching_read_sockets);
+	FD_ZERO(&watching_write_sockets);
+	FD_SET(sock, &watching_read_sockets);
 
 
 	fcntl(sock, F_SETFL, O_NONBLOCK);

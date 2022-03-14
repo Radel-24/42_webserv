@@ -45,7 +45,8 @@ class Server {
 		std::map<std::string, Location*> locations;
 		std::map<int, Request *> requests; // TODO store clients or requests?
 		double client_max_body_size;
-		fd_set	watching_sockets;
+		fd_set	watching_read_sockets;
+		fd_set	watching_write_sockets;
 		int	sock;
 		struct sockaddr_in g_address;
 		int	backlog;

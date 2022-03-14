@@ -37,24 +37,33 @@ void	Request::appendHeader(std::string input) {
 	}
 }
 
-int	Request::process() {
+int	Request::readRequest() {
 	if (!header_read) {
 		readHeader();
-		if (header_read){
-			setType();
-			LOG("------- REQUEST KEY: " << getRequestKey() << " -------");
-			LOG_RED(getHeader());
-			std::cout << "HEADER END" << std::endl;
-		}
+	}
+	if (header_read){
+		setType();
+		LOG("------- REQUEST KEY: " << getRequestKey() << " -------");
+		LOG_RED(getHeader());
+		std::cout << "HEADER END" << std::endl;
 	}
 	if (header_read && getRequestKey() == POST) {
 		if (!body_read)
 			readBody();
 		if (body_read) {
-			LOG_YELLOW("doing this");
-			PostResponder pR(getHeader(), getBody(), socket);
 			return DONE;
 		}
+	}
+	if (header_read && getRequestKey() == GET) {
+		return DONE;
+	}
+	return WORKING;
+}
+
+int	Request::writeRequest() {
+	if (header_read && getRequestKey() == POST) {
+		PostResponder pR(getHeader(), getBody(), socket);
+		return DONE;
 	}
 	if (header_read && getRequestKey() == GET) {
 		responder();

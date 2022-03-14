@@ -64,37 +64,41 @@ void accepter(Server &server)
 
 	int addrlen = sizeof(address);
 
-	fd_set ready_sockets = server.watching_sockets;
+	fd_set read_sockets = server.watching_read_sockets;
+	fd_set write_sockets = server.watching_write_sockets;
 
 	std::cout << "before select\n";
-	int amount_ready_socks = select(FD_SETSIZE, &ready_sockets, NULL, NULL, NULL);
+	int amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, NULL);
 	std::cout << "after select; amount ready socks: " << amount_ready_socks << "\n";
 	if (amount_ready_socks < 0)
 	{
 		perror("select error");
 		exit(EXIT_FAILURE);
 	}
-	for (int i = 0; i < FD_SETSIZE; i++) {
-		if (FD_ISSET(i, &ready_sockets)) {
+	for (int i = 0; i < FD_SETSIZE; ++i) {
+		if (FD_ISSET(i, &read_sockets)) {
 			if (i == server.sock) {
 				int new_socket = accept(server.sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-				FD_SET(new_socket, &server.watching_sockets);
+				FD_SET(new_socket, &server.watching_read_sockets);
 				server.requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket)));
 			}
 			else {
 				Request &	request = *(server.requests[i]);
-				if (server.requests[i]->process() == DONE) {
-					FD_CLR(request.socket, &server.watching_sockets);
-					delete &request;
-					server.requests.erase(server.requests.find(i));
-					LOG_YELLOW("request removed from map");
+				if (server.requests[i]->readRequest() == DONE) {
+					FD_CLR(request.socket, &server.watching_read_sockets);
+					FD_SET(request.socket, &server.watching_write_sockets);
 				}
-
-
-				//if (request.body_read) { // TODO other condition for erasing request, otherwise only POST requests work
-				//	request.handler(); // TODO not inside the if, request.body_read only gets set for POST requests
-				//	close(request.socket); // should this be done?
-				//}
+			}
+		}
+	}
+	for (int i = 0; i < FD_SETSIZE; ++i) {
+		if (FD_ISSET(i, &write_sockets)) {
+			Request &	request = *(server.requests[i]);
+			if (server.requests[i]->writeRequest() == DONE) {
+				FD_CLR(request.socket, &server.watching_write_sockets);
+				delete &request;
+				server.requests.erase(server.requests.find(i));
+				LOG_YELLOW("request removed from map");
 			}
 		}
 	}

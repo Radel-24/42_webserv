@@ -25,13 +25,12 @@ class	Request {
 		std::string	body;
 		std::map<std::string, std::string>	headerValues;
 		unsigned int			requestKey;
-
-	public:
-		int		socket;
 		ssize_t		bytes_read;
 		bool	header_read;
 		bool	body_read;
-		int		keep_alive;
+
+	public:
+		int		socket;
 
 	private:
 		void	init();
@@ -55,7 +54,8 @@ class	Request {
 
 		void	setRequestKey(unsigned int);
 
-		int	process();
+		int	readRequest();
+		int writeRequest();
 
 		void	setType();
 		void	readHeader();
