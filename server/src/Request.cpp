@@ -122,7 +122,7 @@ void Request::readBody() {
 	LOG_YELLOW("bytes read after recv: " << bytes_read);
 	if (bytes_read == max_size) {
 		body_read = true;
-		std::cout << getBody() << std::endl;
+		//std::cout << getBody() << std::endl;
 		LOG_YELLOW("body read true");
 		LOG_YELLOW("rounds " << rounds);
 	}
@@ -176,7 +176,6 @@ void Request::responder() {
 	std::string	file_content;
 	std::string	formatted;
 	filename = getFilename();
-
 	if (filename.empty()) {
 		file_content = "alex ist sehr toll und du leider nicht so :(\n";
 	}
@@ -184,7 +183,7 @@ void Request::responder() {
 		file_content = readFile(filename);
 	}
 	formatted = formatString(file_content);
-
+	std::cout << formatted;
 	write(socket, formatted.c_str(), formatted.length());
 	close(socket); // TODO is this good?
 }

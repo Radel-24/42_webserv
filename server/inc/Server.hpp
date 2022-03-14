@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <stdio.h>
 #include <netinet/in.h>
+#include <unistd.h>
 
 #include <fcntl.h>
 #include <sys/select.h>
