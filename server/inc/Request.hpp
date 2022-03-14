@@ -32,7 +32,6 @@ class	Request {
 		bool	header_read;
 		bool	body_read;
 		int		keep_alive;
-		int rounds;
 
 	private:
 		void	init();
@@ -62,7 +61,6 @@ class	Request {
 		void	readHeader();
 		void	readBody();
 
-		void	handler();
 		void	responder();
 		std::string	getFilename();
 

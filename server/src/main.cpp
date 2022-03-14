@@ -83,15 +83,18 @@ void accepter(Server &server)
 			}
 			else {
 				Request &	request = *(server.requests[i]);
-				server.requests[i]->process();
-				if (request.body_read) { // TODO other condition for erasing request, otherwise only POST requests work
+				if (server.requests[i]->process() == DONE) {
 					FD_CLR(request.socket, &server.watching_sockets);
-					request.handler(); // TODO not inside the if, request.body_read only gets set for POST requests
-					//close(request.socket); // should this be done?
 					delete &request;
 					server.requests.erase(server.requests.find(i));
 					LOG_YELLOW("request removed from map");
 				}
+
+
+				//if (request.body_read) { // TODO other condition for erasing request, otherwise only POST requests work
+				//	request.handler(); // TODO not inside the if, request.body_read only gets set for POST requests
+				//	close(request.socket); // should this be done?
+				//}
 			}
 		}
 	}

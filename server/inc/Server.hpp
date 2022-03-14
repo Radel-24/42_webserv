@@ -7,6 +7,7 @@
 
 #include <fcntl.h>
 #include <sys/select.h>
+#include <unistd.h>
 
 
 #include <string>

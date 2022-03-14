@@ -8,7 +8,6 @@ void	Request::init() {
 	bytes_read = 0;
 	header_read = false;
 	body_read = false;
-	rounds = 0;
 }
 
 Request::Request() { init(); }
@@ -24,7 +23,7 @@ std::string	Request::getHeader() const { return header; }
 std::string	Request::getBody() const { return body; }
 
 int	Request::checkHeader(void) {
-	if (header.find("\r\n\r\n",0) != std::string::npos)
+	if (header.find("\r\n\r\n") != std::string::npos)
 		return (1);
 	return (0);
 }
@@ -41,14 +40,24 @@ void	Request::appendHeader(std::string input) {
 int	Request::process() {
 	if (!header_read) {
 		readHeader();
-		return WORKING;
+		if (header_read){
+			setType();
+			LOG("------- REQUEST KEY: " << getRequestKey() << " -------");
+			LOG_RED(getHeader());
+			std::cout << "HEADER END" << std::endl;
+		}
 	}
-	else if (header_read && getRequestKey() == POST) {
-		readBody();
-		return DONE;
+	if (header_read && getRequestKey() == POST) {
+		if (!body_read)
+			readBody();
+		if (body_read) {
+			LOG_YELLOW("doing this");
+			PostResponder pR(getHeader(), getBody(), socket);
+			return DONE;
+		}
 	}
-	else if (header_read && getRequestKey() == GET) {
-		handler();
+	if (header_read && getRequestKey() == GET) {
+		responder();
 		return DONE;
 	}
 	return WORKING;
@@ -66,11 +75,7 @@ int	Request::checkBodySize(void) {
 
 void	Request::appendBody(char *body_in, int size) {
 	std::string tmp(body_in, size);
-	//if (body.empty())
-	//	body = tmp;
-	//else
-		this->body += tmp;
-	//std::cout << this->body << std::endl;
+	this->body += tmp;
 }
 
 void	Request::setRequestKey(unsigned int KeyIn) {
@@ -78,26 +83,32 @@ void	Request::setRequestKey(unsigned int KeyIn) {
 }
 
 void	Request::setType() {
-	if (header.length() < 3) { setRequestKey(NIL);}
-	else if (header.find("GET") != std::string::npos) { setRequestKey(GET); }// if keyword not always at the beginning, us find("GET")
-	else if (header.find("POST") != std::string::npos) { setRequestKey(POST); }
-	else if (header.find("PUT") != std::string::npos) { setRequestKey(PUT); }
-	else if (header.find("DELETE") != std::string::npos) { setRequestKey(DELETE);}
+	if (header.length() < 3) { setRequestKey(NIL); }
+	else if (header.find("GET") == 0 ) { setRequestKey(GET); }// if keyword not always at the beginning, us find("GET")
+	else if (header.find("POST") == 0) { setRequestKey(POST); }
+	else if (header.find("PUT") == 0) { setRequestKey(PUT); }
+	else if (header.find("DELETE") == 0) { setRequestKey(DELETE);}
+	else { setRequestKey(NIL); }
 }
 
 void Request::readHeader() {
 	std::cout << "HEADER START" << std::endl;
 	char	buffer[5000];
+	memset(buffer, 0, 5000 * sizeof(char));
 	ssize_t bytes_read = recv(socket, buffer, 5000, 0);
 	std::cout << "header read bytes: " << bytes_read << "\n";
 	appendHeader(buffer);
 
 	if (checkHeader()) {
 		header_read = true;
-		setType();
-		LOG("------- REQUEST KEY: " << getRequestKey() << " -------");
-		LOG_RED(getHeader());
-		std::cout << "HEADER END" << std::endl;
+	}
+	if (header.find("\r\n\r\n") != header.size() - 4) {
+		LOG_YELLOW("takes body out of header");
+		body = header.substr(header.find("\r\n\r\n") + 4, std::string::npos);
+		LOG_YELLOW("body size " << body.size() << "check size " << checkBodySize());
+		if ((int)body.size() == checkBodySize()) {
+			body_read = true;
+		}
 	}
 }
 
@@ -112,7 +123,6 @@ void Request::readBody() {
 	LOG_YELLOW("bytes read before recv: " << bytes_read);
 	ssize_t tmp_bytes_read = recv(socket, read_body, max_size, 0);
 	if (tmp_bytes_read > 0) {
-		++rounds;
 		appendBody(read_body, tmp_bytes_read);
 		bytes_read += tmp_bytes_read;
 	}
@@ -124,7 +134,6 @@ void Request::readBody() {
 		body_read = true;
 		//std::cout << getBody() << std::endl;
 		LOG_YELLOW("body read true");
-		LOG_YELLOW("rounds " << rounds);
 	}
 	delete read_body;
 
@@ -161,15 +170,6 @@ std::string	formatString( std::string file_content ) {
 	return ret;
 }
 
-void Request::handler() {
-	LOG_RED("REQUEST TYPE:		" << getRequestKey());
-	getBody().size(); // needed, so that body is ready when going on with processing?
-	if (getRequestKey() == GET) {
-		responder();
-	}
-	else if (getRequestKey() == POST)
-		PostResponder pR(getHeader(), getBody(), socket);
-}
 
 void Request::responder() {
 	std::string	filename;
