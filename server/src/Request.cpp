@@ -145,7 +145,10 @@ void Request::readBody() {
 std::string	readFile( std::string filename ) {
 	std::ifstream	newFile;
 	std::string		ret;
+	size_t			found;
 	char			c;
+	if ((found = filename.find("?",0)) != std::string::npos)
+		filename = filename.substr(0,found);
 	newFile.open(filename, std::ios::in);
 	if (!newFile)
 		return "error: opening file: " + filename;
@@ -183,7 +186,7 @@ void Request::responder() {
 		file_content = readFile(filename);
 	}
 	formatted = formatString(file_content);
-	std::cout << formatted;
+	std::cout << formatted << std::endl;
 	write(socket, formatted.c_str(), formatted.length());
 	close(socket); // TODO is this good?
 }
