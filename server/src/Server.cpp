@@ -26,8 +26,13 @@ void test_connection(int item_to_test)
 }
 
 Server::Server() {
-	int on = 1;
 	default_init();
+
+
+}
+
+void	Server::configure() {
+	int on = 1;
 	int tmp;
 
 	//Establish socket and test
@@ -35,7 +40,7 @@ Server::Server() {
 	test_connection(sock);
 
 	g_address.sin_family = AF_INET;
-	g_address.sin_port = htons(7000);
+	g_address.sin_port = htons(port);
 	g_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
 

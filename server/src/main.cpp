@@ -17,22 +17,23 @@
 #include "general.hpp"
 
 
-void accepter(std::vector<Server *> & servers)
+void accepter(std::map<int, Server *> & servers)
 {
 	//Server server;
 	fd_set	watching_read_sockets;
 	fd_set	watching_write_sockets;
-	fd_set	server_sockets;
+	std::map<int, Request *> requests;
 
-	for (std::vector<Server *>::iterator iter = servers.begin(); iter != servers.end(); ++iter){
-		FD_SET((*iter)->sock, &server_sockets);
+	FD_ZERO(&watching_read_sockets);
+	FD_ZERO(&watching_write_sockets);
+
+	for (std::map<int, Server *>::iterator iter = servers.begin(); iter != servers.end(); ++iter) {
+		LOG_GREEN("Server added to waching read sockets");
+		FD_SET(iter->first, &watching_read_sockets);
 	}
 
 	while (1){
 
-	struct sockaddr_in address = server->g_address;
-
-	int addrlen = sizeof(address);
 
 	fd_set read_sockets = watching_read_sockets;
 	fd_set write_sockets = watching_write_sockets;
@@ -47,14 +48,17 @@ void accepter(std::vector<Server *> & servers)
 	}
 	for (int i = 0; i < FD_SETSIZE; ++i) {
 		if (FD_ISSET(i, &read_sockets)) {
-			if (FD_ISSET(i, &server_sockets)) {
-				int new_socket = accept(server->sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+			std::map<int, Server *>::iterator server_elem = servers.find(i);
+			if (server_elem != servers.end()) {
+				struct sockaddr_in address = (server_elem->second)->g_address;
+				int addrlen = sizeof(address);
+				int new_socket = accept((server_elem->second)->sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
 				FD_SET(new_socket, &watching_read_sockets);
-				server->requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket)));
+				requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket, server_elem->second)));
 			}
 			else {
-				Request &	request = *(server->requests[i]);
-				if (server->requests[i]->readRequest() == DONE) {
+				Request &	request = *(requests[i]);
+				if (requests[i]->readRequest() == DONE) {
 					FD_CLR(request.socket, &watching_read_sockets);
 					FD_SET(request.socket, &watching_write_sockets);
 				}
@@ -63,11 +67,11 @@ void accepter(std::vector<Server *> & servers)
 	}
 	for (int i = 0; i < FD_SETSIZE; ++i) {
 		if (FD_ISSET(i, &write_sockets)) {
-			Request &	request = *(server->requests[i]);
-			if (server->requests[i]->writeRequest() == DONE) {
+			Request &	request = *(requests[i]);
+			if (requests[i]->writeRequest() == DONE) {
 				FD_CLR(request.socket, &watching_write_sockets);
 				delete &request;
-				server->requests.erase(server->requests.find(i));
+				requests.erase(requests.find(i));
 				LOG_YELLOW("request removed from map");
 			}
 		}
@@ -90,7 +94,7 @@ int	main(int argc, char ** argv)
 		configFile = argv[1];
 	else
 		configFile = "setup.conf";
-	std::vector<Server *> servers;
+	std::map<int, Server *> servers;
 	read_config(configFile, servers);
 	check_config(servers);
 

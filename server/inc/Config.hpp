@@ -5,7 +5,6 @@
 #include <fstream>
 #include <sstream>
 #include <map>
-#include <vector>
 #include "utils.hpp"
 
 #include "Server.hpp"
@@ -15,5 +14,5 @@
 #define STR_END std::string::npos
 
 
-int	read_config(std::string file, std::vector<Server *> & servers);
-void	check_config(std::vector<Server *> & servers);
+int	read_config(std::string file, std::map<int, Server *> & servers);
+void	check_config(std::map<int, Server *> & servers);

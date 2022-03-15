@@ -88,7 +88,7 @@ int	server_parser(std::ifstream &fin, Server & server) {
 	return SUCCESS; // TODO
 }
 
-int	main_parser(std::ifstream &fin, std::vector<Server *> & servers) {
+int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 	std::string line;
 
 	while (getline(fin, line)) {
@@ -96,8 +96,9 @@ int	main_parser(std::ifstream &fin, std::vector<Server *> & servers) {
 		remove_whitespace(line);
 		if (is_parameter("server{", line)) {
 			Server *server = new Server();
-			servers.push_back(server);
 			server_parser(fin, *server);
+			server->configure();
+			servers.insert(std::pair<int, Server *>(server->sock, server));
 		}
 		else if (line.empty()) { continue; }
 		else {
@@ -108,7 +109,7 @@ int	main_parser(std::ifstream &fin, std::vector<Server *> & servers) {
 	return SUCCESS; // TODO
 }
 
-int	read_config(std::string file, std::vector<Server *> & servers) {
+int	read_config(std::string file, std::map<int, Server *> & servers) {
 	std::ifstream fin(file);
 	std::string input;
 	std::string line;
@@ -127,7 +128,7 @@ int	read_config(std::string file, std::vector<Server *> & servers) {
 	return SUCCESS; // TODO
 }
 
-void	check_config(std::vector<Server *> & servers) {
+void	check_config(std::map<int, Server *> & servers) {
 	if (servers.empty()) {
 		std::cout << "no server configured\n";
 		exit(EXIT_SUCCESS);

@@ -5,6 +5,10 @@
 #include <map>
 #include <iostream>
 #include <vector>
+
+#include "Server.hpp"
+#include "PostResponder.hpp"
+
 enum ReqKeys {
 	NIL,
 	GET,
@@ -20,6 +24,9 @@ enum Status {
 };
 
 class	Request {
+	public:
+		int		socket;
+
 	private:
 		std::string	header;
 		std::string	body;
@@ -28,16 +35,15 @@ class	Request {
 		ssize_t		bytes_read;
 		bool	header_read;
 		bool	body_read;
+		Server *	server;
 
-	public:
-		int		socket;
 
 	private:
 		void	init();
 
 	public:
 		Request();
-		Request(int);
+		Request(int socket, Server * server);
 		~Request();
 		int			getRequestKey() const;
 		std::string	getHeader() const;

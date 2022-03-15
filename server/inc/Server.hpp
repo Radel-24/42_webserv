@@ -13,7 +13,7 @@
 #include <string>
 #include <map>
 #include <vector>
-#include "Request.hpp"
+
 
 
 
@@ -44,7 +44,7 @@ class Server {
 		int port;
 		std::string server_name;
 		std::map<std::string, Location*> locations;
-		std::map<int, Request *> requests; // TODO store clients or requests?
+
 		double client_max_body_size;
 		fd_set	watching_read_sockets;
 		fd_set	watching_write_sockets;
@@ -61,5 +61,7 @@ class Server {
 
 	public:
 		Server();
+
+		void	configure();
 
 };

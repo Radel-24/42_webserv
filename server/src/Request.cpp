@@ -1,6 +1,5 @@
-#include "../inc/Request.hpp"
-#include "../inc/PostResponder.hpp"
-#include <iostream>
+#include "Request.hpp"
+
 
 void	Request::init() {
 	header = "";
@@ -12,7 +11,7 @@ void	Request::init() {
 
 Request::Request() { init(); }
 
-Request::Request(int socket) : socket(socket) { init(); }
+Request::Request(int socket, Server * server) : socket(socket), server(server) { init(); }
 
 Request::~Request() { }
 
