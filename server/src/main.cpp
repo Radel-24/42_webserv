@@ -33,49 +33,56 @@ void accepter(std::map<int, Server *> & servers)
 	}
 
 	while (1){
+		fd_set read_sockets = watching_read_sockets;
+		fd_set write_sockets = watching_write_sockets;
 
+		std::cout << "before select\n";
+		int amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, NULL);
+		std::cout << "after select; amount ready socks: " << amount_ready_socks << "\n";
+		if (amount_ready_socks < 0)
+		{
+			perror("select error");
+			exit(EXIT_FAILURE);
+		}
+		for (int i = 0; i < FD_SETSIZE; ++i) {
+			if (FD_ISSET(i, &read_sockets)) {
+				std::map<int, Server *>::iterator server_elem = servers.find(i);
+				if (server_elem != servers.end()) {
+					struct sockaddr_in address = (server_elem->second)->g_address;
+					int addrlen = sizeof(address);
+					int new_socket = accept((server_elem->second)->sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+					FD_SET(new_socket, &watching_read_sockets);
+					requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket, server_elem->second)));
+				}
+				else {
+					Request &	request = *(requests[i]);
+					int requestStatus = request.readRequest();
 
-	fd_set read_sockets = watching_read_sockets;
-	fd_set write_sockets = watching_write_sockets;
-
-	std::cout << "before select\n";
-	int amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, NULL);
-	std::cout << "after select; amount ready socks: " << amount_ready_socks << "\n";
-	if (amount_ready_socks < 0)
-	{
-		perror("select error");
-		exit(EXIT_FAILURE);
-	}
-	for (int i = 0; i < FD_SETSIZE; ++i) {
-		if (FD_ISSET(i, &read_sockets)) {
-			std::map<int, Server *>::iterator server_elem = servers.find(i);
-			if (server_elem != servers.end()) {
-				struct sockaddr_in address = (server_elem->second)->g_address;
-				int addrlen = sizeof(address);
-				int new_socket = accept((server_elem->second)->sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
-				FD_SET(new_socket, &watching_read_sockets);
-				requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket, server_elem->second)));
-			}
-			else {
-				Request &	request = *(requests[i]);
-				if (requests[i]->readRequest() == DONE) {
-					FD_CLR(request.socket, &watching_read_sockets);
-					FD_SET(request.socket, &watching_write_sockets);
+					if (requestStatus == DONE) {
+						FD_CLR(request.socket, &watching_read_sockets);
+						FD_SET(request.socket, &watching_write_sockets);
+					}
+					else if (requestStatus == DECLINE) { // TODO check if this is working
+						FD_CLR(request.socket, &watching_read_sockets);
+						delete &request;
+						requests.erase(requests.find(i));
+						LOG_YELLOW("request removed from map");
+					}
 				}
 			}
 		}
-	}
-	for (int i = 0; i < FD_SETSIZE; ++i) {
-		if (FD_ISSET(i, &write_sockets)) {
-			Request &	request = *(requests[i]);
-			if (requests[i]->writeRequest() == DONE) {
-				FD_CLR(request.socket, &watching_write_sockets);
-				delete &request;
-				requests.erase(requests.find(i));
-				LOG_YELLOW("request removed from map");
+		for (int i = 0; i < FD_SETSIZE; ++i) {
+			if (FD_ISSET(i, &write_sockets)) {
+				Request &	request = *(requests[i]);
+				if (requests[i]->writeRequest() == DONE) {
+					FD_CLR(request.socket, &watching_write_sockets);
+					delete &request;
+					requests.erase(requests.find(i));
+					LOG_YELLOW("request removed from map");
+					close(request.socket);
+				}
 			}
 		}
-	}
 	}
 }
 

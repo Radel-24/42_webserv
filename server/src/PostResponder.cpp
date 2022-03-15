@@ -105,7 +105,6 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 	{
 		// es gibt kein boundary, also wuden keine files geschickt und ich muss irgendwas anderes tun
 		write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: extractBoundary", 101);
-		close(new_socket);
 		return ;
 	}
 
@@ -115,7 +114,6 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 		//createUploadFile("FELIX_new", body);
 		// kann eigentlich nicht sein, keine ahnung was dann passieren soll mrrrrrrkkk
 		write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries", 101);
-		close(new_socket);
 		return ;
 	}
 
@@ -126,5 +124,4 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 	char redirection[] = "HTTP/1.1 301 Moved Permanently\nLocation: http://127.0.0.1:7000/index.html\n\n";
 
 	write(new_socket, redirection, strlen(redirection));
-	close(new_socket);
 }

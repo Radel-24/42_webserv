@@ -21,7 +21,7 @@ std::string	Request::getHeader() const { return header; }
 
 std::string	Request::getBody() const { return body; }
 
-int	Request::checkHeader(void) {
+int	Request::checkHeaderRead(void) {
 	if (header.find("\r\n\r\n") != std::string::npos)
 		return (1);
 	return (0);
@@ -36,17 +36,26 @@ void	Request::appendHeader(std::string input) {
 	}
 }
 
-int	Request::readRequest() {
+void	Request::changePaths() {
+
+}
+
+int	Request::readRequest() { // TODO check if request is allowed, otherwise return DECLINE
 	if (!header_read) {
 		readHeader();
+		if (header_read){
+			setType();
+			changePaths();
+			LOG("------- REQUEST KEY: " << getRequestKey() << " -------");
+			LOG_RED(getHeader());
+			std::cout << "HEADER END" << std::endl;
+			if (body_read) {
+				LOG_GREEN("read all in one");
+				return DONE;
+			}
+		}
 	}
-	if (header_read){
-		setType();
-		LOG("------- REQUEST KEY: " << getRequestKey() << " -------");
-		LOG_RED(getHeader());
-		std::cout << "HEADER END" << std::endl;
-	}
-	if (header_read && getRequestKey() == POST) {
+	else if (header_read && getRequestKey() == POST) {
 		if (!body_read)
 			readBody();
 		if (body_read) {
@@ -62,13 +71,11 @@ int	Request::readRequest() {
 int	Request::writeRequest() {
 	if (header_read && getRequestKey() == POST) {
 		PostResponder pR(getHeader(), getBody(), socket);
-		return DONE;
 	}
 	if (header_read && getRequestKey() == GET) {
 		responder();
-		return DONE;
 	}
-	return WORKING;
+	return DONE;
 }
 
 int	Request::checkBodySize(void) {
@@ -78,7 +85,7 @@ int	Request::checkBodySize(void) {
 	while(header[type_end] != '\n')
 		type_end++;
 	content_length = header.substr(type_start, type_end - type_start - 1); // TODO protect when content_lengt not written in header
-	return (std::stoi(content_length));
+	return (std::stoi(content_length)); // TODO is std 11 function
 }
 
 void	Request::appendBody(char *body_in, int size) {
@@ -107,7 +114,7 @@ void Request::readHeader() {
 	std::cout << "header read bytes: " << bytes_read << "\n";
 	appendHeader(buffer);
 
-	if (checkHeader()) {
+	if (checkHeaderRead()) {
 		header_read = true;
 	}
 	if (header.find("\r\n\r\n") != header.size() - 4) {
@@ -127,7 +134,7 @@ void Request::readBody() {
 	std::cout << "body size: " << max_size << std::endl;
 	char * read_body = NULL;
 	read_body = new char[max_size];
-	write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25); // much faster when sending huge files with curl
+	write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25); // much faster when sending huge files with curl // TODO only send when required
 	LOG_YELLOW("bytes read before recv: " << bytes_read);
 	ssize_t tmp_bytes_read = recv(socket, read_body, max_size, 0);
 	if (tmp_bytes_read > 0) {
@@ -138,7 +145,7 @@ void Request::readBody() {
 		LOG_YELLOW("weird shit going on with select");
 	}
 	LOG_YELLOW("bytes read after recv: " << bytes_read);
-	if (bytes_read == max_size) {
+	if ((int)body.size() == checkBodySize()) {
 		body_read = true;
 		//std::cout << getBody() << std::endl;
 		LOG_YELLOW("body read true");
@@ -194,9 +201,8 @@ void Request::responder() {
 		file_content = readFile(filename);
 	}
 	formatted = formatString(file_content);
-	std::cout << formatted << std::endl;
+	//std::cout << formatted << std::endl;
 	write(socket, formatted.c_str(), formatted.length());
-	close(socket); // TODO is this good?
 }
 
 std::string	Request::getFilename() {

@@ -20,7 +20,7 @@ enum ReqKeys {
 enum Status {
 	WORKING,
 	DONE,
-	FAILURE
+	DECLINE
 };
 
 class	Request {
@@ -48,7 +48,7 @@ class	Request {
 		int			getRequestKey() const;
 		std::string	getHeader() const;
 		std::string	getBody() const;
-		int			checkHeader(void);
+		int			checkHeaderRead(void);
 		int			checkBodySize(void);
 
 		void	appendHeader(std::string input);
@@ -64,6 +64,7 @@ class	Request {
 		int writeRequest();
 
 		void	setType();
+		void	changePaths();
 		void	readHeader();
 		void	readBody();
 
