@@ -213,24 +213,24 @@ void Request::responder() {
 	std::string	file_content;
 	std::string	formatted;
 
-	LOG_YELLOW("path of presented file: |" << path << "|");
-	//if (path.empty()) {
-	//	//if (index.html)
-	//		//file_content = readFile();
-	//	// TODO define error pages or call directory listing
-	//}
-	//else {
+	/* HARD CODED START */
+	LOG_PINK("path of presented file: |" << path << "|");
+	LOG_PINK(server->root);
+	if (path == (server->root + "/"))
+	{
+		LOG_PINK("ENTERED HERE!");
+		file_content = readFile("www/server7/index.html");
+		formatted = formatString(file_content);
+	}
+	/* HARD CODED END */
+	else
+	{
 		file_content = readFile(path.substr(1, std::string::npos));
-		if (file_content.empty()) // sinnvoller machen
-		{
+		if (file_content.empty())
 			formatted = formatString("error: 404");
-			//std::cout << formatted << std::endl;
-			write(socket, formatted.c_str(), formatted.length());
-			return ;
-		}
-	//}
-	formatted = formatString(file_content);
-	//std::cout << formatted << std::endl;
+		else
+			formatted = formatString(file_content);
+	}
 	write(socket, formatted.c_str(), formatted.length());
 }
 

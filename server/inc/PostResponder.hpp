@@ -6,6 +6,9 @@
 #define LOG_GREEN(x) (std::cout << "\033[1;32m" << x << "\033[0m" << std::endl)
 #define LOG_YELLOW(x) (std::cout << "\033[1;33m" << x << "\033[0m" << std::endl)
 #define LOG_BLUE(x) (std::cout << "\033[1;34m" << x << "\033[0m" << std::endl)
+#define LOG_BLACK(x) (std::cout << "\033[1;30m" << x << "\033[0m" << std::endl)
+#define LOG_PINK(x) (std::cout << "\033[1;35m" << x << "\033[0m" << std::endl)
+#define LOG_CYAN(x) (std::cout << "\033[1;36m" << x << "\033[0m" << std::endl)
 
 #include <string>
 #include <fstream>
