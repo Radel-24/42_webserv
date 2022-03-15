@@ -1,5 +1,5 @@
 #include "Server.hpp"
-
+#include "PostResponder.hpp"
 void	Location::default_init() {
 	directory_listing = false;
 }
@@ -66,4 +66,23 @@ void	Server::configure() {
 	listening = listen(sock, backlog);
 	test_connection(listening);
 	/* LISTENING SOCKET */
+}
+
+
+void	Server::updateFilesHTML() {
+	std::string path = "./" + root + uploadPath;
+	char * buf = getcwd(NULL, FILENAME_MAX);
+	std::string execPath(buf);
+	execPath += "/tree -H ";
+	execPath += uploadPath;
+	execPath += " -T 'Your Files' -L 1 --noreport --charset utf-8 -o ";
+	execPath += root;
+	execPath += "/files.html";
+	//LOG_GREEN("exec Path " << execPath);
+	if (!chdir(path.c_str())) // else irgendein error
+	{
+		system(execPath.c_str()); // if == -1 error happened
+		chdir("..");
+	}
+	free(buf);
 }

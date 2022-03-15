@@ -87,13 +87,6 @@ void accepter(std::map<int, Server *> & servers)
 	}
 }
 
-void	updateFilesHTML() {
-	if (!chdir("./files")) // else irgendein error
-	{
-		system("../tree -H './files' -T 'Your Files' -L 1 --noreport --charset utf-8 -o ../files.html"); // if == -1 error happened
-		chdir("..");
-	}
-}
 
 int	main(int argc, char ** argv)
 {
@@ -112,7 +105,6 @@ int	main(int argc, char ** argv)
 	//while (1) {
 
 		LOG_BLUE("==========================WAITING==========================");
-		updateFilesHTML();
 		accepter(servers);
 		LOG_BLUE("============================DONE===========================");
 	//}

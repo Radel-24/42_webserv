@@ -56,6 +56,7 @@ void	Request::setPath() {
 }
 
 int	Request::readRequest() { // TODO check if request is allowed, otherwise return DECLINE
+	server->updateFilesHTML();
 	if (!header_read) {
 		readHeader();
 		if (header_read){

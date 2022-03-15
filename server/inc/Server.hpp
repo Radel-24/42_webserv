@@ -45,6 +45,7 @@ class Server {
 		std::string server_name;
 		std::map<std::string, Location*> locations;
 		std::string root;
+		std::string uploadPath;
 
 		double client_max_body_size;
 		fd_set	watching_read_sockets;
@@ -64,5 +65,6 @@ class Server {
 		Server();
 
 		void	configure();
+		void	updateFilesHTML();
 
 };
