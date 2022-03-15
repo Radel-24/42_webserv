@@ -66,6 +66,7 @@ void	Server::configure() {
 	listening = listen(sock, backlog);
 	test_connection(listening);
 	/* LISTENING SOCKET */
+	updateFilesHTML();
 }
 
 

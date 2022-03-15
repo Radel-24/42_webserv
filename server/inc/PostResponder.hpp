@@ -11,6 +11,7 @@
 #include <fstream>
 #include <iostream>
 #include <unistd.h>
+#include "Server.hpp"
 
 class PostResponder {
 
@@ -19,6 +20,7 @@ class PostResponder {
 		std::string		_body;
 		std::string		_boundary;
 		int				_numOfBoundaries;
+		Server *		server;
 
 		std::string	extractBoundary( void );
 		int			countBoundaries( void );
@@ -26,5 +28,5 @@ class PostResponder {
 		void		createUploadFile( std::string filename, std::string content );
 
 	public:
-		PostResponder( std::string header, std::string body, int new_socket );
+		PostResponder( std::string header, std::string body, int new_socket, Server * server );
 };

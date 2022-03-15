@@ -3,9 +3,15 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */);
 
 void	PostResponder::createUploadFile( std::string filename, std::string content )
 {
-	std::ofstream	file(".//files//" + filename);
-	if (file.is_open())
+	char * buf = getcwd(NULL, FILENAME_MAX);
+	std::string cwd(buf);
+	std::string path = cwd + server->root + server->uploadPath + "/" + filename;
+	LOG_YELLOW("depug upload path: " << path);
+	std::ofstream	file(path);
+	if (file.is_open()) {
 		file << content; // else error
+		LOG_YELLOW("upload file is opened");
+	}
 	//std::cout << "HEX\n" << ToHex(content, 0) << "\n";
 	file.close();
 }
@@ -68,6 +74,7 @@ void	PostResponder::uploadFiles( void )
 
 		_numOfBoundaries--;
 	}
+	server->updateFilesHTML();
 }
 
 int	PostResponder::countBoundaries( void )
@@ -98,7 +105,7 @@ std::string	PostResponder::extractBoundary( void )
 	return _header.substr(start, end - start);
 }
 
-PostResponder::PostResponder( std::string header, std::string body, int new_socket ) : _header(header), _body(body)
+PostResponder::PostResponder( std::string header, std::string body, int new_socket, Server * server ) : _header(header), _body(body), server(server)
 {
 	_boundary = extractBoundary();
 	if (_boundary == "error")

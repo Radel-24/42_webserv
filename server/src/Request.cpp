@@ -39,7 +39,7 @@ void	Request::appendHeader(std::string input) {
 void	Request::changePath() {
 	for (std::map<std::string, Location *>::reverse_iterator riter = server->locations.rbegin(); riter != server->locations.rend(); ++riter) {
 		if (path.find(riter->first) == 0) {
-			path = path.substr(riter->first.length() - 1, std::string::npos);
+			path = path.substr(riter->first.length(), std::string::npos);
 			path = riter->second->root + path;
 			LOG_BLUE("after replace: |" << path << "|");
 			break ;
@@ -56,7 +56,7 @@ void	Request::setPath() {
 }
 
 int	Request::readRequest() { // TODO check if request is allowed, otherwise return DECLINE
-	server->updateFilesHTML();
+	//server->updateFilesHTML(); // TODO put to uesful position
 	if (!header_read) {
 		readHeader();
 		if (header_read){
@@ -87,7 +87,7 @@ int	Request::readRequest() { // TODO check if request is allowed, otherwise retu
 
 int	Request::writeRequest() {
 	if (header_read && getRequestKey() == POST) {
-		PostResponder pR(getHeader(), getBody(), socket);
+		PostResponder pR(getHeader(), getBody(), socket, server);
 	}
 	if (header_read && getRequestKey() == GET) {
 		responder();
@@ -125,18 +125,21 @@ void	Request::setType() {
 
 void Request::readHeader() {
 	std::cout << "HEADER START" << std::endl;
-	char	buffer[5000];
-	memset(buffer, 0, 5000 * sizeof(char));
-	ssize_t bytes_read = recv(socket, buffer, 5000, 0);
+	char	buffer[10000]; // TODO if buffer[5000] not possible to upload felix.jpg with browser
+	memset(buffer, 0, 10000 * sizeof(char));
+	ssize_t bytes_read = recv(socket, buffer, 10000, 0);
 	std::cout << "header read bytes: " << bytes_read << "\n";
 	appendHeader(buffer);
 
 	if (checkHeaderRead()) {
 		header_read = true;
 	}
-	if (header.find("\r\n\r\n") != header.size() - 4) {
+	size_t	posHeaderEnd = header.find("\r\n\r\n");
+	if (posHeaderEnd != header.size() - 4) {
 		LOG_YELLOW("takes body out of header");
-		body = header.substr(header.find("\r\n\r\n") + 4, std::string::npos);
+		body = header;
+		body.erase(0, posHeaderEnd + 4);
+
 		LOG_YELLOW("body size " << body.size() << "check size " << checkBodySize());
 		if ((int)body.size() == checkBodySize()) {
 			body_read = true;
@@ -183,7 +186,7 @@ std::string	readFile( std::string filename ) {
 		filename = filename.substr(0,found);
 	newFile.open(filename, std::ios::in);
 	if (!newFile)
-		return "error: opening file: " + filename;
+		return "";
 	while (!newFile.eof())
 	{
 		newFile >> std::noskipws >> c;
@@ -210,13 +213,22 @@ void Request::responder() {
 	std::string	file_content;
 	std::string	formatted;
 
-	if (path.empty()) {
-		file_content = "alex ist sehr toll und du leider nicht so :(\n";
-	}
-	else {
+	LOG_YELLOW("path of presented file: |" << path << "|");
+	//if (path.empty()) {
+	//	//if (index.html)
+	//		//file_content = readFile();
+	//	// TODO define error pages or call directory listing
+	//}
+	//else {
 		file_content = readFile(path.substr(1, std::string::npos));
-		LOG_YELLOW("path of presented file: |" << path << "|");
-	}
+		if (file_content.empty()) // sinnvoller machen
+		{
+			formatted = formatString("error: 404");
+			//std::cout << formatted << std::endl;
+			write(socket, formatted.c_str(), formatted.length());
+			return ;
+		}
+	//}
 	formatted = formatString(file_content);
 	//std::cout << formatted << std::endl;
 	write(socket, formatted.c_str(), formatted.length());
