@@ -70,19 +70,24 @@ void	Server::configure() {
 
 
 void	Server::updateFilesHTML() {
-	std::string path = "./" + root + uploadPath;
 	char * buf = getcwd(NULL, FILENAME_MAX);
-	std::string execPath(buf);
+	std::string cwd(buf);
+	std::string path = cwd + root + uploadPath;
+	LOG_GREEN("path " << path);
+	std::string execPath = cwd;
 	execPath += "/tree -H ";
 	execPath += uploadPath;
 	execPath += " -T 'Your Files' -L 1 --noreport --charset utf-8 -o ";
-	execPath += root;
+	execPath += cwd + root;
 	execPath += "/files.html";
-	//LOG_GREEN("exec Path " << execPath);
+	LOG_GREEN("exec Path " << execPath);
 	if (!chdir(path.c_str())) // else irgendein error
 	{
-		system(execPath.c_str()); // if == -1 error happened
-		chdir("..");
+		if (system(execPath.c_str()) == -1)
+			LOG_RED("file tree went wrong"); // if == -1 error happened
+		chdir(cwd.c_str());
 	}
+	else
+		LOG_RED("chdir went wrong");
 	free(buf);
 }
