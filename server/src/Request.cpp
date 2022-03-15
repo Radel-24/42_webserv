@@ -36,8 +36,23 @@ void	Request::appendHeader(std::string input) {
 	}
 }
 
-void	Request::changePaths() {
+void	Request::changePath() {
+	for (std::map<std::string, Location *>::reverse_iterator riter = server->locations.rbegin(); riter != server->locations.rend(); ++riter) {
+		if (path.find(riter->first) == 0) {
+			path = path.substr(riter->first.length() - 1, std::string::npos);
+			path = riter->second->root + path;
+			LOG_BLUE("after replace: |" << path << "|");
+			break ;
+		}
+	}
+	path = server->root + path;
+}
 
+void	Request::setPath() {
+	size_t posBegin = header.find("/");
+	size_t posEnd = header.find_first_of(" \t", posBegin + 1);
+	path = header.substr(posBegin, posEnd - posBegin);
+	LOG_BLUE("before replace: |" << path << "|");
 }
 
 int	Request::readRequest() { // TODO check if request is allowed, otherwise return DECLINE
@@ -45,7 +60,8 @@ int	Request::readRequest() { // TODO check if request is allowed, otherwise retu
 		readHeader();
 		if (header_read){
 			setType();
-			changePaths();
+			setPath();
+			changePath();
 			LOG("------- REQUEST KEY: " << getRequestKey() << " -------");
 			LOG_RED(getHeader());
 			std::cout << "HEADER END" << std::endl;
@@ -190,15 +206,15 @@ std::string	formatString( std::string file_content ) {
 
 
 void Request::responder() {
-	std::string	filename;
 	std::string	file_content;
 	std::string	formatted;
-	filename = getFilename();
-	if (filename.empty()) {
+
+	if (path.empty()) {
 		file_content = "alex ist sehr toll und du leider nicht so :(\n";
 	}
 	else {
-		file_content = readFile(filename);
+		file_content = readFile(path.substr(1, std::string::npos));
+		LOG_YELLOW("path of presented file: |" << path << "|");
 	}
 	formatted = formatString(file_content);
 	//std::cout << formatted << std::endl;

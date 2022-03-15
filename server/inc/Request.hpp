@@ -36,6 +36,7 @@ class	Request {
 		bool	header_read;
 		bool	body_read;
 		Server *	server;
+		std::string path;
 
 
 	private:
@@ -64,7 +65,8 @@ class	Request {
 		int writeRequest();
 
 		void	setType();
-		void	changePaths();
+		void	changePath();
+		void	setPath();
 		void	readHeader();
 		void	readBody();
 

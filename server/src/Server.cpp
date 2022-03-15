@@ -1,7 +1,7 @@
 #include "Server.hpp"
 
 void	Location::default_init() {
-
+	directory_listing = false;
 }
 
 Location::Location() {
@@ -27,8 +27,6 @@ void test_connection(int item_to_test)
 
 Server::Server() {
 	default_init();
-
-
 }
 
 void	Server::configure() {
@@ -43,18 +41,15 @@ void	Server::configure() {
 	g_address.sin_port = htons(port);
 	g_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
-
 	FD_ZERO(&watching_read_sockets);
 	FD_ZERO(&watching_write_sockets);
 	FD_SET(sock, &watching_read_sockets);
-
 
 	fcntl(sock, F_SETFL, O_NONBLOCK);
 
 	/* set reusable*/
 	tmp = setsockopt(sock, SOL_SOCKET,  SO_REUSEADDR, (char *)&on, sizeof(on));
-	if (tmp < 0)
-	{
+	if (tmp < 0) {
 		perror("setsockopt() failed");
 		close(sock);
 		exit(-1);

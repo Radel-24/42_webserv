@@ -121,7 +121,7 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 		uploadFiles();
 
 	//write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 16\n\nfile was created", 80);
-	char redirection[] = "HTTP/1.1 301 Moved Permanently\nLocation: http://127.0.0.1:7000/index.html\n\n";
+	char redirection[] = "HTTP/1.1 301 Moved Permanently\nLocation: http://127.0.0.1:7000/index.html\n\n"; //TODO include path from rerouting
 
 	write(new_socket, redirection, strlen(redirection));
 }

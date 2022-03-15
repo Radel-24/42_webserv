@@ -70,6 +70,7 @@ int	server_parser(std::ifstream &fin, Server & server) {
 		remove_whitespace(line);
 		if (line.find("}") != STR_END) { break; }
 		else if (size_t pos = is_parameter("server_name: ", line)) { server.server_name = line.substr(pos, STR_END); }
+		else if (size_t pos = is_parameter("root: ", line)) { server.root = line.substr(pos, STR_END); }
 		else if (size_t pos = is_parameter("client_max_body_size: ", line)) { server.client_max_body_size = atof(line.substr(pos).c_str()); }
 		else if (size_t pos = is_parameter("listen: ", line)) { server.port = atoi(line.substr(pos).c_str()); }
 		else if (is_parameter("location ", line)) {

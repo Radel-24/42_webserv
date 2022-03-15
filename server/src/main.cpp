@@ -64,6 +64,7 @@ void accepter(std::map<int, Server *> & servers)
 					}
 					else if (requestStatus == DECLINE) { // TODO check if this is working
 						FD_CLR(request.socket, &watching_read_sockets);
+						close(request.socket);
 						delete &request;
 						requests.erase(requests.find(i));
 						LOG_YELLOW("request removed from map");
@@ -76,10 +77,10 @@ void accepter(std::map<int, Server *> & servers)
 				Request &	request = *(requests[i]);
 				if (requests[i]->writeRequest() == DONE) {
 					FD_CLR(request.socket, &watching_write_sockets);
+					close(request.socket);
 					delete &request;
 					requests.erase(requests.find(i));
 					LOG_YELLOW("request removed from map");
-					close(request.socket);
 				}
 			}
 		}
