@@ -1,4 +1,5 @@
 #include "Config.hpp"
+#include "PostResponder.hpp"
 
 size_t	is_parameter(std::string const & parameter, std::string const & line) {
 	if (line.find(parameter) == 0) {
@@ -64,7 +65,8 @@ int	location_parser(std::ifstream &fin, Location &location) {
 int	server_parser(std::ifstream &fin, Server & server) {
 	// TODO add server to main data struct or something else
 	std::string line;
-	std::cout << "server parser start\n";
+	std::cout << std::endl;
+	LOG_YELLOW("server parser start");
 	while (getline(fin, line)) {
 		remove_comments(line);
 		remove_whitespace(line);
@@ -72,7 +74,7 @@ int	server_parser(std::ifstream &fin, Server & server) {
 		else if (size_t pos = is_parameter("server_name: ", line)) { server.server_name = line.substr(pos, STR_END); }
 		else if (size_t pos = is_parameter("root: ", line)) { server.root = line.substr(pos, STR_END); }
 		else if (size_t pos = is_parameter("upload: ", line)) { server.uploadPath = line.substr(pos, STR_END); }
-		else if (size_t pos = is_parameter("client_max_body_size: ", line)) { server.client_max_body_size = atof(line.substr(pos).c_str()); }
+		else if (size_t pos = is_parameter("client_max_body_size: ", line)) { server.client_max_body_size = atoi(line.substr(pos).c_str()); }
 		else if (size_t pos = is_parameter("listen: ", line)) { server.port = atoi(line.substr(pos).c_str()); }
 		else if (is_parameter("location ", line)) {
 			std::string var = "location ";
@@ -87,8 +89,35 @@ int	server_parser(std::ifstream &fin, Server & server) {
 			location_parser(fin, *location);
 		}
 	}
+	LOG_PINK("server name: " << server.server_name);
+	LOG_PINK("server port: " << server.port);
+	LOG_PINK("server port: " << server.uploadPath);
 	return SUCCESS; // TODO
 }
+
+/* alex new start */
+void	test_script_for_root_folder(Server *server) {
+
+	// only if cwd is /Users/akurz/42projects/projects/z_WEBSERV/server
+	// if (!strcmp(getcwd(NULL, FILENAME_MAX), "/Users/akurz/42projects/projects/z_WEBSERV/server"))
+	// {
+		std::string	directory = "mkdir ." + server->root;
+		// at the moment there is no default uploadPath for the server (i think)
+		std::string	directory2 = "mkdir ." + server->root + server->uploadPath;
+		std::string	cmd_line = directory + " && " + directory2;
+		system(cmd_line.c_str());
+
+		std::string	copy = "cp -n ./www/default_server/* ." + server->root + "/"; // -n option prevents overrides
+		std::string	copy2 = "cp -n -R ./www/default_server/img ." + server->root;
+		system(copy.c_str());
+		system(copy2.c_str());
+	// }
+	LOG_GREEN("created: server directory");
+	// mover this here from Server.cpp
+	server->updateFilesHTML();
+	LOG_GREEN("created: files.html");
+}
+/* alex new end */
 
 int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 	std::string line;
@@ -99,8 +128,9 @@ int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 		if (is_parameter("server{", line)) {
 			Server *server = new Server();
 			server_parser(fin, *server);
-			server->configure();
+			server->configure(servers);
 			servers.insert(std::pair<int, Server *>(server->sock, server));
+			test_script_for_root_folder(server); // alex new
 		}
 		else if (line.empty()) { continue; }
 		else {
@@ -115,6 +145,7 @@ int	read_config(std::string file, std::map<int, Server *> & servers) {
 	std::ifstream fin(file);
 	std::string input;
 	std::string line;
+
 
 	if (fin.is_open()) {
 		if (main_parser(fin, servers) != SUCCESS) {

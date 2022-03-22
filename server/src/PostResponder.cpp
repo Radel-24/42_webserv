@@ -6,11 +6,11 @@ void	PostResponder::createUploadFile( std::string filename, std::string content 
 	char * buf = getcwd(NULL, FILENAME_MAX);
 	std::string cwd(buf);
 	std::string path = cwd + server->root + server->uploadPath + "/" + filename;
-	LOG_YELLOW("depug upload path: " << path);
+	// LOG_YELLOW("depug upload path: " << path);
 	std::ofstream	file(path);
 	if (file.is_open()) {
 		file << content; // else error
-		LOG_YELLOW("upload file is opened");
+		// LOG_YELLOW("upload file is opened");
 	}
 	//std::cout << "HEX\n" << ToHex(content, 0) << "\n";
 	file.close();
@@ -26,8 +26,8 @@ void	PostResponder::uploadFiles( void )
 	std::string		content_type;
 	std::string		bodyContent;
 
-	LOG_RED("_numOfBoundaries :	" << _numOfBoundaries);
-	LOG_RED("_boundary :		" << _boundary);
+	// LOG_RED("_numOfBoundaries :	" << _numOfBoundaries);
+	// LOG_RED("_boundary :		" << _boundary);
 
 	while (_numOfBoundaries > 1)
 	{
@@ -65,9 +65,9 @@ void	PostResponder::uploadFiles( void )
 		size_t	dblNewline = cutBody.find("\r\n\r\n");
 		bodyContent = cutBody.substr(dblNewline + 4, cutBody.length() - dblNewline - 4);
 
-		LOG_RED("content_type :		" << content_type);
-		LOG_RED("filename :		" << filename);
-		LOG_RED("name :			" << name);
+		// LOG_RED("content_type :		" << content_type);
+		// LOG_RED("filename :		" << filename);
+		// LOG_RED("name :			" << name);
 
 		// remove new
 		createUploadFile(filename, bodyContent);

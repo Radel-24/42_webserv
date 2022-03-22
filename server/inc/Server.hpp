@@ -47,7 +47,7 @@ class Server {
 		std::string root;
 		std::string uploadPath;
 
-		double client_max_body_size;
+		int		client_max_body_size;
 		fd_set	watching_read_sockets;
 		fd_set	watching_write_sockets;
 		int	sock;
@@ -64,7 +64,7 @@ class Server {
 	public:
 		Server();
 
-		void	configure();
+		void	configure( std::map<int, Server *> & servers );
 		void	updateFilesHTML();
 
 };

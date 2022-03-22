@@ -29,11 +29,12 @@ Server::Server() {
 	default_init();
 }
 
-void	Server::configure() {
+void	Server::configure( std::map<int, Server *> & servers ) {
 	int on = 1;
 	int tmp;
 
 	//Establish socket and test
+	// LOG_WHITE("DEBUG");
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 	test_connection(sock);
 
@@ -56,17 +57,30 @@ void	Server::configure() {
 	}
 	/* set reusable*/
 
+	/* start alex new */
+	// you can bind to a port only once, so we don't bin if there is alreadya server on the port
 	/* BINDING SOCKET */
-	connection = bind(sock, (struct sockaddr *) &g_address, sizeof(g_address));
-	test_connection(connection);
+	bool								skip_bind = false;
+	std::map<int, Server *>::iterator	iter = servers.begin();
+	while (iter != servers.end()) {
+		if (iter->second->port == this->port)
+			skip_bind = true;
+		++iter;
+	}
+	if (!skip_bind)
+	{
+		connection = bind(sock, (struct sockaddr *) &g_address, sizeof(g_address));
+		test_connection(connection);
+	}
 	/* BINDING SOCKET */
+	/* end alex new */
 
 
 	/* LISTENING SOCKET */
 	listening = listen(sock, backlog);
 	test_connection(listening);
 	/* LISTENING SOCKET */
-	updateFilesHTML();
+	// updateFilesHTML();
 }
 
 
@@ -74,14 +88,14 @@ void	Server::updateFilesHTML() {
 	char * buf = getcwd(NULL, FILENAME_MAX);
 	std::string cwd(buf);
 	std::string path = cwd + root + uploadPath;
-	LOG_GREEN("path " << path);
+	// LOG_GREEN("path " << path);
 	std::string execPath = cwd;
 	execPath += "/tree -H ";
 	execPath += uploadPath;
 	execPath += " -T 'Your Files' -L 1 --noreport --charset utf-8 -o ";
 	execPath += cwd + root;
 	execPath += "/files.html";
-	LOG_GREEN("exec Path " << execPath);
+	// LOG_GREEN("path " << path);
 	if (!chdir(path.c_str())) // else irgendein error
 	{
 		if (system(execPath.c_str()) == -1)
@@ -89,6 +103,9 @@ void	Server::updateFilesHTML() {
 		chdir(cwd.c_str());
 	}
 	else
+	{
+		LOG_WHITE(path.c_str());
 		LOG_RED("chdir went wrong");
+	}
 	free(buf);
 }
