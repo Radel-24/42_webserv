@@ -202,7 +202,10 @@ void Request::responder() {
 	}
 	if (file_content == "EXEC")
 	{
-		//print out in html and send it back
+		file_content = readFile("/Users/fharing/42/webserv/server/out");
+		formatted = formatString(file_content);
+		write(socket, formatted.c_str(), formatted.length());
+		close(socket); // TODO is this good?
 		return;
 	}
 	formatted = formatString(file_content);
