@@ -125,6 +125,8 @@ void	Request::parseHeader( std::string header )
 
 int	Request::readRequest() { // TODO check if request is allowed, otherwise return DECLINE
 	//server->updateFilesHTML(); // TODO put to uesful position
+	LOG_PINK_INFO("server name: " << getServer()->server_name);
+	LOG_PINK_INFO("sock: " << getServer()->sock);
 	if (!header_read) {
 		readHeader();
 		if (header_read) {
