@@ -3,9 +3,15 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */);
 
 void	PostResponder::createUploadFile( std::string filename, std::string content )
 {
-	std::ofstream	file(".//files//" + filename);
-	if (file.is_open())
+	char * buf = getcwd(NULL, FILENAME_MAX);
+	std::string cwd(buf);
+	std::string path = cwd + server->root + server->uploadPath + "/" + filename;
+	// LOG_YELLOW("depug upload path: " << path);
+	std::ofstream	file(path);
+	if (file.is_open()) {
 		file << content; // else error
+		// LOG_YELLOW("upload file is opened");
+	}
 	//std::cout << "HEX\n" << ToHex(content, 0) << "\n";
 	file.close();
 }
@@ -20,8 +26,8 @@ void	PostResponder::uploadFiles( void )
 	std::string		content_type;
 	std::string		bodyContent;
 
-	LOG_RED("_numOfBoundaries :	" << _numOfBoundaries);
-	LOG_RED("_boundary :		" << _boundary);
+	// LOG_RED("_numOfBoundaries :	" << _numOfBoundaries);
+	// LOG_RED("_boundary :		" << _boundary);
 
 	while (_numOfBoundaries > 1)
 	{
@@ -59,15 +65,16 @@ void	PostResponder::uploadFiles( void )
 		size_t	dblNewline = cutBody.find("\r\n\r\n");
 		bodyContent = cutBody.substr(dblNewline + 4, cutBody.length() - dblNewline - 4);
 
-		LOG_RED("content_type :		" << content_type);
-		LOG_RED("filename :		" << filename);
-		LOG_RED("name :			" << name);
+		// LOG_RED("content_type :		" << content_type);
+		// LOG_RED("filename :		" << filename);
+		// LOG_RED("name :			" << name);
 
 		// remove new
 		createUploadFile(filename, bodyContent);
 
 		_numOfBoundaries--;
 	}
+	server->updateFilesHTML();
 }
 
 int	PostResponder::countBoundaries( void )
@@ -98,14 +105,13 @@ std::string	PostResponder::extractBoundary( void )
 	return _header.substr(start, end - start);
 }
 
-PostResponder::PostResponder( std::string header, std::string body, int new_socket ) : _header(header), _body(body)
+PostResponder::PostResponder( std::string header, std::string body, int new_socket, Server * server ) : _header(header), _body(body), server(server)
 {
 	_boundary = extractBoundary();
 	if (_boundary == "error")
 	{
 		// es gibt kein boundary, also wuden keine files geschickt und ich muss irgendwas anderes tun
 		write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: extractBoundary", 101);
-		close(new_socket);
 		return ;
 	}
 
@@ -115,7 +121,6 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 		//createUploadFile("FELIX_new", body);
 		// kann eigentlich nicht sein, keine ahnung was dann passieren soll mrrrrrrkkk
 		write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries", 101);
-		close(new_socket);
 		return ;
 	}
 
@@ -123,8 +128,7 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 		uploadFiles();
 
 	//write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 16\n\nfile was created", 80);
-	char redirection[] = "HTTP/1.1 301 Moved Permanently\nLocation: http://127.0.0.1:7000/index.html\n\n";
+	char redirection[] = "HTTP/1.1 301 Moved Permanently\nLocation: http://127.0.0.1:7000/index.html\n\n"; //TODO include path from rerouting
 
 	write(new_socket, redirection, strlen(redirection));
-	close(new_socket);
 }

@@ -56,3 +56,19 @@ std::string findBlock(std::string input, std::string blockBegin, std::string blo
 	}
 	return NULL;
 }
+
+std::string ToHex(const std::string & s, bool upper_case /* = true */)
+{
+	std::stringstream ret;
+
+	for (std::string::size_type i = 0; i < s.length(); ++i)
+	{
+		if (i % 2 == 0)
+			ret << " ";
+		if (i % 16 == 0)
+			ret << "\n";
+		ret << std::hex << std::setfill('0') << std::setw(2) << (upper_case ? std::uppercase : std::nouppercase) << (int)s[i];
+	}
+
+	return ret.str();
+}

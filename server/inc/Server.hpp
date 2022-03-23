@@ -3,16 +3,17 @@
 #include <sys/socket.h>
 #include <stdio.h>
 #include <netinet/in.h>
+#include <unistd.h>
 
 #include <fcntl.h>
 #include <sys/select.h>
+#include <unistd.h>
 
 
 #include <string>
 #include <map>
 #include <vector>
-#include "Request.hpp"
-#include "Client.hpp"
+
 
 
 
@@ -20,6 +21,7 @@ struct Location {
 	public:
 		int	port;
 		std::string path;
+		std::string root;
 		std::vector<std::string> methods;
 		std::string	redirect;
 		bool	directory_listing;
@@ -27,7 +29,7 @@ struct Location {
 		std::string	cgi_extension;
 		std::string	cgi_path;
 
-		std::map<std::string, Location*> sub_locations;
+		//std::map<std::string, Location*> sub_locations; //maybe remove this
 
 	private:
 		void	default_init();
@@ -42,9 +44,12 @@ class Server {
 		int port;
 		std::string server_name;
 		std::map<std::string, Location*> locations;
-		std::map<int, Request *> requests; // TODO store clients or requests?
-		double client_max_body_size;
-		fd_set	watching_sockets;
+		std::string root;
+		std::string uploadPath;
+
+		int		client_max_body_size;
+		fd_set	watching_read_sockets;
+		fd_set	watching_write_sockets;
 		int	sock;
 		struct sockaddr_in g_address;
 		int	backlog;
@@ -58,5 +63,8 @@ class Server {
 
 	public:
 		Server();
+
+		void	configure( std::map<int, Server *> & servers );
+		void	updateFilesHTML();
 
 };
