@@ -29,20 +29,6 @@ void	printServerMap(std::map<int, Server *> & servers) {
 	}
 }
 
-/* if there is a server that has a fitting name to the request, the request hast to get forwarded to that server */
-/* else we use the default server, which is the first from the config file, that uses the same port */
-/* PORT HAS TO FIT AS WELL !!!!!!!!!!!!!!!!!!!!! */
-std::map<int, Server *>::iterator detectCorrectServer( std::map<int, Server *> & servers, Request & request ) {
-	std::map<int, Server *>::iterator	iter = servers.begin();
-	while (iter != servers.end()) {
-		if (iter->second->server_name == request.getHostName())
-			return iter;
-		++iter;
-	}
-	return servers.begin();
-}
-/* end alex new */
-
 void accepter(std::map<int, Server *> & servers)
 {
 	//Server server;
@@ -54,13 +40,13 @@ void accepter(std::map<int, Server *> & servers)
 	FD_ZERO(&watching_write_sockets);
 
 	for (std::map<int, Server *>::iterator iter = servers.begin(); iter != servers.end(); ++iter) {
-		LOG_GREEN("Server added to waching read sockets");
+		LOG_GREEN("Server " << iter->second->sock << " added to waching read sockets");
 		FD_SET(iter->first, &watching_read_sockets);
 	}
 
-	
 
-	while (1){
+
+	while (true){
 		fd_set read_sockets = watching_read_sockets;
 		fd_set write_sockets = watching_write_sockets;
 
@@ -73,9 +59,12 @@ void accepter(std::map<int, Server *> & servers)
 			perror("select error");
 			exit(EXIT_FAILURE);
 		}
-		for (int i = 0; i < FD_SETSIZE; ++i) {
-			if (FD_ISSET(i, &read_sockets)) {
-				std::map<int, Server *>::iterator server_elem = servers.find(i);
+
+		// TODO read steps should be: default server reads header, requested server checks header, and maybe assigns new server socket with accept (close old socket!) and processes request
+
+		for (int check_socket = 0; check_socket < FD_SETSIZE; ++check_socket) {
+			if (FD_ISSET(check_socket, &read_sockets)) {
+				std::map<int, Server *>::iterator server_elem = servers.find(check_socket);
 				if (server_elem != servers.end()) {
 					LOG_RED("I AM HERE 1");
 					// HIER WEITERMACHEN !!!!!
@@ -88,12 +77,10 @@ void accepter(std::map<int, Server *> & servers)
 				}
 				else {
 					LOG_RED("I AM HERE 2");
-					Request &	request = *(requests[i]);
-					int requestStatus = request.readRequest();
+					Request &	request = *(requests[check_socket]);
+					int requestStatus = request.readRequest(servers);
 
 					/* start alex new */
-					std::map<int, Server *>::iterator iter = detectCorrectServer(servers, request);
-					LOG_GREEN_INFO("IT'S THIS SERVER: " << iter->second->server_name);
 					// printServerMap(servers);
 					// LOG_RED(server_elem->first << " | " << server_elem->second);
 					// LOG_RED(request.getServer()->server_name);
@@ -109,20 +96,20 @@ void accepter(std::map<int, Server *> & servers)
 						FD_CLR(request.socket, &watching_read_sockets);
 						close(request.socket);
 						delete &request;
-						requests.erase(requests.find(i));
+						requests.erase(requests.find(check_socket));
 						LOG_RED("request removed from map");
 					}
 				}
 			}
 		}
-		for (int i = 0; i < FD_SETSIZE; ++i) {
-			if (FD_ISSET(i, &write_sockets)) {
-				Request &	request = *(requests[i]);
-				if (requests[i]->writeRequest() == DONE) {
+		for (int check_socket = 0; check_socket < FD_SETSIZE; ++check_socket) {
+			if (FD_ISSET(check_socket, &write_sockets)) {
+				Request &	request = *(requests[check_socket]);
+				if (requests[check_socket]->writeRequest() == DONE) {
 					FD_CLR(request.socket, &watching_write_sockets);
 					close(request.socket);
 					delete &request;
-					requests.erase(requests.find(i));
+					requests.erase(requests.find(check_socket));
 					LOG_RED("request removed from map");
 				}
 			}
@@ -143,12 +130,7 @@ int	main(int argc, char ** argv)
 	check_config(servers);
 
 	/* LAUNCH */
-
-	//while (1) {
-
 		accepter(servers);
-	//}
-	/* LAUNCH */
 
 	return 0;
 }

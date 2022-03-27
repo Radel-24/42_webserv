@@ -91,7 +91,7 @@ int	server_parser(std::ifstream &fin, Server & server) {
 	}
 	LOG_PINK("server name: " << server.server_name);
 	LOG_PINK("server port: " << server.port);
-	LOG_PINK("server port: " << server.uploadPath);
+	LOG_PINK("server upload path: " << server.uploadPath);
 	return SUCCESS; // TODO
 }
 

@@ -26,6 +26,7 @@ enum Status {
 class	Request {
 	public:
 		int									socket;
+		Server *							server;
 
 	private:
 		std::string							header;
@@ -35,7 +36,6 @@ class	Request {
 		ssize_t								bytes_read;
 		bool								header_read;
 		bool								body_read;
-		Server *							server;
 		std::string							path;
 
 
@@ -61,7 +61,9 @@ class	Request {
 
 		void	setRequestKey(unsigned int);
 
-		int	readRequest();
+		void	detectCorrectServer(std::map<int, Server *> & servers);
+
+		int	readRequest(std::map<int, Server *> & servers);
 		int writeRequest();
 
 		void	setType();

@@ -35,10 +35,10 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 
 	//Establish socket and test
 	// LOG_WHITE("DEBUG");
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	test_connection(sock);
+	sock = socket(PF_INET, SOCK_STREAM, 0);
+	test_connection(sock); // TODO still needed?
 
-	g_address.sin_family = AF_INET;
+	g_address.sin_family = PF_INET;
 	g_address.sin_port = htons(port);
 	g_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
@@ -70,7 +70,7 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 	if (!skip_bind)
 	{
 		connection = bind(sock, (struct sockaddr *) &g_address, sizeof(g_address));
-		test_connection(connection);
+		test_connection(connection); // TODO still needed?
 	}
 	/* BINDING SOCKET */
 	/* end alex new */

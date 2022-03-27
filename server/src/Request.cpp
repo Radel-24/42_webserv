@@ -123,21 +123,38 @@ void	Request::parseHeader( std::string header )
 }
 /* END ALEX NEW */
 
-int	Request::readRequest() { // TODO check if request is allowed, otherwise return DECLINE
+
+/* if there is a server that has a fitting name to the request, the request hast to get forwarded to that server */
+/* else we use the default server, which is the first from the config file, that uses the same port */
+/* PORT HAS TO FIT AS WELL !!!!!!!!!!!!!!!!!!!!! */
+void Request::detectCorrectServer(std::map<int, Server *> & servers) {
+	std::map<int, Server *>::iterator	iter = servers.begin();
+	while (iter != servers.end()) {
+		if (iter->second->port == server->port && iter->second->server_name == getHostName()) {
+			server = iter->second;
+			return;
+		}
+		++iter;
+	}
+}
+/* end alex new */
+
+int	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if request is allowed, otherwise return DECLINE
 	//server->updateFilesHTML(); // TODO put to uesful position
 	LOG_PINK_INFO("server name: " << getServer()->server_name);
 	LOG_PINK_INFO("sock: " << getServer()->sock);
 	if (!header_read) {
 		readHeader();
 		if (header_read) {
+			parseHeader(getHeader());
+			detectCorrectServer(servers);
 			setType();
 			setPath();
 			changePath();
 			// LOG_RED_INFO(getRequestKey());
-			LOG_WHITE(getHeader());
+			//LOG_WHITE(getHeader());
 			// start new alex
 			// LOG_GREEN("START HEADER VALUES");
-			parseHeader(getHeader());
 			// printHeaderValues();
 			// LOG_GREEN("END HEADER VALUES");
 			LOG_BLUE("HEADER END ------------------------");
@@ -217,6 +234,7 @@ void Request::readHeader() {
 
 	if (checkHeaderRead()) {
 		header_read = true;
+		LOG_WHITE_INFO(getHeader());
 	}
 	size_t	posHeaderEnd = header.find("\r\n\r\n");
 	if (posHeaderEnd != header.size() - 4) {
@@ -239,7 +257,7 @@ void Request::readBody() {
 	if (max_size > server->client_max_body_size)
 	{
 		LOG_RED("error: BODY TO BIG!");
-		// give back some type of error page
+		// TODO give back some type of error page
 	}
 	char * read_body = NULL;
 	read_body = new char[max_size];
@@ -283,7 +301,7 @@ std::string	readFile( std::string filename ) {
 			std::replace(values.begin(),values.end(), '&', ' ');
 		}
 		execute = execute + binary + " " + values + " > out";
-		std::cout << execute << std::endl;
+		//std::cout << execute << std::endl;
 		system(execute.c_str());
 		return "EXEC";
 	}
@@ -358,7 +376,7 @@ void	Request::responder() {
 		return;
 	}
 	formatted = formatString(file_content);
-	std::cout << formatted << std::endl;
+	//std::cout << formatted << std::endl;
 	write(socket, formatted.c_str(), formatted.length());
 }
 
