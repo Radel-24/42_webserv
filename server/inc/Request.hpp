@@ -25,18 +25,18 @@ enum Status {
 
 class	Request {
 	public:
-		int		socket;
+		int									socket;
 
 	private:
-		std::string	header;
-		std::string	body;
+		std::string							header;
+		std::string							body;
 		std::map<std::string, std::string>	headerValues;
-		unsigned int			requestKey;
-		ssize_t		bytes_read;
-		bool	header_read;
-		bool	body_read;
-		Server *	server;
-		std::string path;
+		unsigned int						requestKey;
+		ssize_t								bytes_read;
+		bool								header_read;
+		bool								body_read;
+		Server *							server;
+		std::string							path;
 
 
 	private:
@@ -54,7 +54,7 @@ class	Request {
 
 		void	appendHeader(std::string input);
 		void	appendBody(char *, int);
-		void	setHeaderValues(std::map<std::string, std::string> mappe);
+		// void	setHeaderValues(std::pair<std::string, std::string> pair);
 
 		//void	clearBody();
 		//void	clearHeader();
@@ -80,5 +80,31 @@ class	Request {
 				++iter;
 			}
 		}
+
+		/* start alex new */
+		void								deleteResponder( void );
+		void								parseHeader( std::string header );
+		std::pair<std::string, std::string>	splitToken( std::string token );
+		std::string							&leftTrim( std::string &str, char c );
+		void								setHeaderValues( const std::pair<std::string, std::string> &pair );
+		std::map<std::string, std::string>	getHeaderValues( void ) const {
+			return this->headerValues;
+		}
+		Server								*getServer( void ) const {
+			return this->server;
+		}
+		int									checkHeaderValues( void );
+
+		std::string							getHostName( void ) const {
+			std::map<std::string, std::string>::const_iterator	iter = headerValues.begin();
+			while (iter != headerValues.end())
+			{
+				if (iter->first == "Host")
+					return iter->second;
+				iter++;
+			}
+			return "";
+		}
+		/* end alex new */
 
 };

@@ -18,3 +18,14 @@ Body: name=felix&money=0
 
 
 <?php echo $POST['name'];?>
+
+
+
+TO-DO
+
+1. create a file
+2. call php file with query-string(parameters)
+3. pipe output to my file
+4. send file content back to hmtl and display it
+
+https://www.tcl.tk/man/aolserver3.0/cgi-ch1.html
