@@ -8,6 +8,7 @@ void	Request::init() {
 	bytes_read = 0;
 	header_read = false;
 	body_read = false;
+	location = NULL;
 }
 
 Request::Request() { init(); }
@@ -37,9 +38,10 @@ void	Request::appendHeader(std::string input) {
 	}
 }
 
-void	Request::changePath() {
+void	Request::changePath() { // TODO make hacking save when relative path is given in request
 	for (std::map<std::string, Location *>::reverse_iterator riter = server->locations.rbegin(); riter != server->locations.rend(); ++riter) {
 		if (path.find(riter->first) == 0) {
+			location = riter->second;
 			path = path.substr(riter->first.length(), std::string::npos);
 			path = riter->second->root + path;
 			// LOG_BLUE("after replace: |" << path << "|");
@@ -52,6 +54,11 @@ void	Request::changePath() {
 void	Request::setPath() {
 	size_t posBegin = header.find("/");
 	size_t posEnd = header.find_first_of(" \t", posBegin + 1);
+	if (posBegin == std::string::npos || posEnd == std::string::npos) { // TODO usually not needed, except when header is wrong
+		path = "";
+		LOG_RED_INFO("shit path not found");
+		return ;
+	}
 	path = header.substr(posBegin, posEnd - posBegin);
 	// LOG_BLUE("before replace: |" << path << "|");
 }
@@ -100,7 +107,7 @@ int	Request::checkHeaderValues( void )
 	return EXIT_SUCCESS;
 }
 
-void	Request::parseHeader( std::string header )
+void	Request::parseHeader(std::string header)
 {
 	std::string							delimiter = "\n";
 	size_t								pos = 0;
@@ -139,6 +146,37 @@ void Request::detectCorrectServer(std::map<int, Server *> & servers) {
 }
 /* end alex new */
 
+int Request::checkRequest() {
+
+	if (requestKey == NIL) { return DECLINE; }
+	else if (location == NULL) { return NIL; }
+	else if (requestKey == GET) {
+		if (!findInVector(location->methods, std::string("GET")))
+			return DECLINE;
+	}
+	else if (requestKey == POST) {
+		if (!findInVector(location->methods, std::string("POST"))) {
+			LOG_RED("error: POST not allowed");
+			return DECLINE;
+		}
+	}
+	else if (requestKey == PUT) {
+		if (!findInVector(location->methods, std::string("PUT")))
+			return DECLINE;
+	}
+	else if (requestKey == DELETE) {
+		if (!findInVector(location->methods, std::string("DELETE")))
+			return DECLINE;
+	}
+	return NIL;
+
+	if (requestKey == POST && server->client_max_body_size != -1 && checkBodySize() > server->client_max_body_size) {
+		LOG_RED("error: BODY TO BIG!");
+		return DECLINE;
+		// TODO give back some type of error page
+	}
+}
+
 int	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if request is allowed, otherwise return DECLINE
 	//server->updateFilesHTML(); // TODO put to uesful position
 	LOG_PINK_INFO("server name: " << getServer()->server_name);
@@ -146,11 +184,13 @@ int	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if r
 	if (!header_read) {
 		readHeader();
 		if (header_read) {
-			parseHeader(getHeader());
+			parseHeader(header);
 			detectCorrectServer(servers);
-			setType();
 			setPath();
 			changePath();
+			setType();
+			if (checkRequest() == DECLINE)
+				return DECLINE;
 			// LOG_RED_INFO(getRequestKey());
 			//LOG_WHITE(getHeader());
 			// start new alex
@@ -165,7 +205,7 @@ int	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if r
 			}
 		}
 	}
-	if (header_read && getRequestKey() == DELETE) {
+	else if (header_read && getRequestKey() == DELETE) {
 		return DONE;
 	}
 	else if (header_read && getRequestKey() == POST) {
@@ -215,8 +255,7 @@ void	Request::setRequestKey(unsigned int KeyIn) {
 
 void	Request::setType() {
 	// LOG_RED("find: " << header.find("DELETE"));
-	if (header.length() < 3) { setRequestKey(NIL); }
-	else if (header.find("GET") == 0 ) { setRequestKey(GET); }// if keyword not always at the beginning, us find("GET")
+	if (header.find("GET") == 0 ) { setRequestKey(GET); }// if keyword not always at the beginning, us find("GET")
 	else if (header.find("POST") == 0) { setRequestKey(POST); }
 	else if (header.find("PUT") == 0) { setRequestKey(PUT); }
 	else if (header.find("DELETE") == 0) { setRequestKey(DELETE);}
@@ -234,7 +273,6 @@ void Request::readHeader() {
 
 	if (checkHeaderRead()) {
 		header_read = true;
-		LOG_WHITE_INFO(getHeader());
 	}
 	size_t	posHeaderEnd = header.find("\r\n\r\n");
 	if (posHeaderEnd != header.size() - 4) {
@@ -247,6 +285,9 @@ void Request::readHeader() {
 			body_read = true;
 		}
 	}
+	else {
+		LOG_BLACK_INFO("only header sent");
+	}
 }
 
 void Request::readBody() {
@@ -254,11 +295,7 @@ void Request::readBody() {
 
 	int max_size = checkBodySize();
 	LOG_BLACK("body size: " << max_size);
-	if (max_size > server->client_max_body_size)
-	{
-		LOG_RED("error: BODY TO BIG!");
-		// TODO give back some type of error page
-	}
+
 	char * read_body = NULL;
 	read_body = new char[max_size];
 	//write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25); // much faster when sending huge files with curl; not allowed without checking with select for write rights
