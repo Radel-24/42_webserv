@@ -154,7 +154,7 @@ void Request::readBody() {
 	std::cout << "body size: " << max_size << std::endl;
 	char * read_body = NULL;
 	read_body = new char[max_size];
-	write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25); // much faster when sending huge files with curl // TODO only send when required
+	//write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25); // much faster when sending huge files with curl; not allowed without checking with select for write rights
 	LOG_YELLOW("bytes read before recv: " << bytes_read);
 	ssize_t tmp_bytes_read = recv(socket, read_body, max_size, 0);
 	if (tmp_bytes_read > 0) {
