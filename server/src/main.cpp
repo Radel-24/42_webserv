@@ -66,9 +66,6 @@ void accepter(std::map<int, Server *> & servers)
 			if (FD_ISSET(check_socket, &read_sockets)) {
 				std::map<int, Server *>::iterator server_elem = servers.find(check_socket);
 				if (server_elem != servers.end()) {
-					LOG_RED("I AM HERE 1");
-					// HIER WEITERMACHEN !!!!!
-					// muss name von request mit name servern vergleichen um an richtigen zu schicken
 					struct sockaddr_in address = (server_elem->second)->g_address;
 					int addrlen = sizeof(address);
 					int new_socket = accept((server_elem->second)->sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
@@ -76,7 +73,6 @@ void accepter(std::map<int, Server *> & servers)
 					requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket, server_elem->second)));
 				}
 				else {
-					LOG_RED("I AM HERE 2");
 					Request &	request = *(requests[check_socket]);
 					int requestStatus = request.readRequest(servers);
 
@@ -93,11 +89,14 @@ void accepter(std::map<int, Server *> & servers)
 						FD_SET(request.socket, &watching_write_sockets);
 					}
 					else if (requestStatus == DECLINE) { // TODO check if this is working
+						// TODO should try to write: 413 Payload Too Large
+						request.status = DECLINE;
 						FD_CLR(request.socket, &watching_read_sockets);
-						close(request.socket);
-						delete &request;
-						requests.erase(requests.find(check_socket));
-						LOG_RED("request removed from map");
+						FD_SET(request.socket, &watching_write_sockets);
+						//close(request.socket);
+						//delete &request;
+						//requests.erase(requests.find(check_socket));
+						//LOG_RED("request removed from map");
 					}
 				}
 			}

@@ -168,13 +168,14 @@ int Request::checkRequest() {
 		if (!findInVector(location->methods, std::string("DELETE")))
 			return DECLINE;
 	}
-	return NIL;
 
-	if (requestKey == POST && server->client_max_body_size != -1 && checkBodySize() > server->client_max_body_size) {
+	if (location->client_max_body_size != -1 && checkBodySize() > location->client_max_body_size) {
 		LOG_RED("error: BODY TO BIG!");
 		return DECLINE;
 		// TODO give back some type of error page
 	}
+
+	return NIL;
 }
 
 int	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if request is allowed, otherwise return DECLINE
@@ -222,6 +223,9 @@ int	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if r
 }
 
 int	Request::writeRequest() {
+	if (status == DECLINE) {
+		writeToSocket(socket, "HTTP/1.1 413 Payload Too Large\r\n\r\n");
+	}
 	if (header_read && getRequestKey() == POST) {
 		PostResponder pR(getHeader(), getBody(), socket, server);
 	}
@@ -241,7 +245,7 @@ int	Request::checkBodySize(void) {
 	while(header[type_end] != '\n')
 		type_end++;
 	content_length = header.substr(type_start, type_end - type_start - 1); // TODO protect when content_lengt not written in header
-	return (std::stoi(content_length)); // TODO is std 11 function
+	return (std::atol(content_length.c_str()));
 }
 
 void	Request::appendBody(char *body_in, int size) {

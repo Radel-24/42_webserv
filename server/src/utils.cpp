@@ -72,3 +72,7 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */)
 
 	return ret.str();
 }
+
+void	writeToSocket(int socket, std::string text) {
+	write(socket, text.c_str(), text.length());
+}

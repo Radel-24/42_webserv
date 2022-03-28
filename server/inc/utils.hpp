@@ -7,6 +7,8 @@
 #include <iomanip>
 #include <map>
 #include <vector>
+#include <string>
+#include <unistd.h>
 
 std::pair<std::string, std::string>	divideString(std::string input, std::string divide);
 std::map<std::string, std::string>	stringToMap(std::string input, std::string divide = ": ",
@@ -25,3 +27,5 @@ bool	findInVector(std::vector<T> vec, T needle) {
 	}
 	return false;
 }
+
+void	writeToSocket(int socket, std::string text);

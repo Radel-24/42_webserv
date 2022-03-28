@@ -25,6 +25,7 @@
 #include <iostream>
 #include <unistd.h>
 #include "Server.hpp"
+#include "utils.hpp"
 
 class PostResponder {
 
@@ -39,6 +40,7 @@ class PostResponder {
 		int			countBoundaries( void );
 		void		uploadFiles( void );
 		void		createUploadFile( std::string filename, std::string content );
+		void	writeResponse(std::string response);
 
 	public:
 		PostResponder( std::string header, std::string body, int new_socket, Server * server );

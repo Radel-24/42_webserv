@@ -111,7 +111,7 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 	if (_boundary == "error")
 	{
 		// es gibt kein boundary, also wuden keine files geschickt und ich muss irgendwas anderes tun
-		write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: extractBoundary", 101);
+		writeToSocket(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: extractBoundary");
 		return ;
 	}
 
@@ -120,15 +120,19 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 	{
 		//createUploadFile("FELIX_new", body);
 		// kann eigentlich nicht sein, keine ahnung was dann passieren soll mrrrrrrkkk
-		write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries", 101);
+		writeToSocket(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries");
 		return ;
 	}
 
-	if (_numOfBoundaries > 0)
+	if (_numOfBoundaries > 0) {
 		uploadFiles();
+		writeToSocket(new_socket, "HTTP/1.1 201 Created\r\n\r\n");
+		return ;
+	}
 
 	//write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 16\n\nfile was created", 80);
-	char redirection[] = "HTTP/1.1 301 Moved Permanently\nLocation: http://127.0.0.1:7000/index.html\n\n"; //TODO include path from rerouting
+	char redirection[] = "HTTP/1.1 301 Moved Permanently\nLocation: http://127.0.0.1:1000/index.html\n\n"; //TODO include path from rerouting
 
-	write(new_socket, redirection, strlen(redirection));
+	writeToSocket(new_socket, redirection);
 }
+

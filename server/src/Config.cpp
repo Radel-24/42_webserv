@@ -34,6 +34,7 @@ int	location_parser(std::ifstream &fin, Location &location) {
 		else if (size_t pos = is_parameter("cgi_extension: ", line)) { location.cgi_extension = line.substr(pos, STR_END); }
 		else if (size_t pos = is_parameter("cgi_path: ", line)) { location.cgi_path = line.substr(pos, STR_END); }
 		else if (size_t pos = is_parameter("default_file: ", line)) { location.default_file = line.substr(pos, STR_END); }
+		else if (size_t pos = is_parameter("client_max_body_size: ", line)) { location.client_max_body_size = atol(line.substr(pos).c_str()); }
 		else if (line.find("directory_listing: ") == 0) {
 			line = line.substr(strlen("directory_listing: "), std::string::npos);
 			if (line == "on") { location.directory_listing = true; }
@@ -41,18 +42,6 @@ int	location_parser(std::ifstream &fin, Location &location) {
 			else { return FAILURE; }
 		}
 		else if (size_t pos = is_parameter("methods: ", line)) { location.methods = stringSplit(", ", line.substr(pos, STR_END)); }
-		//else if (is_parameter("location ", line)) {
-		//	std::string var = "location ";
-		//	std::string path = line.substr(var.length(), line.find(" {") - var.length());
-		//	if (line.find("{") != line.length() - 1) {
-		//		std::cout << "Wrong formatting\n";
-		//		// TODO error handling or in calling function/
-		//		return FAILURE;
-		//	}
-		//	Location *sub_location = new Location(path);
-		//	location.sub_locations.insert(std::pair<std::string, Location*>(path, sub_location));
-		//	location_parser(fin, *sub_location);
-		//}
 		else {
 			std::cout << "Not a valid parameter in location scope\n";
 			// TODO error handling
@@ -75,7 +64,7 @@ int	server_parser(std::ifstream &fin, Server & server) {
 		else if (size_t pos = is_parameter("root: ", line)) { server.root = line.substr(pos, STR_END); }
 		else if (size_t pos = is_parameter("upload: ", line)) { server.uploadPath = line.substr(pos, STR_END); }
 		else if (size_t pos = is_parameter("client_max_body_size: ", line)) { server.client_max_body_size = atoi(line.substr(pos).c_str()); }
-		else if (size_t pos = is_parameter("listen: ", line)) { server.port = atoi(line.substr(pos).c_str()); }
+		else if (size_t pos = is_parameter("listen: ", line)) { server.port = atol(line.substr(pos).c_str()); }
 		else if (is_parameter("location ", line)) {
 			std::string var = "location ";
 			std::string path = line.substr(var.length(), line.find(" {") - var.length());

@@ -26,6 +26,7 @@ enum Status {
 
 class	Request {
 	public:
+		int	status;
 		int									socket;
 		Server *							server;
 

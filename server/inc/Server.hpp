@@ -28,6 +28,7 @@ struct Location {
 		std::string	default_file;
 		std::string	cgi_extension;
 		std::string	cgi_path;
+		long client_max_body_size;
 
 		//std::map<std::string, Location*> sub_locations; //maybe remove this
 
@@ -47,7 +48,7 @@ class Server {
 		std::string root;
 		std::string uploadPath;
 
-		int		client_max_body_size;
+		long		client_max_body_size;
 		fd_set	watching_read_sockets;
 		fd_set	watching_write_sockets;
 		int	sock;

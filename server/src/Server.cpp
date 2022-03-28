@@ -2,6 +2,7 @@
 #include "PostResponder.hpp"
 void	Location::default_init() {
 	directory_listing = false;
+	client_max_body_size = -1;
 }
 
 Location::Location() {
@@ -58,15 +59,14 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 	}
 	/* set reusable*/
 
-	/* start alex new */
 	// you can bind to a port only once, so we don't bin if there is alreadya server on the port
 	/* BINDING SOCKET */
 	bool								skip_bind = false;
-	std::map<int, Server *>::iterator	iter = servers.begin();
-	while (iter != servers.end()) {
-		if (iter->second->port == this->port)
+	for (std::map<int, Server *>::iterator	iter = servers.begin(); iter != servers.end(); ++iter) {
+		if (iter->second->port == this->port) {
 			skip_bind = true;
-		++iter;
+			break;
+		}
 	}
 	if (!skip_bind)
 	{
@@ -74,7 +74,6 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 		test_connection(connection); // TODO still needed?
 	}
 	/* BINDING SOCKET */
-	/* end alex new */
 
 
 	/* LISTENING SOCKET */
@@ -82,6 +81,14 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 	test_connection(listening);
 	/* LISTENING SOCKET */
 	// updateFilesHTML();
+
+	//check for main client_max_body_size and adapt all location client_max_body_size with this value
+	if (client_max_body_size != -1) {
+		for (std::map<std::string, Location*>::iterator location = locations.begin(); location != locations.end(); ++location) {
+			if (location->second->client_max_body_size == -1 || client_max_body_size < location->second->client_max_body_size)
+				location->second->client_max_body_size = client_max_body_size;
+		}
+	}
 }
 
 
