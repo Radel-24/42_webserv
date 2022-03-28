@@ -40,11 +40,11 @@ int	location_parser(std::ifstream &fin, Location &location) {
 			else { return FAILURE; }
 		}
 		else if (size_t pos = is_parameter("methods: ", line)) { location.methods = stringSplit(", ", line.substr(pos, STR_END)); }
-		else {
-			std::cout << "Not a valid parameter in location scope\n";
-			// TODO error handling
-			exit(EXIT_SUCCESS);
-		}
+		//else {
+		//	std::cout << "Not a valid parameter in location scope\n";
+		//	// TODO error handling
+		//	exit(EXIT_SUCCESS);
+		//}
 	}
 	return SUCCESS;
 }

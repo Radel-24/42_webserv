@@ -224,7 +224,7 @@ int	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if r
 
 int	Request::writeRequest() {
 	if (status == DECLINE) {
-		writeToSocket(socket, "HTTP/1.1 403 Method Not Allowed\r\n\r\n");
+		writeToSocket(socket, "HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
 	}
 	else if (header_read && getRequestKey() == POST) {
 		PostResponder pR(getHeader(), getBody(), socket, server);
