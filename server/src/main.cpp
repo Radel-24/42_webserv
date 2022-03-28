@@ -119,6 +119,7 @@ void accepter(std::map<int, Server *> & servers)
 
 int	main(int argc, char ** argv)
 {
+	LOG_RED_INFO(getcwd(NULL, FILENAME_MAX));
 	std::string configFile;
 	if (argc == 2)
 		configFile = argv[1];

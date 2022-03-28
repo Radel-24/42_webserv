@@ -73,6 +73,14 @@ void	PostResponder::uploadFiles( void )
 		createUploadFile(filename, bodyContent);
 
 		_numOfBoundaries--;
+
+		std::string fileExtension = filename.substr(filename.find_last_of(".") + 1, std::string::npos);
+		if (fileExtension == server->cgi_extension) {
+			LOG_CYAN_INFO("this should be processed with cgi");
+			std::string executionString = server->cgi_path + " " + "./cgi/cgi_tester";
+			system(executionString.c_str());
+			return ;
+		}
 	}
 	server->updateFilesHTML();
 }
@@ -107,6 +115,12 @@ std::string	PostResponder::extractBoundary( void )
 
 PostResponder::PostResponder( std::string header, std::string body, int new_socket, Server * server ) : _header(header), _body(body), server(server)
 {
+	if (body.size() == 0) {
+		LOG_RED_INFO("empty body in post request");
+		LOG_RED_INFO(header);
+		writeToSocket(new_socket, "HTTP/1.1 204 No Content");
+		return ;
+	}
 	_boundary = extractBoundary();
 	if (_boundary == "error")
 	{

@@ -224,15 +224,15 @@ int	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if r
 
 int	Request::writeRequest() {
 	if (status == DECLINE) {
-		writeToSocket(socket, "HTTP/1.1 413 Payload Too Large\r\n\r\n");
+		writeToSocket(socket, "HTTP/1.1 403 Method Not Allowed\r\n\r\n");
 	}
-	if (header_read && getRequestKey() == POST) {
+	else if (header_read && getRequestKey() == POST) {
 		PostResponder pR(getHeader(), getBody(), socket, server);
 	}
-	if (header_read && getRequestKey() == GET) {
+	else if (header_read && getRequestKey() == GET) {
 		responder();
 	}
-	if (header_read && getRequestKey() == DELETE) {
+	else if (header_read && getRequestKey() == DELETE) {
 		deleteResponder();
 	}
 	return DONE;
@@ -277,20 +277,23 @@ void Request::readHeader() {
 
 	if (checkHeaderRead()) {
 		header_read = true;
-	}
-	size_t	posHeaderEnd = header.find("\r\n\r\n");
-	if (posHeaderEnd != header.size() - 4) {
-		LOG_BLACK("takes body out of header");
-		body = header;
-		body.erase(0, posHeaderEnd + 4);
 
-		LOG_BLACK("body size " << body.size() << "check size " << checkBodySize());
-		if ((int)body.size() == checkBodySize()) {
-			body_read = true;
+		size_t	posHeaderEnd = header.find("\r\n\r\n");
+		if (posHeaderEnd != header.size() - 4) {
+			LOG_BLACK("takes body out of header; pos header end: " << posHeaderEnd);
+			body = header;
+			body.erase(0, posHeaderEnd + 4);
+			LOG_RED_INFO("header: " << header << "\nbody: " << body);
+
+			LOG_BLACK("body size " << body.size() << "check size " << checkBodySize());
+			if ((int)body.size() == checkBodySize()) {
+				body_read = true;
+				LOG_WHITE_INFO(header);
+			}
 		}
-	}
-	else {
-		LOG_BLACK_INFO("only header sent");
+		else {
+			LOG_BLACK_INFO("only header sent");
+		}
 	}
 }
 
@@ -299,6 +302,10 @@ void Request::readBody() {
 
 	int max_size = checkBodySize();
 	LOG_BLACK("body size: " << max_size);
+	if (max_size < 1) {
+		body_read = true;
+		return ;
+	}
 
 	char * read_body = NULL;
 	read_body = new char[max_size];
