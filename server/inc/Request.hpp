@@ -19,9 +19,13 @@ enum ReqKeys {
 };
 
 enum Status {
-	WORKING,
-	DONE,
-	DECLINE
+	NILL,
+	READING_HEADER,
+	HEADER_READ,
+	READING_BODY,
+	DONE_READING,
+	WRITING,
+	DONE_WRITING
 };
 
 class	Request {
@@ -36,8 +40,6 @@ class	Request {
 		std::map<std::string, std::string>	headerValues;
 		unsigned int						requestKey;
 		ssize_t								bytes_read;
-		bool								header_read;
-		bool								body_read;
 		std::string							path;
 		Location *							location;
 
@@ -66,8 +68,8 @@ class	Request {
 
 		void	detectCorrectServer(std::map<int, Server *> & servers);
 
-		int	readRequest(std::map<int, Server *> & servers);
-		int writeRequest();
+		void	readRequest(std::map<int, Server *> & servers);
+		void writeRequest();
 
 		void	setType();
 		void	changePath();
@@ -98,9 +100,9 @@ class	Request {
 		Server								*getServer( void ) const {
 			return this->server;
 		}
-		int									checkHeaderValues( void );
+		void									checkHeaderValues( void );
 
-		int	checkRequest();
+		void	checkRequest();
 
 		std::string							getHostName( void ) const {
 			std::map<std::string, std::string>::const_iterator	iter = headerValues.begin();

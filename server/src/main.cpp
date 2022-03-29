@@ -74,7 +74,7 @@ void accepter(std::map<int, Server *> & servers)
 				}
 				else {
 					Request &	request = *(requests[check_socket]);
-					int requestStatus = request.readRequest(servers);
+					request.readRequest(servers);
 
 					/* start alex new */
 					// printServerMap(servers);
@@ -83,20 +83,11 @@ void accepter(std::map<int, Server *> & servers)
 					// LOG_RED(request.getServer()->port);
 					// request.printHeaderValues();
 					/* end alex new */
+					LOG_RED_INFO("request status: " << request.status);
 
-					if (requestStatus == DONE) {
+					if (request.status >= 100 || request.status == DONE_READING) {
 						FD_CLR(request.socket, &watching_read_sockets);
 						FD_SET(request.socket, &watching_write_sockets);
-					}
-					else if (requestStatus == DECLINE) { // TODO check if this is working
-						// TODO should try to write: 413 Payload Too Large
-						request.status = DECLINE;
-						FD_CLR(request.socket, &watching_read_sockets);
-						FD_SET(request.socket, &watching_write_sockets);
-						//close(request.socket);
-						//delete &request;
-						//requests.erase(requests.find(check_socket));
-						//LOG_RED("request removed from map");
 					}
 				}
 			}
@@ -104,7 +95,14 @@ void accepter(std::map<int, Server *> & servers)
 		for (int check_socket = 0; check_socket < FD_SETSIZE; ++check_socket) {
 			if (FD_ISSET(check_socket, &write_sockets)) {
 				Request &	request = *(requests[check_socket]);
-				if (requests[check_socket]->writeRequest() == DONE) {
+				LOG_RED_INFO("request status: " << request.status);
+				if (request.status >= 100 && request.status < 200) {
+					requests[check_socket]->writeRequest();
+					FD_CLR(request.socket, &watching_write_sockets);
+					FD_SET(request.socket, &watching_read_sockets);
+				}
+				if (request.status == DONE_READING || (request.status >= 200 && request.status < 600)) {
+					requests[check_socket]->writeRequest();
 					FD_CLR(request.socket, &watching_write_sockets);
 					close(request.socket);
 					delete &request;

@@ -6,9 +6,8 @@ void	Request::init() {
 	header = "";
 	body = "";
 	bytes_read = 0;
-	header_read = false;
-	body_read = false;
 	location = NULL;
+	status = READING_HEADER;
 }
 
 Request::Request() { init(); }
@@ -89,22 +88,32 @@ std::pair<std::string, std::string>	Request::splitToken( std::string token )
 }
 
 /* currently only checking if host is included */
-int	Request::checkHeaderValues( void )
+void	Request::checkHeaderValues( void )
 {
-	bool											flag = false;
-	std::map<std::string, std::string>::iterator	iter = headerValues.begin();
+	//bool											flag = false;
+	//std::map<std::string, std::string>::iterator	iter = headerValues.begin();
 
-	while (iter != headerValues.end()) {
-		if (iter->first == "Host")
-			flag = true;
-		++iter;
-	}
-	if (flag == false)
-	{
+	//while (iter != headerValues.end()) {
+	//	if (iter->first == "Host")
+	//		flag = true;
+	//	++iter;
+	//}
+	//if (flag == false)
+	//{
+	//	LOG_RED("error: request is missing host");
+	//	return EXIT_FAILURE;
+	//}
+	//return EXIT_SUCCESS;
+
+
+	if (headerValues.find("Host") == headerValues.end()) {
+		status = 400; // TODO don't know error code
 		LOG_RED("error: request is missing host");
-		return EXIT_FAILURE;
 	}
-	return EXIT_SUCCESS;
+	//if (headerValues.find("Content-Length") == headerValues.end()) {
+	//	status = 411;
+	//	LOG_RED("error: request is missing content length");
+	//}
 }
 
 void	Request::parseHeader(std::string header)
@@ -124,8 +133,7 @@ void	Request::parseHeader(std::string header)
 		}
 		header.erase(0, pos + delimiter.length());
 	}
-	int check = checkHeaderValues();
-	LOG_BLACK("check: " << check);
+
 	// if check == 1 muessen error pages returned werden, je nachdm was falsch am header ist
 }
 /* END ALEX NEW */
@@ -146,52 +154,55 @@ void Request::detectCorrectServer(std::map<int, Server *> & servers) {
 }
 /* end alex new */
 
-int Request::checkRequest() {
+void Request::checkRequest() {
 
-	if (requestKey == NIL) { return DECLINE; }
-	else if (location == NULL) { return NIL; }
+	if (requestKey == NIL) { status = 400; }
+	else if (location == NULL) { return ; }
 	else if (requestKey == GET) {
 		if (!findInVector(location->methods, std::string("GET")))
-			return DECLINE;
+			status = 405; // TODO compulsory method mustn't be deactivated: https://developer.mozilla.org/de/docs/Web/HTTP/Status
 	}
 	else if (requestKey == POST) {
 		if (!findInVector(location->methods, std::string("POST"))) {
 			LOG_RED("error: POST not allowed");
-			return DECLINE;
+			status = 405;
 		}
 	}
 	else if (requestKey == PUT) {
 		if (!findInVector(location->methods, std::string("PUT")))
-			return DECLINE;
+			status = 405;
 	}
 	else if (requestKey == DELETE) {
 		if (!findInVector(location->methods, std::string("DELETE")))
-			return DECLINE;
+			status = 405;
 	}
 
-	if (location->client_max_body_size != -1 && checkBodySize() > location->client_max_body_size) {
+	else if (location->client_max_body_size != -1 && checkBodySize() > location->client_max_body_size) {
 		LOG_RED("error: BODY TO BIG!");
-		return DECLINE;
-		// TODO give back some type of error page
+		status = 413; // TODO is this the right status??
 	}
 
-	return NIL;
 }
 
-int	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if request is allowed, otherwise return DECLINE
+void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if request is allowed, otherwise return DECLINE
 	//server->updateFilesHTML(); // TODO put to uesful position
 	LOG_PINK_INFO("server name: " << getServer()->server_name);
 	LOG_PINK_INFO("sock: " << getServer()->sock);
-	if (!header_read) {
+	LOG_RED_INFO("request status " << status << " request key " << requestKey);
+	if (status == READING_HEADER) {
 		readHeader();
-		if (header_read) {
+		if (status == HEADER_READ) {
 			parseHeader(header);
+			checkHeaderValues();
+			if (status >= 100)
+				return ;
 			detectCorrectServer(servers);
 			setPath();
 			changePath();
 			setType();
-			if (checkRequest() == DECLINE)
-				return DECLINE;
+			checkRequest();
+			if (status >= 100)
+				return ;
 			// LOG_RED_INFO(getRequestKey());
 			//LOG_WHITE(getHeader());
 			// start new alex
@@ -200,42 +211,42 @@ int	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if r
 			// LOG_GREEN("END HEADER VALUES");
 			LOG_BLUE("HEADER END ------------------------");
 			// end new alex
-			if (body_read) {
+			if (status == DONE_READING) {
 				LOG_GREEN("read all in one");
-				return DONE;
+				return ;
 			}
 		}
 	}
-	else if (header_read && getRequestKey() == DELETE) {
-		return DONE;
+	else if (status == HEADER_READ && getRequestKey() == DELETE) {
+		status = DONE_READING;
+		return ;
 	}
-	else if (header_read && getRequestKey() == POST) {
-		if (!body_read)
-			readBody();
-		if (body_read) {
-			return DONE;
+	else if (status == HEADER_READ && getRequestKey() == POST) {
+		readBody();
+		if (status == DONE_READING) {
+			return ;
 		}
 	}
-	if (header_read && getRequestKey() == GET) {
-		return DONE;
+	if (status == HEADER_READ && getRequestKey() == GET) {
+		status = DONE_READING;
+		return ;
 	}
-	return WORKING;
 }
 
-int	Request::writeRequest() {
-	if (status == DECLINE) {
+void	Request::writeRequest() {
+	if (status == 405) {
 		writeToSocket(socket, "HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
 	}
-	else if (header_read && getRequestKey() == POST) {
+	else if (status == DONE_READING && getRequestKey() == POST) {
 		PostResponder pR(getHeader(), getBody(), socket, server);
 	}
-	else if (header_read && getRequestKey() == GET) {
+	else if (status == DONE_READING && getRequestKey() == GET) {
 		responder();
 	}
-	else if (header_read && getRequestKey() == DELETE) {
+	else if (status == DONE_READING && getRequestKey() == DELETE) {
 		deleteResponder();
 	}
-	return DONE;
+	status =  DONE_WRITING;
 }
 
 int	Request::checkBodySize(void) {
@@ -276,7 +287,7 @@ void Request::readHeader() {
 	appendHeader(buffer);
 
 	if (checkHeaderRead()) {
-		header_read = true;
+		status = HEADER_READ;
 
 		size_t	posHeaderEnd = header.find("\r\n\r\n");
 		if (posHeaderEnd != header.size() - 4) {
@@ -287,7 +298,7 @@ void Request::readHeader() {
 
 			LOG_BLACK("body size " << body.size() << "check size " << checkBodySize());
 			if ((int)body.size() == checkBodySize()) {
-				body_read = true;
+				status = DONE_READING;
 				LOG_WHITE_INFO(header);
 			}
 		}
@@ -303,7 +314,7 @@ void Request::readBody() {
 	int max_size = checkBodySize();
 	LOG_BLACK("body size: " << max_size);
 	if (max_size < 1) {
-		body_read = true;
+		status = DONE_READING;
 		return ;
 	}
 
@@ -321,7 +332,7 @@ void Request::readBody() {
 	}
 	LOG_BLACK("bytes read after recv: " << bytes_read);
 	if ((int)body.size() == checkBodySize()) {
-		body_read = true;
+		status = DONE_READING;
 		//std::cout << getBody() << std::endl;
 		LOG_BLACK("body read true");
 	}
