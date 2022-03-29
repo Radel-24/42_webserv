@@ -1,7 +1,7 @@
 /* Compare strings while treating digits characters numerically.
    Copyright (C) 1997, 2002, 2005 Free Software Foundation, Inc.
    This file is part of the libiberty library.
-   Contributed by Jean-François Bignolles <bignolle@ecoledoc.ibp.fr>, 1997.
+   Contributed by Jean-Franï¿½ois Bignolles <bignolle@ecoledoc.ibp.fr>, 1997.
 
    Libiberty is free software; you can redistribute it and/or
    modify it under the terms of the GNU Lesser General Public
@@ -23,7 +23,7 @@
 #include <ctype.h>
 #ifndef __linux__
 
-/* 
+/*
 @deftypefun int strverscmp (const char *@var{s1}, const char *@var{s2})
 The @code{strverscmp} function compares the string @var{s1} against
 @var{s2}, considering them as holding indices/version numbers.  Return
@@ -145,16 +145,17 @@ strverscmp (const char *s1, const char *s2)
     {
     case CMP:
       return diff;
-      
+
     case LEN:
       while (isdigit (*p1++))
 	if (!isdigit (*p2++))
 	  return 1;
-      
+
       return isdigit (*p2) ? -1 : diff;
-      
+
     default:
       return state;
     }
 }
+
 #endif
