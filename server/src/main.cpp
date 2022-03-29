@@ -121,19 +121,20 @@ int	main(int argc, char ** argv)
 {
 	LOG_RED_INFO(getcwd(NULL, FILENAME_MAX));
 	std::string configFile;
+	//check if there is a config file in argv, if not we take the default server config file
 	if (argc == 2)
 		configFile = argv[1];
 	else
 		configFile = "setup.conf";
+	//create a map of servers(Key: serversocket, Value: server class)
 	std::map<int, Server *> servers;
+	//read the config file and setup the servers
 	read_config(configFile, servers);
+	//check if the servers are correctly setup
 	check_config(servers);
 
-	/* LAUNCH */
-		accepter(servers);
+	//hardest thing evaaaaaaa
+	accepter(servers);
 
 	return 0;
 }
-
-
-// curl -F 'name=@hund.txt' localhost:7000 -v

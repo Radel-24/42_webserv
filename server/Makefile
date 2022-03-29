@@ -25,13 +25,18 @@ all: $(NAME)
 
 #creates programm
 $(NAME): $(SOURCES) $(addprefix inc/, $(HEADER))
+	make -C ../tree-2.0.2
+	cp ../tree-2.0.2/tree .
 	$(CC) $(CPPFLAGS) $(INC) -c $(SOURCES)
 	mkdir -p obj
 	mv $(OBJ) obj
 	$(CC) $(CPPFLAGS) $(INC) $(addprefix obj/, $(OBJ)) -o $(NAME)
 
 clean:
+	make -C ../tree-2.0.2 clean
+	$(RM) www/server*
 	$(RM) obj
+	$(RM) tree
 	$(RM) files/*
 	$(RM) binary.file
 
