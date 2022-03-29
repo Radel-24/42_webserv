@@ -31,6 +31,20 @@ Server::Server() {
 	default_init();
 }
 
+/*
+Setting up the server with the parameters from the class.
+socket = creates a network socket for tcp/ip connections
+g_address.sin_family = PF_INET == TCP/IP;
+g_address.sin_port = htons(port) == PORT to communicate over;
+g_address.sin_addr.s_addr = htonl(INADDR_ANY) == accept every IPv4 address;
+FD_ZERO = Clear all entries from the set. (sets them all to zero)
+FD_SET = Add fd to the set.
+fcntl = set the socket to nonblocking
+setsockopt = sets the socket to be reusable, so when the server crash we can instantly restart it
+bind = maps the socket to the corresponding port on the machine
+listen = allows connections to the port/socket and logs them in a backlog, NOW we can accept them
+test_connection checks if a function returns < 0 to see i there was an error.
+*/
 void	Server::configure( std::map<int, Server *> & servers ) {
 	int on = 1;
 	int tmp;
@@ -59,7 +73,7 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 	}
 	/* set reusable*/
 
-	// you can bind to a port only once, so we don't bin if there is alreadya server on the port
+	// you can bind to a port only once, so we don't bind if there is already a server on the port
 	/* BINDING SOCKET */
 	bool								skip_bind = false;
 	for (std::map<int, Server *>::iterator	iter = servers.begin(); iter != servers.end(); ++iter) {
@@ -91,7 +105,9 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 	}
 }
 
-
+/*
+This function runs the tree command on the root of the server to list alle the uploaded files in html format.
+*/
 void	Server::updateFilesHTML() {
 	char * buf = getcwd(NULL, FILENAME_MAX);
 	std::string cwd(buf);
@@ -103,7 +119,7 @@ void	Server::updateFilesHTML() {
 	execPath += " -T 'Your Files' -L 1 --noreport --charset utf-8 -o ";
 	execPath += cwd + root;
 	execPath += "/files.html";
-	// LOG_GREEN("path " << path);
+	//LOG_GREEN("path " << path);
 	if (!chdir(path.c_str())) // else irgendein error
 	{
 		if (system(execPath.c_str()) == -1)

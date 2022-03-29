@@ -24,6 +24,12 @@ void	remove_whitespace(std::string &line) {
 		line.erase(pos + 1);
 }
 
+
+/*
+This function reads all the data which is inside of the parantheses after the location variable.
+It checks for different parameter and puts them inside our location class.
+That we can access them later, and check for possible error handling.
+*/
 int	location_parser(std::ifstream &fin, Location &location) {
 	std::string line;
 	while (getline(fin, line)) {
@@ -49,6 +55,11 @@ int	location_parser(std::ifstream &fin, Location &location) {
 	return SUCCESS;
 }
 
+/*
+This function reads all the data which is inside of the parantheses after the server variable.
+It checks for different parameter and puts them inside our server class.
+That we can access them later, and check for possible error handling.
+*/
 int	server_parser(std::ifstream &fin, Server & server) {
 	// TODO add server to main data struct or something else
 	std::string line;
@@ -84,7 +95,10 @@ int	server_parser(std::ifstream &fin, Server & server) {
 	return SUCCESS; // TODO
 }
 
-/* alex new start */
+/*
+This function created the main structure of the server. (directorys)
+It then copies all the data into the root directory(default server)
+*/
 void	test_script_for_root_folder(Server *server) {
 
 	// only if cwd is /Users/akurz/42projects/projects/z_WEBSERV/server
@@ -106,8 +120,15 @@ void	test_script_for_root_folder(Server *server) {
 	server->updateFilesHTML();
 	LOG_GREEN("created: files.html");
 }
-/* alex new end */
 
+
+/*
+This function reads the input file line by line and deletes all the comments(#) and the whitespaces(\t ) out.
+If the parameter SERVER is found it will create a new server class and parse it into the server parser to
+extract the server data and write them into the newly created class.
+Then it will be configured (starting server/binding ports etc.) in the configure function.
+If there is a false line OR an empty file we exit with an error.
+*/
 int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 	std::string line;
 
@@ -130,6 +151,11 @@ int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 	return SUCCESS; // TODO
 }
 
+
+/*
+This function opens the config-file in an ifstream and then send it to the parser.
+If the config is not readable we exit with an error.
+*/
 int	read_config(std::string file, std::map<int, Server *> & servers) {
 	std::ifstream fin(file);
 	std::string input;
@@ -155,5 +181,5 @@ void	check_config(std::map<int, Server *> & servers) {
 		std::cout << "no server configured\n";
 		exit(EXIT_SUCCESS);
 	}
-	// TODO check for several servers listening on same port
+	// TODO check for several servers listening on same port //ALEX DID THIS I GUESS?
 }
