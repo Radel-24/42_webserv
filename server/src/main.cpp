@@ -100,6 +100,7 @@ void accepter(std::map<int, Server *> & servers)
 					requests[check_socket]->writeRequest();
 					FD_CLR(request.socket, &watching_write_sockets);
 					FD_SET(request.socket, &watching_read_sockets);
+					request.status = HEADER_READ;
 				}
 				if (request.status == DONE_READING || (request.status >= 200 && request.status < 600)) {
 					requests[check_socket]->writeRequest();

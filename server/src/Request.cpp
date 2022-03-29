@@ -157,7 +157,6 @@ void Request::detectCorrectServer(std::map<int, Server *> & servers) {
 void Request::checkRequest() {
 
 	if (requestKey == NIL) { status = 400; }
-	else if (location == NULL) { return ; }
 	else if (requestKey == GET) {
 		if (!findInVector(location->methods, std::string("GET")))
 			status = 405; // TODO compulsory method mustn't be deactivated: https://developer.mozilla.org/de/docs/Web/HTTP/Status
@@ -167,6 +166,13 @@ void Request::checkRequest() {
 			LOG_RED("error: POST not allowed");
 			status = 405;
 		}
+		else if (headerValues.find("Expect") != headerValues.end()) {
+			LOG_CYAN_INFO("expect found");
+			std::map<std::string, std::string>::iterator iter = headerValues.find("Expect");
+			if (iter->second == "100-continue")
+				status = 100;
+		}
+
 	}
 	else if (requestKey == PUT) {
 		if (!findInVector(location->methods, std::string("PUT")))
@@ -194,6 +200,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 		if (status == HEADER_READ) {
 			parseHeader(header);
 			checkHeaderValues();
+			printHeaderValues();
 			if (status >= 100)
 				return ;
 			detectCorrectServer(servers);
@@ -234,8 +241,13 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 }
 
 void	Request::writeRequest() {
-	if (status == 405) {
-		writeToSocket(socket, "HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
+	if (status >= 100 && status < 600) {
+		if (status == 405) {
+			writeToSocket(socket, "HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
+		}
+		if (status == 100) {
+			write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25);
+		}
 	}
 	else if (status == DONE_READING && getRequestKey() == POST) {
 		PostResponder pR(getHeader(), getBody(), socket, server);
