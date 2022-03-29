@@ -8,6 +8,7 @@
 
 #include "Server.hpp"
 #include "PostResponder.hpp"
+#include "utils.hpp"
 
 enum ReqKeys {
 	NIL,
@@ -25,7 +26,9 @@ enum Status {
 
 class	Request {
 	public:
+		int	status;
 		int									socket;
+		Server *							server;
 
 	private:
 		std::string							header;
@@ -35,8 +38,8 @@ class	Request {
 		ssize_t								bytes_read;
 		bool								header_read;
 		bool								body_read;
-		Server *							server;
 		std::string							path;
+		Location *							location;
 
 
 	private:
@@ -61,7 +64,9 @@ class	Request {
 
 		void	setRequestKey(unsigned int);
 
-		int	readRequest();
+		void	detectCorrectServer(std::map<int, Server *> & servers);
+
+		int	readRequest(std::map<int, Server *> & servers);
 		int writeRequest();
 
 		void	setType();
@@ -83,7 +88,7 @@ class	Request {
 
 		/* start alex new */
 		void								deleteResponder( void );
-		void								parseHeader( std::string header );
+		void								parseHeader(std::string header);
 		std::pair<std::string, std::string>	splitToken( std::string token );
 		std::string							&leftTrim( std::string &str, char c );
 		void								setHeaderValues( const std::pair<std::string, std::string> &pair );
@@ -94,6 +99,8 @@ class	Request {
 			return this->server;
 		}
 		int									checkHeaderValues( void );
+
+		int	checkRequest();
 
 		std::string							getHostName( void ) const {
 			std::map<std::string, std::string>::const_iterator	iter = headerValues.begin();

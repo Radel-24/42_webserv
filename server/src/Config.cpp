@@ -24,6 +24,12 @@ void	remove_whitespace(std::string &line) {
 		line.erase(pos + 1);
 }
 
+
+/*
+This function reads all the data which is inside of the parantheses after the location variable.
+It checks for different parameter and puts them inside our location class.
+That we can access them later, and check for possible error handling.
+*/
 int	location_parser(std::ifstream &fin, Location &location) {
 	std::string line;
 	while (getline(fin, line)) {
@@ -31,9 +37,8 @@ int	location_parser(std::ifstream &fin, Location &location) {
 		remove_whitespace(line);
 		if (line.find("}") != STR_END) { break; }
 		else if (size_t pos = is_parameter("root: ", line)) { location.root = line.substr(pos, STR_END); }
-		else if (size_t pos = is_parameter("cgi_extension: ", line)) { location.cgi_extension = line.substr(pos, STR_END); }
-		else if (size_t pos = is_parameter("cgi_path: ", line)) { location.cgi_path = line.substr(pos, STR_END); }
 		else if (size_t pos = is_parameter("default_file: ", line)) { location.default_file = line.substr(pos, STR_END); }
+		else if (size_t pos = is_parameter("client_max_body_size: ", line)) { location.client_max_body_size = atol(line.substr(pos).c_str()); }
 		else if (line.find("directory_listing: ") == 0) {
 			line = line.substr(strlen("directory_listing: "), std::string::npos);
 			if (line == "on") { location.directory_listing = true; }
@@ -41,27 +46,20 @@ int	location_parser(std::ifstream &fin, Location &location) {
 			else { return FAILURE; }
 		}
 		else if (size_t pos = is_parameter("methods: ", line)) { location.methods = stringSplit(", ", line.substr(pos, STR_END)); }
-		//else if (is_parameter("location ", line)) {
-		//	std::string var = "location ";
-		//	std::string path = line.substr(var.length(), line.find(" {") - var.length());
-		//	if (line.find("{") != line.length() - 1) {
-		//		std::cout << "Wrong formatting\n";
-		//		// TODO error handling or in calling function/
-		//		return FAILURE;
-		//	}
-		//	Location *sub_location = new Location(path);
-		//	location.sub_locations.insert(std::pair<std::string, Location*>(path, sub_location));
-		//	location_parser(fin, *sub_location);
+		//else {
+		//	std::cout << "Not a valid parameter in location scope\n";
+		//	// TODO error handling
+		//	exit(EXIT_SUCCESS);
 		//}
-		else {
-			std::cout << "Not a valid parameter in location scope\n";
-			// TODO error handling
-			exit(EXIT_SUCCESS);
-		}
 	}
 	return SUCCESS;
 }
 
+/*
+This function reads all the data which is inside of the parantheses after the server variable.
+It checks for different parameter and puts them inside our server class.
+That we can access them later, and check for possible error handling.
+*/
 int	server_parser(std::ifstream &fin, Server & server) {
 	// TODO add server to main data struct or something else
 	std::string line;
@@ -75,7 +73,9 @@ int	server_parser(std::ifstream &fin, Server & server) {
 		else if (size_t pos = is_parameter("root: ", line)) { server.root = line.substr(pos, STR_END); }
 		else if (size_t pos = is_parameter("upload: ", line)) { server.uploadPath = line.substr(pos, STR_END); }
 		else if (size_t pos = is_parameter("client_max_body_size: ", line)) { server.client_max_body_size = atoi(line.substr(pos).c_str()); }
-		else if (size_t pos = is_parameter("listen: ", line)) { server.port = atoi(line.substr(pos).c_str()); }
+		else if (size_t pos = is_parameter("cgi_extension: ", line)) { server.cgi_extension = line.substr(pos, STR_END); }
+		else if (size_t pos = is_parameter("cgi_path: ", line)) { server.cgi_path = line.substr(pos, STR_END); }
+		else if (size_t pos = is_parameter("listen: ", line)) { server.port = atol(line.substr(pos).c_str()); }
 		else if (is_parameter("location ", line)) {
 			std::string var = "location ";
 			std::string path = line.substr(var.length(), line.find(" {") - var.length());
@@ -91,11 +91,14 @@ int	server_parser(std::ifstream &fin, Server & server) {
 	}
 	LOG_PINK("server name: " << server.server_name);
 	LOG_PINK("server port: " << server.port);
-	LOG_PINK("server port: " << server.uploadPath);
+	LOG_PINK("server upload path: " << server.uploadPath);
 	return SUCCESS; // TODO
 }
 
-/* alex new start */
+/*
+This function created the main structure of the server. (directorys)
+It then copies all the data into the root directory(default server)
+*/
 void	test_script_for_root_folder(Server *server) {
 
 	// only if cwd is /Users/akurz/42projects/projects/z_WEBSERV/server
@@ -117,8 +120,15 @@ void	test_script_for_root_folder(Server *server) {
 	server->updateFilesHTML();
 	LOG_GREEN("created: files.html");
 }
-/* alex new end */
 
+
+/*
+This function reads the input file line by line and deletes all the comments(#) and the whitespaces(\t ) out.
+If the parameter SERVER is found it will create a new server class and parse it into the server parser to
+extract the server data and write them into the newly created class.
+Then it will be configured (starting server/binding ports etc.) in the configure function.
+If there is a false line OR an empty file we exit with an error.
+*/
 int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 	std::string line;
 
@@ -141,6 +151,11 @@ int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 	return SUCCESS; // TODO
 }
 
+
+/*
+This function opens the config-file in an ifstream and then send it to the parser.
+If the config is not readable we exit with an error.
+*/
 int	read_config(std::string file, std::map<int, Server *> & servers) {
 	std::ifstream fin(file);
 	std::string input;
@@ -166,5 +181,5 @@ void	check_config(std::map<int, Server *> & servers) {
 		std::cout << "no server configured\n";
 		exit(EXIT_SUCCESS);
 	}
-	// TODO check for several servers listening on same port
+	// TODO check for several servers listening on same port //ALEX DID THIS I GUESS?
 }

@@ -8,6 +8,7 @@ void	Request::init() {
 	bytes_read = 0;
 	header_read = false;
 	body_read = false;
+	location = NULL;
 }
 
 Request::Request() { init(); }
@@ -37,9 +38,10 @@ void	Request::appendHeader(std::string input) {
 	}
 }
 
-void	Request::changePath() {
+void	Request::changePath() { // TODO make hacking save when relative path is given in request
 	for (std::map<std::string, Location *>::reverse_iterator riter = server->locations.rbegin(); riter != server->locations.rend(); ++riter) {
 		if (path.find(riter->first) == 0) {
+			location = riter->second;
 			path = path.substr(riter->first.length(), std::string::npos);
 			path = riter->second->root + path;
 			// LOG_BLUE("after replace: |" << path << "|");
@@ -52,6 +54,11 @@ void	Request::changePath() {
 void	Request::setPath() {
 	size_t posBegin = header.find("/");
 	size_t posEnd = header.find_first_of(" \t", posBegin + 1);
+	if (posBegin == std::string::npos || posEnd == std::string::npos) { // TODO usually not needed, except when header is wrong
+		path = "";
+		LOG_RED_INFO("shit path not found");
+		return ;
+	}
 	path = header.substr(posBegin, posEnd - posBegin);
 	// LOG_BLUE("before replace: |" << path << "|");
 }
@@ -100,7 +107,7 @@ int	Request::checkHeaderValues( void )
 	return EXIT_SUCCESS;
 }
 
-void	Request::parseHeader( std::string header )
+void	Request::parseHeader(std::string header)
 {
 	std::string							delimiter = "\n";
 	size_t								pos = 0;
@@ -123,21 +130,72 @@ void	Request::parseHeader( std::string header )
 }
 /* END ALEX NEW */
 
-int	Request::readRequest() { // TODO check if request is allowed, otherwise return DECLINE
+
+/* if there is a server that has a fitting name to the request, the request hast to get forwarded to that server */
+/* else we use the default server, which is the first from the config file, that uses the same port */
+/* PORT HAS TO FIT AS WELL !!!!!!!!!!!!!!!!!!!!! */
+void Request::detectCorrectServer(std::map<int, Server *> & servers) {
+	std::map<int, Server *>::iterator	iter = servers.begin();
+	while (iter != servers.end()) {
+		if (iter->second->port == server->port && iter->second->server_name == getHostName()) {
+			server = iter->second;
+			return;
+		}
+		++iter;
+	}
+}
+/* end alex new */
+
+int Request::checkRequest() {
+
+	if (requestKey == NIL) { return DECLINE; }
+	else if (location == NULL) { return NIL; }
+	else if (requestKey == GET) {
+		if (!findInVector(location->methods, std::string("GET")))
+			return DECLINE;
+	}
+	else if (requestKey == POST) {
+		if (!findInVector(location->methods, std::string("POST"))) {
+			LOG_RED("error: POST not allowed");
+			return DECLINE;
+		}
+	}
+	else if (requestKey == PUT) {
+		if (!findInVector(location->methods, std::string("PUT")))
+			return DECLINE;
+	}
+	else if (requestKey == DELETE) {
+		if (!findInVector(location->methods, std::string("DELETE")))
+			return DECLINE;
+	}
+
+	if (location->client_max_body_size != -1 && checkBodySize() > location->client_max_body_size) {
+		LOG_RED("error: BODY TO BIG!");
+		return DECLINE;
+		// TODO give back some type of error page
+	}
+
+	return NIL;
+}
+
+int	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if request is allowed, otherwise return DECLINE
 	//server->updateFilesHTML(); // TODO put to uesful position
 	LOG_PINK_INFO("server name: " << getServer()->server_name);
 	LOG_PINK_INFO("sock: " << getServer()->sock);
 	if (!header_read) {
 		readHeader();
 		if (header_read) {
-			setType();
+			parseHeader(header);
+			detectCorrectServer(servers);
 			setPath();
 			changePath();
+			setType();
+			if (checkRequest() == DECLINE)
+				return DECLINE;
 			// LOG_RED_INFO(getRequestKey());
-			LOG_WHITE(getHeader());
+			//LOG_WHITE(getHeader());
 			// start new alex
 			// LOG_GREEN("START HEADER VALUES");
-			parseHeader(getHeader());
 			// printHeaderValues();
 			// LOG_GREEN("END HEADER VALUES");
 			LOG_BLUE("HEADER END ------------------------");
@@ -148,7 +206,7 @@ int	Request::readRequest() { // TODO check if request is allowed, otherwise retu
 			}
 		}
 	}
-	if (header_read && getRequestKey() == DELETE) {
+	else if (header_read && getRequestKey() == DELETE) {
 		return DONE;
 	}
 	else if (header_read && getRequestKey() == POST) {
@@ -165,13 +223,16 @@ int	Request::readRequest() { // TODO check if request is allowed, otherwise retu
 }
 
 int	Request::writeRequest() {
-	if (header_read && getRequestKey() == POST) {
+	if (status == DECLINE) {
+		writeToSocket(socket, "HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
+	}
+	else if (header_read && getRequestKey() == POST) {
 		PostResponder pR(getHeader(), getBody(), socket, server);
 	}
-	if (header_read && getRequestKey() == GET) {
+	else if (header_read && getRequestKey() == GET) {
 		responder();
 	}
-	if (header_read && getRequestKey() == DELETE) {
+	else if (header_read && getRequestKey() == DELETE) {
 		deleteResponder();
 	}
 	return DONE;
@@ -184,7 +245,7 @@ int	Request::checkBodySize(void) {
 	while(header[type_end] != '\n')
 		type_end++;
 	content_length = header.substr(type_start, type_end - type_start - 1); // TODO protect when content_lengt not written in header
-	return (std::stoi(content_length)); // TODO is std 11 function
+	return (std::atol(content_length.c_str()));
 }
 
 void	Request::appendBody(char *body_in, int size) {
@@ -198,8 +259,7 @@ void	Request::setRequestKey(unsigned int KeyIn) {
 
 void	Request::setType() {
 	// LOG_RED("find: " << header.find("DELETE"));
-	if (header.length() < 3) { setRequestKey(NIL); }
-	else if (header.find("GET") == 0 ) { setRequestKey(GET); }// if keyword not always at the beginning, us find("GET")
+	if (header.find("GET") == 0 ) { setRequestKey(GET); }// if keyword not always at the beginning, us find("GET")
 	else if (header.find("POST") == 0) { setRequestKey(POST); }
 	else if (header.find("PUT") == 0) { setRequestKey(PUT); }
 	else if (header.find("DELETE") == 0) { setRequestKey(DELETE);}
@@ -217,16 +277,22 @@ void Request::readHeader() {
 
 	if (checkHeaderRead()) {
 		header_read = true;
-	}
-	size_t	posHeaderEnd = header.find("\r\n\r\n");
-	if (posHeaderEnd != header.size() - 4) {
-		LOG_BLACK("takes body out of header");
-		body = header;
-		body.erase(0, posHeaderEnd + 4);
 
-		LOG_BLACK("body size " << body.size() << "check size " << checkBodySize());
-		if ((int)body.size() == checkBodySize()) {
-			body_read = true;
+		size_t	posHeaderEnd = header.find("\r\n\r\n");
+		if (posHeaderEnd != header.size() - 4) {
+			LOG_BLACK("takes body out of header; pos header end: " << posHeaderEnd);
+			body = header;
+			body.erase(0, posHeaderEnd + 4);
+			LOG_RED_INFO("header: " << header << "\nbody: " << body);
+
+			LOG_BLACK("body size " << body.size() << "check size " << checkBodySize());
+			if ((int)body.size() == checkBodySize()) {
+				body_read = true;
+				LOG_WHITE_INFO(header);
+			}
+		}
+		else {
+			LOG_BLACK_INFO("only header sent");
 		}
 	}
 }
@@ -236,15 +302,15 @@ void Request::readBody() {
 
 	int max_size = checkBodySize();
 	LOG_BLACK("body size: " << max_size);
-	if (max_size > server->client_max_body_size)
-	{
-		LOG_RED("error: BODY TO BIG!");
-		// give back some type of error page
+	if (max_size < 1) {
+		body_read = true;
+		return ;
 	}
+
 	char * read_body = NULL;
 	read_body = new char[max_size];
-	write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25); // much faster when sending huge files with curl // TODO only send when required
-	LOG_BLACK("bytes read before recv: " << bytes_read);
+	//write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25); // much faster when sending huge files with curl; not allowed without checking with select for write rights
+	LOG_YELLOW("bytes read before recv: " << bytes_read);
 	ssize_t tmp_bytes_read = recv(socket, read_body, max_size, 0);
 	if (tmp_bytes_read > 0) {
 		appendBody(read_body, tmp_bytes_read);
@@ -283,7 +349,7 @@ std::string	readFile( std::string filename ) {
 			std::replace(values.begin(),values.end(), '&', ' ');
 		}
 		execute = execute + binary + " " + values + " > out";
-		std::cout << execute << std::endl;
+		//std::cout << execute << std::endl;
 		system(execute.c_str());
 		return "EXEC";
 	}
@@ -345,7 +411,7 @@ void	Request::responder() {
 	{
 		file_content = readFile(path.substr(1, std::string::npos));
 		if (file_content.empty())
-			formatted = formatString("error: 404");
+			formatted = formatString("error: 404"); //TODO check if this is reached
 		else
 			formatted = formatString(file_content);
 	}
@@ -358,7 +424,7 @@ void	Request::responder() {
 		return;
 	}
 	formatted = formatString(file_content);
-	std::cout << formatted << std::endl;
+	//std::cout << formatted << std::endl;
 	write(socket, formatted.c_str(), formatted.length());
 }
 

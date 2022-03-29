@@ -2,6 +2,7 @@
 #include "PostResponder.hpp"
 void	Location::default_init() {
 	directory_listing = false;
+	client_max_body_size = -1;
 }
 
 Location::Location() {
@@ -13,6 +14,7 @@ Location::Location(std::string path) : path(path) { default_init(); }
 void	Server::default_init() {
 	port = 80;
 	backlog = 10;
+	client_max_body_size = -1;
 }
 
 //check if socket or connection has been properly established
@@ -29,16 +31,30 @@ Server::Server() {
 	default_init();
 }
 
+/*
+Setting up the server with the parameters from the class.
+socket = creates a network socket for tcp/ip connections
+g_address.sin_family = PF_INET == TCP/IP;
+g_address.sin_port = htons(port) == PORT to communicate over;
+g_address.sin_addr.s_addr = htonl(INADDR_ANY) == accept every IPv4 address;
+FD_ZERO = Clear all entries from the set. (sets them all to zero)
+FD_SET = Add fd to the set.
+fcntl = set the socket to nonblocking
+setsockopt = sets the socket to be reusable, so when the server crash we can instantly restart it
+bind = maps the socket to the corresponding port on the machine
+listen = allows connections to the port/socket and logs them in a backlog, NOW we can accept them
+test_connection checks if a function returns < 0 to see i there was an error.
+*/
 void	Server::configure( std::map<int, Server *> & servers ) {
 	int on = 1;
 	int tmp;
 
 	//Establish socket and test
 	// LOG_WHITE("DEBUG");
-	sock = socket(AF_INET, SOCK_STREAM, 0);
-	test_connection(sock);
+	sock = socket(PF_INET, SOCK_STREAM, 0);
+	test_connection(sock); // when failed, protect
 
-	g_address.sin_family = AF_INET;
+	g_address.sin_family = PF_INET;
 	g_address.sin_port = htons(port);
 	g_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
@@ -57,23 +73,21 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 	}
 	/* set reusable*/
 
-	/* start alex new */
-	// you can bind to a port only once, so we don't bin if there is alreadya server on the port
+	// you can bind to a port only once, so we don't bind if there is already a server on the port
 	/* BINDING SOCKET */
 	bool								skip_bind = false;
-	std::map<int, Server *>::iterator	iter = servers.begin();
-	while (iter != servers.end()) {
-		if (iter->second->port == this->port)
+	for (std::map<int, Server *>::iterator	iter = servers.begin(); iter != servers.end(); ++iter) {
+		if (iter->second->port == this->port) {
 			skip_bind = true;
-		++iter;
+			break;
+		}
 	}
 	if (!skip_bind)
 	{
 		connection = bind(sock, (struct sockaddr *) &g_address, sizeof(g_address));
-		test_connection(connection);
+		test_connection(connection); // TODO still needed?
 	}
 	/* BINDING SOCKET */
-	/* end alex new */
 
 
 	/* LISTENING SOCKET */
@@ -81,9 +95,19 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 	test_connection(listening);
 	/* LISTENING SOCKET */
 	// updateFilesHTML();
+
+	//check for main client_max_body_size and adapt all location client_max_body_size with this value
+	if (client_max_body_size != -1) {
+		for (std::map<std::string, Location*>::iterator location = locations.begin(); location != locations.end(); ++location) {
+			if (location->second->client_max_body_size == -1 || client_max_body_size < location->second->client_max_body_size)
+				location->second->client_max_body_size = client_max_body_size;
+		}
+	}
 }
 
-
+/*
+This function runs the tree command on the root of the server to list alle the uploaded files in html format.
+*/
 void	Server::updateFilesHTML() {
 	char * buf = getcwd(NULL, FILENAME_MAX);
 	std::string cwd(buf);
@@ -95,7 +119,7 @@ void	Server::updateFilesHTML() {
 	execPath += " -T 'Your Files' -L 1 --noreport --charset utf-8 -o ";
 	execPath += cwd + root;
 	execPath += "/files.html";
-	// LOG_GREEN("path " << path);
+	//LOG_GREEN("path " << path);
 	if (!chdir(path.c_str())) // else irgendein error
 	{
 		if (system(execPath.c_str()) == -1)
