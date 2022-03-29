@@ -411,7 +411,7 @@ void	Request::responder() {
 	{
 		file_content = readFile(path.substr(1, std::string::npos));
 		if (file_content.empty())
-			formatted = formatString("error: 404");
+			formatted = formatString("error: 404"); //TODO check if this is reached
 		else
 			formatted = formatString(file_content);
 	}

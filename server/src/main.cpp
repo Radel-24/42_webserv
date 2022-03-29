@@ -41,7 +41,7 @@ void accepter(std::map<int, Server *> & servers)
 
 	for (std::map<int, Server *>::iterator iter = servers.begin(); iter != servers.end(); ++iter) {
 		LOG_GREEN("Server " << iter->second->sock << " added to waching read sockets");
-		FD_SET(iter->first, &watching_read_sockets);
+		FD_SET(iter->second->sock, &watching_read_sockets);
 	}
 
 

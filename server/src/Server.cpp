@@ -38,7 +38,7 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 	//Establish socket and test
 	// LOG_WHITE("DEBUG");
 	sock = socket(PF_INET, SOCK_STREAM, 0);
-	test_connection(sock); // TODO still needed?
+	test_connection(sock); // when failed, protect
 
 	g_address.sin_family = PF_INET;
 	g_address.sin_port = htons(port);
