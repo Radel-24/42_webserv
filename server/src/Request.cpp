@@ -10,6 +10,7 @@ void	Request::init() {
 	location = NULL;
 	status = READING_HEADER;
 	requestKey = NIL;
+	chunk_size = -1;
 }
 
 Request::Request() { init(); }
@@ -230,11 +231,11 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 		if (headerValues.find("Transfer-Encoding")->second == "chunked") {
 			//readBodyChunked();
 			LOG_GREEN_INFO("READ BODY CHUNKED");
-			readBody();
+			readBodyChunked();
 		}
 		else {
 			LOG_GREEN_INFO("READ BODY NOT CHUNKED");
-			readBody();
+			readBodyLength();
 		}
 		if (status == DONE_READING) {
 			return ;
@@ -276,8 +277,7 @@ int	Request::checkBodySize(void) {
 	std::string content_length;
 	size_t	type_start = header.find("Content-Length: ") + strlen("Content-Length: ");
 	size_t	type_end = type_start;
-	if (requestKey == PUT)
-		return 1010;
+
 	while(header[type_end] != '\n')
 		type_end++;
 	content_length = header.substr(type_start, type_end - type_start - 1); // TODO protect when content_lengt not written in header
@@ -333,7 +333,39 @@ void Request::readHeader() {
 	}
 }
 
-void Request::readBody() {
+void	Request::readBodyChunked() {
+	LOG_CYAN(std::endl << "BODY START ----------------------");
+
+	int buffer_size;
+	if (chunk_size == -1)
+		buffer_size = 30;
+	else
+		buffer_size = chunk_size;
+
+	char * read_body = NULL;
+	read_body = new char[buffer_size];
+	ssize_t tmp_bytes_read = recv(socket, read_body, buffer_size, 0);
+	//if ()
+	//std::string	sizeInfo =
+	if (tmp_bytes_read > 0) {
+		appendBody(read_body, tmp_bytes_read);
+		bytes_read += tmp_bytes_read;
+	}
+	else {
+		LOG_RED("weird shit going on with select");
+	}
+	LOG_BLACK("bytes read after recv: " << bytes_read);
+	if ((int)body.size() == checkBodySize()) {
+		status = DONE_READING;
+		//std::cout << getBody() << std::endl;
+		LOG_BLACK("body read true" << body.size());
+	}
+	delete read_body;
+	LOG_BLUE_INFO(body);
+	LOG_CYAN(std::endl << "BODY END ------------------------");
+}
+
+void Request::readBodyLength() {
 	LOG_CYAN(std::endl << "BODY START ----------------------");
 
 	int max_size = checkBodySize();
@@ -345,8 +377,6 @@ void Request::readBody() {
 
 	char * read_body = NULL;
 	read_body = new char[max_size];
-	//write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25); // much faster when sending huge files with curl; not allowed without checking with select for write rights
-	LOG_YELLOW("bytes read before recv: " << bytes_read);
 	ssize_t tmp_bytes_read = recv(socket, read_body, max_size, 0);
 	if (tmp_bytes_read > 0) {
 		appendBody(read_body, tmp_bytes_read);
@@ -362,7 +392,7 @@ void Request::readBody() {
 		LOG_BLACK("body read true" << body.size());
 	}
 	delete read_body;
-	LOG_BLUE_INFO(ToHex(body, false));
+	LOG_BLUE_INFO(body);
 	LOG_CYAN(std::endl << "BODY END ------------------------");
 }
 

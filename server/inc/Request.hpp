@@ -42,6 +42,7 @@ class	Request {
 		ssize_t								bytes_read;
 		std::string							path;
 		Location *							location;
+		int		chunk_size;
 
 
 	private:
@@ -75,7 +76,8 @@ class	Request {
 		void	changePath();
 		void	setPath();
 		void	readHeader();
-		void	readBody();
+		void	readBodyLength();
+		void	readBodyChunked();
 
 		void	responder();
 		std::string	getFilename();
