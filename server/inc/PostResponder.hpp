@@ -40,7 +40,11 @@ class PostResponder {
 		int			countBoundaries( void );
 		void		uploadFiles( void );
 		void		createUploadFile( std::string filename, std::string content );
-		void	writeResponse(std::string response);
+		void		writeResponse(std::string response);
+		int			checkBodySizeChuncked();
+		int			checkBodyStart();
+		int			extractStartChunk();
+		int			extractEndChunk();
 
 	public:
 		PostResponder( std::string header, std::string body, int new_socket, Server * server );
