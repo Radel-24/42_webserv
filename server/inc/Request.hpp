@@ -83,7 +83,7 @@ class	Request {
 		void	printHeaderValues() {
 			std::map<std::string, std::string>::iterator iter = headerValues.begin();
 			while (iter != headerValues.end()) {
-				std::cout << iter->first << " | " << iter->second << "\n";
+				LOG_WHITE(iter->first << " | " << iter->second);
 				++iter;
 			}
 		}

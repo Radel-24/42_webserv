@@ -102,6 +102,7 @@ std::pair<std::string, std::string>	Request::splitToken( std::string token )
 
 void	Request::checkHeaderValues( void )
 {
+	LOG_GREEN_INFO("request key: " << requestKey);
 	if (headerValues.find("Host") == headerValues.end()) {
 		status = 400; // TODO don't know error code
 		LOG_RED("error: request is missing host");
@@ -194,6 +195,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 	if (status == READING_HEADER) {
 		readHeader();
 		if (status == HEADER_READ) {
+			LOG_GREEN_INFO("where is this shit???????????????????????");
 			parseHeader(header);
 			checkHeaderValues();
 			printHeaderValues();
@@ -225,7 +227,15 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 		return ;
 	}
 	else if (status == HEADER_READ && (getRequestKey() == POST || getRequestKey() == PUT)) {
-		readBody();
+		if (headerValues.find("Transfer-Encoding")->second == "chunked") {
+			//readBodyChunked();
+			LOG_GREEN_INFO("READ BODY CHUNKED");
+			readBody();
+		}
+		else {
+			LOG_GREEN_INFO("READ BODY NOT CHUNKED");
+			readBody();
+		}
 		if (status == DONE_READING) {
 			return ;
 		}
@@ -266,6 +276,8 @@ int	Request::checkBodySize(void) {
 	std::string content_length;
 	size_t	type_start = header.find("Content-Length: ") + strlen("Content-Length: ");
 	size_t	type_end = type_start;
+	if (requestKey == PUT)
+		return 1010;
 	while(header[type_end] != '\n')
 		type_end++;
 	content_length = header.substr(type_start, type_end - type_start - 1); // TODO protect when content_lengt not written in header
@@ -347,10 +359,10 @@ void Request::readBody() {
 	if ((int)body.size() == checkBodySize()) {
 		status = DONE_READING;
 		//std::cout << getBody() << std::endl;
-		LOG_BLACK("body read true");
+		LOG_BLACK("body read true" << body.size());
 	}
 	delete read_body;
-
+	LOG_BLUE_INFO(ToHex(body, false));
 	LOG_CYAN(std::endl << "BODY END ------------------------");
 }
 
