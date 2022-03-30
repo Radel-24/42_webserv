@@ -7,7 +7,7 @@ void	PostResponder::createUploadFile( std::string filename, std::string content 
 	std::string cwd(buf);
 	std::string path = cwd + server->root + server->uploadPath + "/" + filename;
 	LOG_YELLOW("depug upload path: " << path);
-	std::ofstream	file(path);
+	std::ofstream	file(path, std::ios_base::app);
 	if (file.is_open()) {
 		file << content; // else error
 		// LOG_YELLOW("upload file is opened");
@@ -162,15 +162,16 @@ int	PostResponder::checkBodyStart(void) {
 }
 
 int	PostResponder::extractStartChunk(void) {
+	std::string content_length_in_hex;
 	size_t	type_start = _body.find("\r\n") + 2;
-	_body = _body.substr(0, type_start);
-	LOG_CYAN(type_start);
-	return (type_start);
+	content_length_in_hex = _body.substr(0, type_start);
+	//LOG_RED(content_length_in_hex);
+	return (content_length_in_hex.length());
 }
 
 int	PostResponder::extractEndChunk(void) {
-	size_t	type_end = _body.find("\r\n");
-	LOG_YELLOW(type_end);
+	size_t	type_end = checkBodySizeChuncked() + extractStartChunk();
+	//LOG_YELLOW(type_end);
 	return (type_end);
 }
 
@@ -181,15 +182,18 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 		//TO-DO create a loop which takes the hexvalue-transform it to and int and then read the size
 		//if there is no \r\n\r\n read the next value until \r\n and loop over the body to created the files!
 		LOG_YELLOW("chunked body!!!!");
-		int i = 0;
 		int start;
 		int end;
 		while (body.find("\r\n\r\n") != std::string::npos)
 		{
 			start = extractStartChunk();
+			//LOG_RED(start);
 			end = extractEndChunk();
-			createUploadFile("Felix" + std::to_string(i), body.substr(start, end));
-			body = body.substr(end,body.length());
+			//LOG_RED(end);
+			createUploadFile("Felix", body.substr(start, end));
+			LOG_BLACK(body);
+			body = body.substr(end + 2,body.length());
+			LOG_BLACK(body);
 			_body = body;
 		}
 		writeToSocket(new_socket, "HTTP/1.1 201 Created\r\n\r\n");
