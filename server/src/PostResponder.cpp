@@ -157,7 +157,7 @@ int	PostResponder::checkBodyStart(void) {
 	std::string content_length_in_hex;
 	size_t	type_start = _body.find("\r\n");
 	content_length_in_hex = _body.substr(0, type_start);
-	LOG_RED(content_length_in_hex);
+	//LOG_RED(content_length_in_hex);
 	return (content_length_in_hex.length());
 }
 
@@ -170,7 +170,7 @@ int	PostResponder::extractStartChunk(void) {
 }
 
 int	PostResponder::extractEndChunk(void) {
-	size_t	type_end = checkBodySizeChuncked() + extractStartChunk();
+	size_t	type_end = checkBodySizeChuncked();
 	//LOG_YELLOW(type_end);
 	return (type_end);
 }
@@ -179,8 +179,7 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 {
 	if (header.find("Transfer-Encoding: chunked") != std::string::npos)
 	{
-		//TO-DO create a loop which takes the hexvalue-transform it to and int and then read the size
-		//if there is no \r\n\r\n read the next value until \r\n and loop over the body to created the files!
+		//TO-DO create the right file name, and create new file per reuest atm im appending it
 		LOG_YELLOW("chunked body!!!!");
 		int start;
 		int end;
@@ -190,10 +189,12 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 			//LOG_RED(start);
 			end = extractEndChunk();
 			//LOG_RED(end);
+			if (end == 3)
+				break;
 			createUploadFile("Felix", body.substr(start, end));
-			LOG_BLACK(body);
-			body = body.substr(end + 2,body.length());
-			LOG_BLACK(body);
+			//LOG_BLACK(body);
+			body = body.substr(end + 2 + extractStartChunk(),body.length());
+			//LOG_BLACK(body);
 			_body = body;
 		}
 		writeToSocket(new_socket, "HTTP/1.1 201 Created\r\n\r\n");
