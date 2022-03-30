@@ -103,6 +103,7 @@ class	Request {
 		void									checkHeaderValues( void );
 
 		void	checkRequest();
+		std::string	readFile( std::string filename );
 
 		std::string							getHostName( void ) const {
 			std::map<std::string, std::string>::const_iterator	iter = headerValues.begin();

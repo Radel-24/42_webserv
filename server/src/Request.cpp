@@ -1,6 +1,7 @@
 #include "Request.hpp"
 #include "PostResponder.hpp"
 
+#include <sys/stat.h>
 
 void	Request::init() {
 	header = "";
@@ -8,6 +9,7 @@ void	Request::init() {
 	bytes_read = 0;
 	location = NULL;
 	status = READING_HEADER;
+	requestKey = NIL;
 }
 
 Request::Request() { init(); }
@@ -40,9 +42,19 @@ void	Request::appendHeader(std::string input) {
 void	Request::changePath() { // TODO make hacking save when relative path is given in request
 	for (std::map<std::string, Location *>::reverse_iterator riter = server->locations.rbegin(); riter != server->locations.rend(); ++riter) {
 		if (path.find(riter->first) == 0) {
+			LOG_CYAN_INFO("path: " << path << " riter first " << riter->first);
 			location = riter->second;
+			LOG_CYAN_INFO("root: " << riter->second->root);
+			LOG_CYAN_INFO("path: " << path);
 			path = path.substr(riter->first.length(), std::string::npos);
 			path = riter->second->root + path;
+			LOG_CYAN_INFO("modified path: " << path);
+			struct stat path_stat; // TODO, I don't think this is allowed
+			stat(path.c_str(), &path_stat);
+			if (S_ISDIR(path_stat.st_mode)) {
+				path += "/" + location->default_file;
+				LOG_CYAN_INFO("default file request: " << path);
+			}
 			// LOG_BLUE("after replace: |" << path << "|");
 			break ;
 		}
@@ -87,25 +99,9 @@ std::pair<std::string, std::string>	Request::splitToken( std::string token )
 	return std::make_pair(key, value);
 }
 
-/* currently only checking if host is included */
+
 void	Request::checkHeaderValues( void )
 {
-	//bool											flag = false;
-	//std::map<std::string, std::string>::iterator	iter = headerValues.begin();
-
-	//while (iter != headerValues.end()) {
-	//	if (iter->first == "Host")
-	//		flag = true;
-	//	++iter;
-	//}
-	//if (flag == false)
-	//{
-	//	LOG_RED("error: request is missing host");
-	//	return EXIT_FAILURE;
-	//}
-	//return EXIT_SUCCESS;
-
-
 	if (headerValues.find("Host") == headerValues.end()) {
 		status = 400; // TODO don't know error code
 		LOG_RED("error: request is missing host");
@@ -156,7 +152,7 @@ void Request::detectCorrectServer(std::map<int, Server *> & servers) {
 
 void Request::checkRequest() {
 
-	if (requestKey == NIL) { status = 400; }
+	if (requestKey == NIL) { status = 405; }
 	else if (requestKey == GET) {
 		if (!findInVector(location->methods, std::string("GET")))
 			status = 405; // TODO compulsory method mustn't be deactivated: https://developer.mozilla.org/de/docs/Web/HTTP/Status
@@ -228,7 +224,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 		status = DONE_READING;
 		return ;
 	}
-	else if (status == HEADER_READ && getRequestKey() == POST) {
+	else if (status == HEADER_READ && (getRequestKey() == POST || getRequestKey() == PUT)) {
 		readBody();
 		if (status == DONE_READING) {
 			return ;
@@ -238,18 +234,23 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 		status = DONE_READING;
 		return ;
 	}
+	//if (status == HEADER_READ && getRequestKey() == PUT) {
+	//	status = DONE_READING;
+	//	return ;
+	//}
 }
 
 void	Request::writeRequest() {
 	if (status >= 100 && status < 600) {
 		if (status == 405) {
+			LOG_RED_INFO("405 error sent back");
 			writeToSocket(socket, "HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
 		}
 		if (status == 100) {
 			write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25);
 		}
 	}
-	else if (status == DONE_READING && getRequestKey() == POST) {
+	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
 		PostResponder pR(getHeader(), getBody(), socket, server);
 	}
 	else if (status == DONE_READING && getRequestKey() == GET) {
@@ -281,7 +282,7 @@ void	Request::setRequestKey(unsigned int KeyIn) {
 }
 
 void	Request::setType() {
-	// LOG_RED("find: " << header.find("DELETE"));
+	 LOG_RED_INFO("find: " << header);
 	if (header.find("GET") == 0 ) { setRequestKey(GET); }// if keyword not always at the beginning, us find("GET")
 	else if (header.find("POST") == 0) { setRequestKey(POST); }
 	else if (header.find("PUT") == 0) { setRequestKey(PUT); }
@@ -355,7 +356,7 @@ void Request::readBody() {
 
 
 // TODO put following 2 functions into utils file
-std::string	readFile( std::string filename ) {
+std::string	Request::readFile( std::string filename ) {
 	std::ifstream	newFile;
 	std::string		ret;
 	std::string		binary = "/Users/fharing/42/webserv/server/";
@@ -377,9 +378,15 @@ std::string	readFile( std::string filename ) {
 		return "EXEC";
 	}
 
-	newFile.open(filename, std::ios::in);
-	if (!newFile)
+	LOG_CYAN_INFO("trying to open: " << filename);
+	if (open(filename.c_str(), std::ios::in) == -1) {
+		status = 404;
 		return "";
+	}
+	newFile.open(filename, std::ios::in);
+	if (!newFile){
+		return "";
+	}
 	while (!newFile.eof())
 	{
 		newFile >> std::noskipws >> c;
@@ -398,6 +405,7 @@ std::string	formatString( std::string file_content ) {
 	length = std::to_string(file_content.length()) + "\n\n";
 	full_header = header.append(length);
 	ret = full_header.append(file_content);
+	LOG_RED_INFO("response: " << ret);
 	return ret;
 }
 
@@ -425,6 +433,18 @@ void	Request::responder() {
 	std::string	file_content;
 	std::string	formatted;
 
+	LOG_PINK_INFO("test:	" << path);
+	struct stat path_stat; // TODO, I don't think this is allowed
+	std::string	temp = "." + path;
+	stat(temp.c_str(), &path_stat);
+	if (S_ISDIR(path_stat.st_mode)) {
+		path += "/" + location->default_file;
+		LOG_CYAN_INFO("default dir request: " << path);
+	}
+	if (S_ISREG(path_stat.st_mode)) {
+		//path += "/" + location->default_file;
+		LOG_CYAN_INFO("default file request: " << path);
+	}
 	if (path == (server->root + "/"))
 	{
 		file_content = readFile( "." + server->root + "/index.html");
@@ -433,8 +453,14 @@ void	Request::responder() {
 	else
 	{
 		file_content = readFile(path.substr(1, std::string::npos));
-		if (file_content.empty())
+		if (status == 404){
+			LOG_RED_INFO("404 gets sent");
+			writeToSocket(socket, "HTTP/1.1 404 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
+			return ;
+		}
+		if (file_content.empty()) {
 			formatted = formatString("error: 404"); //TODO check if this is reached
+		}
 		else
 			formatted = formatString(file_content);
 	}
