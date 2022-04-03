@@ -10,6 +10,9 @@
 #include "PostResponder.hpp"
 #include "utils.hpp"
 
+class Server;
+class PostResponder;
+
 enum ReqKeys {
 	NIL,
 	GET,
@@ -33,16 +36,18 @@ class	Request {
 		int	status;
 		int									socket;
 		Server *							server;
+		bool	cgi_request;
+		std::map<std::string, std::string>	headerValues;
+		std::string							body;
+		std::string							header;
+
 
 	private:
-		std::string							header;
-		std::string							body;
-		std::map<std::string, std::string>	headerValues;
 		unsigned int						requestKey;
 		ssize_t								bytes_read;
 		std::string							path;
 		Location *							location;
-		int		chunk_size;
+		std::string	chunk;
 
 
 	private:
@@ -59,7 +64,7 @@ class	Request {
 		int			checkBodySize(void);
 
 		void	appendHeader(std::string input);
-		void	appendBody(char *, int);
+		void	appendBody( char *, int);
 		// void	setHeaderValues(std::pair<std::string, std::string> pair);
 
 		//void	clearBody();
@@ -78,6 +83,10 @@ class	Request {
 		void	readHeader();
 		void	readBodyLength();
 		void	readBodyChunked();
+
+		int	checkBodySizeChunk();
+		int	chunkSize();
+
 
 		void	responder();
 		std::string	getFilename();
@@ -120,3 +129,5 @@ class	Request {
 		/* end alex new */
 
 };
+
+

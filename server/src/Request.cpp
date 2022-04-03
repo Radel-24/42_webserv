@@ -10,7 +10,7 @@ void	Request::init() {
 	location = NULL;
 	status = READING_HEADER;
 	requestKey = NIL;
-	chunk_size = -1;
+	cgi_request = false;
 }
 
 Request::Request() { init(); }
@@ -72,6 +72,12 @@ void	Request::setPath() {
 		return ;
 	}
 	path = header.substr(posBegin, posEnd - posBegin);
+	LOG_GREEN_INFO("path: |" << path << "|");
+	LOG_GREEN_INFO("find: " << path.find_last_of(server->cgi_extension));
+	LOG_GREEN_INFO("length path: " << path.length() << " cgi Length " << server->cgi_extension.length());
+	if (path.find_last_of(server->cgi_extension) == (path.length() - 1)) {
+		cgi_request = true;
+	}
 	// LOG_BLUE("before replace: |" << path << "|");
 }
 
@@ -190,13 +196,12 @@ void Request::checkRequest() {
 
 void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if request is allowed, otherwise return DECLINE
 	//server->updateFilesHTML(); // TODO put to uesful position
-	LOG_PINK_INFO("server name: " << getServer()->server_name);
-	LOG_PINK_INFO("sock: " << getServer()->sock);
-	LOG_RED_INFO("request status " << status << " request key " << requestKey);
+	//LOG_PINK_INFO("server name: " << getServer()->server_name);
+	//LOG_PINK_INFO("sock: " << getServer()->sock);
+	//LOG_RED_INFO("request status " << status << " request key " << requestKey);
 	if (status == READING_HEADER) {
 		readHeader();
 		if (status == HEADER_READ) {
-			LOG_GREEN_INFO("where is this shit???????????????????????");
 			parseHeader(header);
 			checkHeaderValues();
 			printHeaderValues();
@@ -230,11 +235,11 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 	else if (status == HEADER_READ && (getRequestKey() == POST || getRequestKey() == PUT)) {
 		if (headerValues.find("Transfer-Encoding")->second == "chunked") {
 			//readBodyChunked();
-			LOG_GREEN_INFO("READ BODY CHUNKED");
+			//LOG_GREEN_INFO("READ BODY CHUNKED");
 			readBodyChunked();
 		}
 		else {
-			LOG_GREEN_INFO("READ BODY NOT CHUNKED");
+			LOG_GREEN_INFO("READ BODY LENGTH");
 			readBodyLength();
 		}
 		if (status == DONE_READING) {
@@ -252,17 +257,12 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 }
 
 void	Request::writeRequest() {
+	//LOG_RED_INFO("request status " << status);
 	if (status >= 100 && status < 600) {
-		if (status == 405) {
-			LOG_RED_INFO("405 error sent back");
-			writeToSocket(socket, "HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
-		}
-		if (status == 100) {
-			write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25);
-		}
+		writeStatus(status, socket);
 	}
 	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
-		PostResponder pR(getHeader(), getBody(), socket, server);
+		PostResponder pR(*this);
 	}
 	else if (status == DONE_READING && getRequestKey() == GET) {
 		responder();
@@ -334,13 +334,11 @@ void Request::readHeader() {
 }
 
 void	Request::readBodyChunked() {
-	LOG_CYAN(std::endl << "BODY START ----------------------");
-
-	int buffer_size;
-	if (chunk_size == -1)
-		buffer_size = 4096;
-	else
-		buffer_size = chunk_size;
+	int buffer_size = 4096;
+	//if (chunk_size == -1)
+	//	buffer_size = 4096;
+	//else
+	//	buffer_size = chunk_size;
 	char * read_body = NULL;
 	read_body = new char[buffer_size];
 	ssize_t tmp_bytes_read = recv(socket, read_body, buffer_size, 0);
@@ -353,15 +351,15 @@ void	Request::readBodyChunked() {
 	else {
 		LOG_RED("weird shit going on with select");
 	}
-	LOG_BLACK("bytes read after recv: " << bytes_read);
+	//LOG_BLACK("bytes read after recv: " << bytes_read);
 	if (body.find("\r\n\r\n") != std::string::npos) {
 		status = DONE_READING;
 		//std::cout << getBody() << std::endl;
-		LOG_BLACK("body read true" << body.size());
+		//LOG_BLACK("body read true" << body.size());
 	}
 	delete read_body;
 	//LOG_BLUE_INFO(body);
-	LOG_CYAN(std::endl << "BODY END ------------------------");
+	//LOG_CYAN(std::endl << "BODY END ------------------------");
 }
 
 void Request::readBodyLength() {
@@ -382,9 +380,10 @@ void Request::readBodyLength() {
 		bytes_read += tmp_bytes_read;
 	}
 	else {
-		LOG_YELLOW("weird shit going on with select");
+		LOG_YELLOW("weird shit going on with select, socket: " << socket);
 	}
 	LOG_BLACK("bytes read after recv: " << bytes_read);
+	LOG_BLACK("body size " << body.size());
 	if ((int)body.size() == checkBodySize()) {
 		status = DONE_READING;
 		//std::cout << getBody() << std::endl;

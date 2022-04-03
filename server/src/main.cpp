@@ -51,9 +51,10 @@ void accepter(std::map<int, Server *> & servers)
 		fd_set write_sockets = watching_write_sockets;
 
 		std::cout << std::endl;
-		LOG_YELLOW("before select ---------------------");
 		int amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, NULL);
-		LOG_YELLOW("after select: amount ready socks: " << amount_ready_socks);
+
+		LOG("after select");
+
 		if (amount_ready_socks < 0)
 		{
 			perror("select error");
@@ -83,7 +84,8 @@ void accepter(std::map<int, Server *> & servers)
 					// LOG_RED(request.getServer()->port);
 					// request.printHeaderValues();
 					/* end alex new */
-					LOG_RED_INFO("request status: " << request.status);
+
+					//LOG_RED_INFO("request status: " << request.status);
 
 					if (request.status >= 100 || request.status == DONE_READING) {
 						FD_CLR(request.socket, &watching_read_sockets);
@@ -105,7 +107,7 @@ void accepter(std::map<int, Server *> & servers)
 				if (request.status == DONE_READING || (request.status >= 200 && request.status < 600)) {
 					requests[check_socket]->writeRequest();
 					FD_CLR(request.socket, &watching_write_sockets);
-					close(request.socket);
+					close(request.socket); // TODO close socket in Request destructor
 					delete &request;
 					requests.erase(requests.find(check_socket));
 					LOG_RED("request removed from map");
@@ -137,3 +139,5 @@ int	main(int argc, char ** argv)
 
 	return 0;
 }
+
+// TODO check file sizes after put, maybe clearing file at first call and then appending

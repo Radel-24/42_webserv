@@ -1,12 +1,27 @@
 #include "PostResponder.hpp"
 std::string ToHex(const std::string & s, bool upper_case /* = true */);
 
+void	PostResponder::emptyUploadFile( std::string filename )
+{
+	char * buf = getcwd(NULL, FILENAME_MAX);
+	std::string cwd(buf);
+	std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
+	//LOG_YELLOW("depug upload path: " << path);
+	std::ofstream	file(path, std::ios_base::out);
+	if (file.is_open()) {
+		file << ""; // else error
+		// LOG_YELLOW("upload file is opened");
+	}
+	//std::cout << "HEX\n" << ToHex(content, 0) << "\n";
+	file.close();
+}
+
 void	PostResponder::createUploadFile( std::string filename, std::string content )
 {
 	char * buf = getcwd(NULL, FILENAME_MAX);
 	std::string cwd(buf);
-	std::string path = cwd + server->root + server->uploadPath + "/" + filename;
-	LOG_YELLOW("depug upload path: " << path);
+	std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
+	//LOG_YELLOW("depug upload path: " << path);
 	std::ofstream	file(path, std::ios_base::app);
 	if (file.is_open()) {
 		file << content; // else error
@@ -31,14 +46,14 @@ void	PostResponder::uploadFiles( void )
 
 	while (_numOfBoundaries > 1)
 	{
-		pos = _body.find(_boundary, pos2 + 1) + _boundary.length() + 2;
-		pos2 = _body.find(_boundary, pos + 1);
-		while (_body[--pos2] == '-')
+		pos = request.body.find(_boundary, pos2 + 1) + _boundary.length() + 2;
+		pos2 = request.body.find(_boundary, pos + 1);
+		while (request.body[--pos2] == '-')
 			continue ;
 		pos2 -= 1;
 
 
-		cutBody = _body.substr(pos, pos2 - pos);
+		cutBody = request.body.substr(pos, pos2 - pos);
 
 
 		size_t	file_start = cutBody.find("filename=") + strlen("filename=") + 1;
@@ -75,24 +90,24 @@ void	PostResponder::uploadFiles( void )
 		_numOfBoundaries--;
 
 		std::string fileExtension = filename.substr(filename.find_last_of(".") + 1, std::string::npos);
-		if (fileExtension == server->cgi_extension) {
+		if (fileExtension == request.server->cgi_extension) {
 			LOG_CYAN_INFO("this should be processed with cgi");
-			std::string executionString = server->cgi_path + " " + "./cgi/cgi_tester";
+			std::string executionString = request.server->cgi_path + " " + "./cgi/cgi_tester";
 			system(executionString.c_str());
 			return ;
 		}
 	}
-	server->updateFilesHTML();
+	request.server->updateFilesHTML();
 }
 
 int	PostResponder::countBoundaries( void )
 {
 	size_t	count = 0;
-	size_t	pos = _body.find(_boundary, 0);
+	size_t	pos = request.body.find(_boundary, 0);
 
 	while(pos != std::string::npos)
 	{
-		pos = _body.find(_boundary, pos + 1);
+		pos = request.body.find(_boundary, pos + 1);
 		count++;
 	}
 	return count;
@@ -100,71 +115,39 @@ int	PostResponder::countBoundaries( void )
 
 std::string	PostResponder::extractBoundary( void )
 {
-	size_t	start = _header.find("boundary=") + strlen("boundary=");
+	size_t	start = request.header.find("boundary=") + strlen("boundary=");
 	if (start == std::string::npos)
 		return "error";
 
-	while (!isalpha(_header[start]) && !isdigit(_header[start]))
+	while (!isalpha(request.header[start]) && !isdigit(request.header[start]))
 		start++;
 
 	size_t end = start;
-	while ((isalpha(_header[end]) || isdigit(_header[end])) && _header[end])
+	while ((isalpha(request.header[end]) || isdigit(request.header[end])) && request.header[end])
 		end++;
-	return _header.substr(start, end - start);
-}
-
-int hex_to_decimal(std::string hex)
-{
-	std::transform(hex.begin(), hex.end(),hex.begin(), ::toupper);
-	int len = hex.size();
-	// Initializing base value to 1, i.e 16^0
-	int base = 1;
-	int dec_val = 0;
-	// Extracting characters as digits from last
-	// character
-	for (int i = len - 1; i >= 0; i--) {
-		// if character lies in '0'-'9', converting
-		// it to integral 0-9 by subtracting 48 from
-		// ASCII value
-		if (hex[i] >= '0' && hex[i] <= '9') {
-			dec_val += (int(hex[i]) - 48) * base;
-			// incrementing base by power
-			base = base * 16;
-		}
-		// if character lies in 'A'-'F' , converting
-		// it to integral 10 - 15 by subtracting 55
-		// from ASCII value
-		else if (hex[i] >= 'A' && hex[i] <= 'F') {
-			dec_val += (int(hex[i]) - 55) * base;
-			// incrementing base by power
-			base = base * 16;
-		}
-	}
-	return dec_val;
+	return request.header.substr(start, end - start);
 }
 
 //search body for first char until \r\n and hen convert it from hex to decimal
 int	PostResponder::checkBodySizeChuncked(void) {
 	std::string content_length_in_hex;
-	size_t	type_start = _body.find("\r\n");
-	content_length_in_hex = _body.substr(0, type_start);
-	LOG_CYAN_INFO(content_length_in_hex);
-	LOG_CYAN_INFO(hex_to_decimal(content_length_in_hex));
+	size_t	type_start = request.body.find("\r\n");
+	content_length_in_hex = request.body.substr(0, type_start);
 	return (hex_to_decimal(content_length_in_hex));
 }
 
 int	PostResponder::checkBodyStart(void) {
 	std::string content_length_in_hex;
-	size_t	type_start = _body.find("\r\n");
-	content_length_in_hex = _body.substr(0, type_start);
+	size_t	type_start = request.body.find("\r\n");
+	content_length_in_hex = request.body.substr(0, type_start);
 	//LOG_RED(content_length_in_hex);
 	return (content_length_in_hex.length());
 }
 
 int	PostResponder::extractStartChunk(void) {
 	std::string content_length_in_hex;
-	size_t	type_start = _body.find("\r\n") + 2;
-	content_length_in_hex = _body.substr(0, type_start);
+	size_t	type_start = request.body.find("\r\n") + 2;
+	content_length_in_hex = request.body.substr(0, type_start);
 	//LOG_RED(content_length_in_hex);
 	return (content_length_in_hex.length());
 }
@@ -175,42 +158,52 @@ int	PostResponder::extractEndChunk(void) {
 	return (type_end);
 }
 
-PostResponder::PostResponder( std::string header, std::string body, int new_socket, Server * server ) : _header(header), _body(body), server(server)
+PostResponder::PostResponder(Request & request ) : request(request)
 {
-	if (header.find("Transfer-Encoding: chunked") != std::string::npos)
+	if (request.header.find("Transfer-Encoding: chunked") != std::string::npos)
 	{
 		//TO-DO create the right file name, and create new file per reuest atm im appending it
 		LOG_YELLOW("chunked body!!!!");
 		int start;
 		int end;
-		while (body.find("\r\n\r\n") != std::string::npos)
+		std::string cleanBody;
+		emptyUploadFile("Felix");
+		while (request.body.find("\r\n\r\n") != std::string::npos)
 		{
+			LOG("clean chunked body");
 			start = extractStartChunk();
 			//LOG_RED(start);
 			end = extractEndChunk();
 			//LOG_RED(end);
 			if (end == 3)
 				break;
-			createUploadFile("Felix", body.substr(start, end));
+			createUploadFile("Felix", request.body.substr(start, end));
+			cleanBody += request.body.substr(start, end);
 			//LOG_BLACK(body);
-			body = body.substr(end + 2 + extractStartChunk(),body.length());
+			request.body = request.body.substr(end + 2 + extractStartChunk(), request.body.length());
 			//LOG_BLACK(body);
-			_body = body;
+			//request.body = request.body;
 		}
-		writeToSocket(new_socket, "HTTP/1.1 201 Created\r\n\r\n");
+		request.body = cleanBody;
+		LOG_GREEN(request.body);
+		if (request.cgi_request) {
+			Cgi cgi(request);
+			return ;
+		}
+		writeStatus(201, request.socket);
 		return ;
 	}
-	if (body.size() == 0) {
+	if (request.body.size() == 0) {
 		LOG_RED_INFO("empty body in post request");
-		LOG_RED_INFO(header);
-		writeToSocket(new_socket, "HTTP/1.1 204 No Content");
+		LOG_RED_INFO(request.header);
+		writeStatus(204, request.socket);
 		return ;
 	}
 	_boundary = extractBoundary();
 	if (_boundary == "error")
 	{
 		// es gibt kein boundary, also wuden keine files geschickt und ich muss irgendwas anderes tun
-		writeToSocket(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: extractBoundary");
+		writeToSocket(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: extractBoundary");
 		return ;
 	}
 
@@ -218,20 +211,24 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 	if (!_numOfBoundaries)
 	{
 		// kann eigentlich nicht sein, keine ahnung was dann passieren soll mrrrrrrkkk
-		writeToSocket(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries");
+		writeToSocket(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries");
 		return ;
 	}
 
 	if (_numOfBoundaries > 0)
 	{
 		uploadFiles();
-		writeToSocket(new_socket, "HTTP/1.1 201 Created\r\n\r\n");
+		if (request.cgi_request) {
+			Cgi cgi(request);
+			return ;
+		}
+		writeStatus(201, request.socket);
 		return ;
 	}
 
-	//write(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 16\n\nfile was created", 80);
+	//write(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 16\n\nfile was created", 80);
 	char redirection[] = "HTTP/1.1 301 Moved Permanently\nLocation: http://127.0.0.1:1000/index.html\n\n"; //TODO include path from rerouting
 
-	writeToSocket(new_socket, redirection);
+	writeToSocket(request.socket, redirection);
 }
 
