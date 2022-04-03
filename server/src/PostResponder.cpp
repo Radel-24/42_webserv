@@ -170,7 +170,7 @@ PostResponder::PostResponder(Request & request ) : request(request)
 		emptyUploadFile("Felix");
 		while (request.body.find("\r\n\r\n") != std::string::npos)
 		{
-			LOG("clean chunked body");
+			//LOG("clean chunked body");
 			start = extractStartChunk();
 			//LOG_RED(start);
 			end = extractEndChunk();
@@ -185,7 +185,7 @@ PostResponder::PostResponder(Request & request ) : request(request)
 			//request.body = request.body;
 		}
 		request.body = cleanBody;
-		LOG_GREEN(request.body);
+		//LOG_GREEN(request.body);
 		if (request.cgi_request) {
 			Cgi cgi(request);
 			return ;

@@ -50,10 +50,9 @@ void accepter(std::map<int, Server *> & servers)
 		fd_set read_sockets = watching_read_sockets;
 		fd_set write_sockets = watching_write_sockets;
 
-		std::cout << std::endl;
 		int amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, NULL);
 
-		LOG("after select");
+		//LOG("after select");
 
 		if (amount_ready_socks < 0)
 		{

@@ -12,15 +12,15 @@ Cgi::Cgi(Request & request) : request(request) {
 void	Cgi::setEnv() {
 	env["REQUEST_METHOD"] = "POST";
 	env["SERVER_PROTOCOL"] = "HTTP/1.1";
-	env["PATH_INFO"] = toAbsolutPath(request.server->cgi_path);
+	env["PATH_INFO"] = toAbsolutPath(request.server->cgi_path); // path to uploaded file?
+	env["REQUEST_URI"] = toAbsolutPath(request.server->cgi_path); // path to uploaded file?
 	//env["REDIRECT_STATUS"] = "200";
-	env["REDIRECT_STATUS"] = "CGI";
-	env["SCRIPT_NAME"] = toAbsolutPath(request.server->cgi_path);
-	env["REQUEST_URI"] = toAbsolutPath(request.server->cgi_path);
-	env["PATH_TRANSLATED"] = toAbsolutPath(request.server->cgi_path);
-	env["CONTENT_TYPE"] = request.headerValues["Content-type"];
-	env["CONTENT_LENGTH"] = std::to_string(request.getBody().length());
-	env["QUERY_STRING"] = request.getBody();
+	//env["REDIRECT_STATUS"] = "CGI";
+	//env["SCRIPT_NAME"] = toAbsolutPath(request.server->cgi_path);
+	//env["PATH_TRANSLATED"] = toAbsolutPath(request.server->cgi_path);
+	//env["CONTENT_TYPE"] = request.headerValues["Content-type"];
+	//env["CONTENT_LENGTH"] = std::to_string(request.getBody().length());
+	//env["QUERY_STRING"] = request.getBody();
 
 
 	//for (std::map<std::string, std::string>::iterator iter = env.begin(); iter != env.end(); ++iter) {
@@ -32,7 +32,12 @@ void	Cgi::setEnv() {
 void	Cgi::runCgi() {
 	char ** localEnv = mapToArray(env);
 
-
+	//size_t index = 0;
+	//while (localEnv[index]) {
+	//	LOG_BLUE(localEnv[index]);
+	//	++index;
+	//}
+	//char * cgi_path = const_cast<char *>(toAbsolutPath(request.server->cgi_path).c_str());
 
 	pid_t pid = fork();
 	if (pid == -1) {
@@ -40,7 +45,7 @@ void	Cgi::runCgi() {
 		request.status = 500;
 	}
 	if (pid == 0) {
-		if (execve(request.server->cgi_path.c_str(), NULL, localEnv) == -1) {
+		if (execve(toAbsolutPath(request.server->cgi_path).c_str(), NULL, localEnv) == -1) {
 			LOG_RED_INFO("cgi failed");
 			exit(1);
 		}

@@ -202,6 +202,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 	if (status == READING_HEADER) {
 		readHeader();
 		if (status == HEADER_READ) {
+			//LOG_GREEN_INFO(header);
 			parseHeader(header);
 			checkHeaderValues();
 			printHeaderValues();
@@ -303,7 +304,6 @@ void	Request::setType() {
 }
 
 void Request::readHeader() {
-	std::cout << std::endl;
 	LOG_BLUE("HEADER START ----------------------");
 	char	buffer[10000]; // TODO if buffer[5000] not possible to upload felix.jpg with browser
 	memset(buffer, 0, 10000 * sizeof(char));
@@ -313,6 +313,7 @@ void Request::readHeader() {
 
 	if (checkHeaderRead()) {
 		status = HEADER_READ;
+		LOG_WHITE_INFO(header);
 
 		size_t	posHeaderEnd = header.find("\r\n\r\n");
 		if (posHeaderEnd != header.size() - 4) {
@@ -324,7 +325,7 @@ void Request::readHeader() {
 			LOG_BLACK("body size " << body.size() << "check size " << checkBodySize());
 			if ((int)body.size() == checkBodySize()) {
 				status = DONE_READING;
-				LOG_WHITE_INFO(header);
+				//LOG_WHITE_INFO(header);
 			}
 		}
 		else {
@@ -363,7 +364,7 @@ void	Request::readBodyChunked() {
 }
 
 void Request::readBodyLength() {
-	LOG_CYAN(std::endl << "BODY START ----------------------");
+	//LOG_CYAN(std::endl << "BODY START ----------------------");
 
 	int max_size = checkBodySize();
 	LOG_BLACK("body size: " << max_size);
@@ -390,8 +391,8 @@ void Request::readBodyLength() {
 		LOG_BLACK("body read true" << body.size());
 	}
 	delete read_body;
-	LOG_BLUE_INFO(body);
-	LOG_CYAN(std::endl << "BODY END ------------------------");
+	//LOG_BLUE_INFO(body);
+	//LOG_CYAN(std::endl << "BODY END ------------------------");
 }
 
 
