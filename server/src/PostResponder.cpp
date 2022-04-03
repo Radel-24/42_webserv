@@ -6,8 +6,8 @@ void	PostResponder::createUploadFile( std::string filename, std::string content 
 	char * buf = getcwd(NULL, FILENAME_MAX);
 	std::string cwd(buf);
 	std::string path = cwd + server->root + server->uploadPath + "/" + filename;
-	// LOG_YELLOW("depug upload path: " << path);
-	std::ofstream	file(path);
+	LOG_YELLOW("depug upload path: " << path);
+	std::ofstream	file(path, std::ios_base::app);
 	if (file.is_open()) {
 		file << content; // else error
 		// LOG_YELLOW("upload file is opened");
@@ -113,8 +113,93 @@ std::string	PostResponder::extractBoundary( void )
 	return _header.substr(start, end - start);
 }
 
+int hex_to_decimal(std::string hex)
+{
+	std::transform(hex.begin(), hex.end(),hex.begin(), ::toupper);
+	int len = hex.size();
+	// Initializing base value to 1, i.e 16^0
+	int base = 1;
+	int dec_val = 0;
+	// Extracting characters as digits from last
+	// character
+	for (int i = len - 1; i >= 0; i--) {
+		// if character lies in '0'-'9', converting
+		// it to integral 0-9 by subtracting 48 from
+		// ASCII value
+		if (hex[i] >= '0' && hex[i] <= '9') {
+			dec_val += (int(hex[i]) - 48) * base;
+			// incrementing base by power
+			base = base * 16;
+		}
+		// if character lies in 'A'-'F' , converting
+		// it to integral 10 - 15 by subtracting 55
+		// from ASCII value
+		else if (hex[i] >= 'A' && hex[i] <= 'F') {
+			dec_val += (int(hex[i]) - 55) * base;
+			// incrementing base by power
+			base = base * 16;
+		}
+	}
+	return dec_val;
+}
+
+//search body for first char until \r\n and hen convert it from hex to decimal
+int	PostResponder::checkBodySizeChuncked(void) {
+	std::string content_length_in_hex;
+	size_t	type_start = _body.find("\r\n");
+	content_length_in_hex = _body.substr(0, type_start);
+	LOG_CYAN_INFO(content_length_in_hex);
+	LOG_CYAN_INFO(hex_to_decimal(content_length_in_hex));
+	return (hex_to_decimal(content_length_in_hex));
+}
+
+int	PostResponder::checkBodyStart(void) {
+	std::string content_length_in_hex;
+	size_t	type_start = _body.find("\r\n");
+	content_length_in_hex = _body.substr(0, type_start);
+	//LOG_RED(content_length_in_hex);
+	return (content_length_in_hex.length());
+}
+
+int	PostResponder::extractStartChunk(void) {
+	std::string content_length_in_hex;
+	size_t	type_start = _body.find("\r\n") + 2;
+	content_length_in_hex = _body.substr(0, type_start);
+	//LOG_RED(content_length_in_hex);
+	return (content_length_in_hex.length());
+}
+
+int	PostResponder::extractEndChunk(void) {
+	size_t	type_end = checkBodySizeChuncked();
+	//LOG_YELLOW(type_end);
+	return (type_end);
+}
+
 PostResponder::PostResponder( std::string header, std::string body, int new_socket, Server * server ) : _header(header), _body(body), server(server)
 {
+	if (header.find("Transfer-Encoding: chunked") != std::string::npos)
+	{
+		//TO-DO create the right file name, and create new file per reuest atm im appending it
+		LOG_YELLOW("chunked body!!!!");
+		int start;
+		int end;
+		while (body.find("\r\n\r\n") != std::string::npos)
+		{
+			start = extractStartChunk();
+			//LOG_RED(start);
+			end = extractEndChunk();
+			//LOG_RED(end);
+			if (end == 3)
+				break;
+			createUploadFile("Felix", body.substr(start, end));
+			//LOG_BLACK(body);
+			body = body.substr(end + 2 + extractStartChunk(),body.length());
+			//LOG_BLACK(body);
+			_body = body;
+		}
+		writeToSocket(new_socket, "HTTP/1.1 201 Created\r\n\r\n");
+		return ;
+	}
 	if (body.size() == 0) {
 		LOG_RED_INFO("empty body in post request");
 		LOG_RED_INFO(header);
@@ -132,13 +217,13 @@ PostResponder::PostResponder( std::string header, std::string body, int new_sock
 	_numOfBoundaries = countBoundaries();
 	if (!_numOfBoundaries)
 	{
-		//createUploadFile("FELIX_new", body);
 		// kann eigentlich nicht sein, keine ahnung was dann passieren soll mrrrrrrkkk
 		writeToSocket(new_socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries");
 		return ;
 	}
 
-	if (_numOfBoundaries > 0) {
+	if (_numOfBoundaries > 0)
+	{
 		uploadFiles();
 		writeToSocket(new_socket, "HTTP/1.1 201 Created\r\n\r\n");
 		return ;

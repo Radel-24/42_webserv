@@ -338,10 +338,9 @@ void	Request::readBodyChunked() {
 
 	int buffer_size;
 	if (chunk_size == -1)
-		buffer_size = 30;
+		buffer_size = 4096;
 	else
 		buffer_size = chunk_size;
-
 	char * read_body = NULL;
 	read_body = new char[buffer_size];
 	ssize_t tmp_bytes_read = recv(socket, read_body, buffer_size, 0);
@@ -355,13 +354,13 @@ void	Request::readBodyChunked() {
 		LOG_RED("weird shit going on with select");
 	}
 	LOG_BLACK("bytes read after recv: " << bytes_read);
-	if ((int)body.size() == checkBodySize()) {
+	if (body.find("\r\n\r\n") != std::string::npos) {
 		status = DONE_READING;
 		//std::cout << getBody() << std::endl;
 		LOG_BLACK("body read true" << body.size());
 	}
 	delete read_body;
-	LOG_BLUE_INFO(body);
+	//LOG_BLUE_INFO(body);
 	LOG_CYAN(std::endl << "BODY END ------------------------");
 }
 
@@ -383,7 +382,7 @@ void Request::readBodyLength() {
 		bytes_read += tmp_bytes_read;
 	}
 	else {
-		LOG_RED("weird shit going on with select");
+		LOG_YELLOW("weird shit going on with select");
 	}
 	LOG_BLACK("bytes read after recv: " << bytes_read);
 	if ((int)body.size() == checkBodySize()) {
