@@ -446,7 +446,7 @@ std::string	formatString( std::string file_content ) {
 	length = std::to_string(file_content.length()) + "\n\n";
 	full_header = header.append(length);
 	ret = full_header.append(file_content);
-	LOG_RED_INFO("response: " << ret);
+	//LOG_RED_INFO("response: " << ret);
 	return ret;
 }
 

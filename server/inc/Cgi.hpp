@@ -4,6 +4,8 @@
 #include "utils.hpp"
 #include <map>
 #include <unistd.h>
+#include <fstream>
+#include <string>
 
 class Request;
 
@@ -13,10 +15,14 @@ class Cgi {
 		Request &	request;
 		FILE *	inFile; // TODO change to pipe?
 		FILE *	outFile;
+		std::string	answer;
+		std::string body;
 
 		void	init();
 		void	setEnv();
 		void	runCgi();
+		void	parseCgi();
+		void	answerCgi();
 
 	public:
 		Cgi(Request & request);

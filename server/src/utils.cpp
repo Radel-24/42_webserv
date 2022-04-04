@@ -74,7 +74,6 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */)
 }
 
 void	writeToSocket(int socket, std::string text) {
-	std::cout << "response to client: " << text << "\n";
 	write(socket, text.c_str(), text.length());
 }
 

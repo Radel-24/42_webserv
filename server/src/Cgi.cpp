@@ -9,6 +9,8 @@ Cgi::Cgi(Request & request) : request(request) {
 	init();
 	setEnv();
 	runCgi();
+	parseCgi();
+	answerCgi();
 }
 
 void	Cgi::setEnv() {
@@ -21,7 +23,7 @@ void	Cgi::setEnv() {
 	//env["REDIRECT_STATUS"] = "CGI";
 	//env["SCRIPT_NAME"] = toAbsolutPath(request.server->cgi_path);
 	//env["PATH_TRANSLATED"] = toAbsolutPath(request.server->cgi_path);
-	//env["CONTENT_TYPE"] = request.headerValues["Content-type"];
+	env["CONTENT_TYPE"] = request.headerValues["Content-type"];
 	//env["CONTENT_LENGTH"] = std::to_string(request.getBody().length());
 	//env["QUERY_STRING"] = request.getBody();
 
@@ -45,39 +47,115 @@ void	Cgi::runCgi() {
 	//}
 	//char * cgi_path = const_cast<char *>(toAbsolutPath(request.server->cgi_path).c_str());
 	int fin = fileno(inFile);
-	int fout = request.socket; // TODO maybe write to outfile and let host send the answer back to the client
+	//int fout = fileno(outFile); // TODO maybe write to outfile and let host send the answer back to the client
+	int fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR);
+
+
+
 	pid_t pid = fork();
 	if (pid == -1) {
 		LOG_RED_INFO("fork failed"); // TODO error handling
 		request.status = 500;
 	}
 	if (pid == 0) {
+
+		// !!!!!!!! Don't write log messages in here !!!!!!!
+
 		write(fin, request.body.c_str(), request.body.size());
 		dup2(fin, STDIN_FILENO);
 
-		//dup2(fout, STDOUT_FILENO); // TODO comment this line in to write back the answer to the client
+		//fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR); // TODO only for testing
 
-		lseek(fin, 0, SEEK_SET); // TODO needed?
+		dup2(fout, STDOUT_FILENO); // TODO comment this line in to write back the answer to the client
+
+		lseek(fin, 0, SEEK_SET);
 		close(fin);
 		close(fout);
-		LOG_RED_INFO("first " << toAbsolutPath(request.server->cgi_path).c_str());
+		//LOG_RED_INFO("first " << toAbsolutPath(request.server->cgi_path).c_str());
 		if (execve(toAbsolutPath(request.server->cgi_path).c_str(), NULL, localEnv) == -1) {
 			LOG_RED_INFO("cgi failed");
 			exit(1);
 		}
 	} else {
 		close(fin);
+		close(fout);
 		// TODO no clue what to do
 		int exit_status;
 		wait(&exit_status);
 		LOG_GREEN_INFO("cgi ended with status " << exit_status);
 		LOG_GREEN_INFO("exit status " << WEXITSTATUS(exit_status));
-		if (WEXITSTATUS(exit_status) == 1)
-			request.status = 500;
-		else
+		//if (WEXITSTATUS(exit_status) == 1)
+		//	request.status = 500;
+		//else
 			request.status = DONE_WRITING;
 
 		//write(request.socket, fout, )
 		//LOG_BLUE_INFO(fout);
 	}
+}
+
+std::string	readFile( std::string filename ) {
+	std::ifstream	newFile;
+	std::string		ret;
+	std::string		binary = "/Users/fharing/42/webserv/server/";
+	std::string		values;
+	std::string		execute = "/Users/fharing/42/webserv/server/cgi/php-cgi -f ";
+	size_t			found;
+	char			c;
+	if ((found = filename.find("cgi/", 0)) != std::string::npos)
+	{
+		if ((found = filename.find("?",0)) != std::string::npos)
+		{
+			binary = binary + filename.substr(0,found);
+			values = filename.substr(found + 1,filename.length());
+			std::replace(values.begin(),values.end(), '&', ' ');
+		}
+		execute = execute + binary + " " + values + " > out";
+		//std::cout << execute << std::endl;
+		system(execute.c_str());
+		return "EXEC";
+	}
+
+	LOG_CYAN_INFO("trying to open: " << filename);
+	if (open(filename.c_str(), std::ios::in) == -1) {
+		//status = 404;
+		return "";
+	}
+	newFile.open(filename, std::ios::in);
+	if (!newFile){
+		return "";
+	}
+	while (!newFile.eof())
+	{
+		newFile >> std::noskipws >> c;
+		ret.push_back(c);
+	}
+	newFile.close();
+	return ret;
+}
+
+
+void	Cgi::parseCgi() {
+//	std::ifstream instream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt");
+//	std::stringstream strStr;
+//	strStr << instream;
+	answer = readFile("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt");
+	size_t	bodyBegin = answer.find("\r\n\r\n") + 5;
+	body = answer.substr(bodyBegin, std::string::npos);
+	LOG_GREEN_INFO("body begin: " << bodyBegin);
+	//std::getline(std::ifstream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt"), answer, '\0');
+	//LOG_BLUE_INFO(body);
+}
+
+void	Cgi::answerCgi() {
+	std::string response = "HTTP/1.1 200 OK\r\nContent-Length: ";
+	response += std::to_string(body.length());
+	response += "\r\n\r\n";
+	response += body;
+	//response += "\r\n\r\n";
+	LOG_GREEN_INFO("cgi body length: " << body.length());
+	//writeToSocket(request.socket, response);
+	int fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR);
+	writeToSocket(fout, response);
+	close(fout);
 }
