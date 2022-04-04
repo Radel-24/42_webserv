@@ -167,7 +167,10 @@ PostResponder::PostResponder(Request & request ) : request(request)
 		int start;
 		int end;
 		std::string cleanBody;
-		emptyUploadFile("Felix");
+
+		std::string filename = "Felix";
+
+		emptyUploadFile(filename);
 		while (request.body.find("\r\n\r\n") != std::string::npos)
 		{
 			//LOG("clean chunked body");
@@ -177,7 +180,7 @@ PostResponder::PostResponder(Request & request ) : request(request)
 			//LOG_RED(end);
 			if (end == 3)
 				break;
-			createUploadFile("Felix", request.body.substr(start, end));
+			createUploadFile(filename, request.body.substr(start, end));
 			cleanBody += request.body.substr(start, end);
 			//LOG_BLACK(body);
 			request.body = request.body.substr(end + 2 + extractStartChunk(), request.body.length());

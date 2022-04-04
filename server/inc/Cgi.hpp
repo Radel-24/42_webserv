@@ -11,6 +11,8 @@ class Cgi {
 	private:
 		std::map<std::string, std::string>	env;
 		Request &	request;
+		FILE *	inFile; // TODO change to pipe?
+		FILE *	outFile;
 
 		void	init();
 		void	setEnv();
