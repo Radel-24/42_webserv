@@ -49,6 +49,7 @@ void	Cgi::runCgi() {
 	int fin = fileno(inFile);
 	//int fout = fileno(outFile); // TODO maybe write to outfile and let host send the answer back to the client
 	int fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR);
+	LOG_CYAN_INFO("file opened");
 
 
 
@@ -140,9 +141,10 @@ void	Cgi::parseCgi() {
 //	std::stringstream strStr;
 //	strStr << instream;
 	answer = readFile("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt");
+	//LOG_RED_INFO("file read " << answer);
 	size_t	bodyBegin = answer.find("\r\n\r\n") + 5;
+	//LOG_GREEN_INFO("body begin: " << bodyBegin);
 	body = answer.substr(bodyBegin, std::string::npos);
-	LOG_GREEN_INFO("body begin: " << bodyBegin);
 	//std::getline(std::ifstream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt"), answer, '\0');
 	//LOG_BLUE_INFO(body);
 }
@@ -152,10 +154,15 @@ void	Cgi::answerCgi() {
 	response += std::to_string(body.length());
 	response += "\r\n\r\n";
 	response += body;
+	//if (size_t pos = body.find("\r"))
+	//	LOG_RED_INFO("found r " << pos);
+	//if (size_t pos = body.find("\n"))
+	//	LOG_RED_INFO("found n " << pos);
 	//response += "\r\n\r\n";
 	LOG_GREEN_INFO("cgi body length: " << body.length());
-	//writeToSocket(request.socket, response);
-	int fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR);
-	writeToSocket(fout, response);
-	close(fout);
+	writeToSocket(request.socket, response);
+
+	//int fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR);
+	//writeToSocket(fout, response);
+	//close(fout);
 }
