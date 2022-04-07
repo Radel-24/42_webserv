@@ -48,7 +48,7 @@ void	Cgi::runCgi() {
 	//char * cgi_path = const_cast<char *>(toAbsolutPath(request.server->cgi_path).c_str());
 	int fin = fileno(inFile);
 	//int fout = fileno(outFile); // TODO maybe write to outfile and let host send the answer back to the client
-	int fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR);
+	int fout = open("/Users/fharing/42/webserv/server/cgiOutput.txt", O_RDWR);
 	LOG_CYAN_INFO("file opened");
 
 
@@ -89,7 +89,7 @@ void	Cgi::runCgi() {
 		//	request.status = 500;
 		//else
 			request.status = DONE_WRITING;
-
+		LOG_GREEN_INFO("finished runCgi");
 		//write(request.socket, fout, )
 		//LOG_BLUE_INFO(fout);
 	}
@@ -97,12 +97,12 @@ void	Cgi::runCgi() {
 
 std::string	readFile( std::string filename ) {
 	std::ifstream	newFile;
-	std::string		ret;
+	std::string		ret = "";
 	std::string		binary = "/Users/fharing/42/webserv/server/";
 	std::string		values;
 	std::string		execute = "/Users/fharing/42/webserv/server/cgi/php-cgi -f ";
 	size_t			found;
-	char			c;
+	//char			c;
 	if ((found = filename.find("cgi/", 0)) != std::string::npos)
 	{
 		if ((found = filename.find("?",0)) != std::string::npos)
@@ -112,6 +112,7 @@ std::string	readFile( std::string filename ) {
 			std::replace(values.begin(),values.end(), '&', ' ');
 		}
 		execute = execute + binary + " " + values + " > out";
+
 		//std::cout << execute << std::endl;
 		system(execute.c_str());
 		return "EXEC";
@@ -124,13 +125,29 @@ std::string	readFile( std::string filename ) {
 	}
 	newFile.open(filename, std::ios::in);
 	if (!newFile){
+		LOG_RED_INFO("openeing " << filename << " failed");
 		return "";
 	}
+	std::string buffer;
+	int i = 0;
 	while (!newFile.eof())
 	{
-		newFile >> std::noskipws >> c;
-		ret.push_back(c);
+		std::getline(newFile, buffer);
+		if (i < 3)
+			LOG_BLACK(buffer);
+		ret.append(buffer);
+		i++;
 	}
+	// LOG_YELLOW("i: " << i);
+	// LOG_WHITE("ret1 = " << ret.substr(0, 80));
+
+	// unsigned long pos = ret.find("\r\n");
+	// LOG_GREEN("pos = " << pos);
+	// if (pos != std::string::npos)
+	// {
+	// 	LOG_GREEN("pos = " << pos);
+	// 	ret = ret.substr(pos + 2, ret.length());
+	// }
 	newFile.close();
 	return ret;
 }
@@ -140,11 +157,13 @@ void	Cgi::parseCgi() {
 //	std::ifstream instream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt");
 //	std::stringstream strStr;
 //	strStr << instream;
-	answer = readFile("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt");
+	answer = readFile("/Users/fharing/42/webserv/server/cgiOutput.txt");
 	//LOG_RED_INFO("file read " << answer);
-	size_t	bodyBegin = answer.find("\r\n\r\n") + 5;
+	//size_t	bodyBegin = answer.find("\r\n") + 2;
 	//LOG_GREEN_INFO("body begin: " << bodyBegin);
-	body = answer.substr(bodyBegin, std::string::npos);
+	LOG_GREEN_INFO("std::string::npos: " << std::string::npos);
+	body = answer.substr(55, std::string::npos);
+	LOG_BLACK("substr 0-10: " << answer.substr(0, 55));
 	//std::getline(std::ifstream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt"), answer, '\0');
 	//LOG_BLUE_INFO(body);
 }

@@ -74,7 +74,14 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */)
 }
 
 void	writeToSocket(int socket, std::string text) {
-	write(socket, text.c_str(), text.length());
+	LOG_YELLOW("text.length(): " << text.length());
+	size_t test = 0;
+	while (test < text.size())
+	{
+		test = write(socket, text.c_str(), text.length());
+		LOG_YELLOW(test);
+		//FIX THIS SHIT
+	}
 }
 
 char ** mapToArray(std::map<std::string, std::string> map) {

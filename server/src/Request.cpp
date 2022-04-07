@@ -320,7 +320,7 @@ void Request::readHeader() {
 			LOG_BLACK("takes body out of header; pos header end: " << posHeaderEnd);
 			body = header;
 			body.erase(0, posHeaderEnd + 4);
-			LOG_RED_INFO("header: " << header << "\nbody: " << body);
+			//LOG_RED_INFO("header: " << header << "\nbody: " << body);
 
 			LOG_BLACK("body size " << body.size() << "check size " << checkBodySize());
 			if ((int)body.size() == checkBodySize()) {
