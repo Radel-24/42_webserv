@@ -193,12 +193,15 @@ PostResponder::PostResponder(Request & request ) : request(request)
 			std::getline(tmp_body, cleanBody);
 		}
 		LOG_YELLOW("END LOOP");
-
+		LOG_YELLOW("CREATE FILE");
 		createUploadFile(filename, tmp);
+		request.body = tmp;
+		LOG_YELLOW("FILE CREATED");
 
 
 		//LOG_GREEN(request.body);
 		if (request.cgi_request) {
+			LOG_GREEN("RUN CGI");
 			Cgi cgi(request);
 			return ;
 		}

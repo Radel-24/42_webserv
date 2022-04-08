@@ -1,5 +1,6 @@
 #include "Cgi.hpp"
 
+// LOGIC: <request.body php-cgi >response -> socket
 void	Cgi::init() {
 	inFile = tmpfile();
 	outFile = tmpfile();
@@ -49,7 +50,7 @@ void	Cgi::runCgi() {
 	int fin = fileno(inFile);
 	//int fout = fileno(outFile); // TODO maybe write to outfile and let host send the answer back to the client
 	int fout = open("/Users/fharing/42/webserv/server/cgiOutput.txt", O_RDWR);
-	LOG_CYAN_INFO("file opened");
+	LOG_CYAN_INFO("cgi file opened");
 
 
 
@@ -129,14 +130,10 @@ std::string	readFile( std::string filename ) {
 		return "";
 	}
 	std::string buffer;
-	int i = 0;
 	while (!newFile.eof())
 	{
 		std::getline(newFile, buffer);
-		if (i < 3)
-			LOG_BLACK(buffer);
 		ret.append(buffer);
-		i++;
 	}
 	// LOG_YELLOW("i: " << i);
 	// LOG_WHITE("ret1 = " << ret.substr(0, 80));
@@ -157,13 +154,12 @@ void	Cgi::parseCgi() {
 //	std::ifstream instream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt");
 //	std::stringstream strStr;
 //	strStr << instream;
-	answer = readFile("/Users/fharing/42/webserv/server/cgiOutput.txt");
+	answer = readFile("/Users/fharing/42/webserv/server/www/42testServer/upload/Felix");
 	//LOG_RED_INFO("file read " << answer);
 	//size_t	bodyBegin = answer.find("\r\n") + 2;
 	//LOG_GREEN_INFO("body begin: " << bodyBegin);
-	LOG_GREEN_INFO("std::string::npos: " << std::string::npos);
-	body = answer.substr(55, std::string::npos);
-	LOG_BLACK("substr 0-10: " << answer.substr(0, 55));
+	//LOG_GREEN_INFO("std::string::npos: " << std::string::npos);
+	body = answer;
 	//std::getline(std::ifstream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt"), answer, '\0');
 	//LOG_BLUE_INFO(body);
 }
@@ -180,6 +176,7 @@ void	Cgi::answerCgi() {
 	//response += "\r\n\r\n";
 	LOG_GREEN_INFO("cgi body length: " << body.length());
 	writeToSocket(request.socket, response);
+	LOG_GREEN("FINISHED CGI");
 
 	//int fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR);
 	//writeToSocket(fout, response);

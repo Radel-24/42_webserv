@@ -335,7 +335,7 @@ void Request::readHeader() {
 }
 
 void	Request::readBodyChunked() {
-	int buffer_size = 4096;
+	int buffer_size = 200000;
 	//if (chunk_size == -1)
 	//	buffer_size = 4096;
 	//else
