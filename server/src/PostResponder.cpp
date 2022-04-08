@@ -158,36 +158,45 @@ int	PostResponder::extractEndChunk(void) {
 	return (type_end);
 }
 
+/*				TIMINGS
+AFTER 50-60 SEC CHUNKED BODY IS PRINTED
+AFTER 3-5 SEC CHUNKED BODY WITH THIS LOGIC IS OVER
+WRITE BODY TO FILE TAKES 20 SECS
+-> SUM OF 1:25 MINUTES TO UPLOAD 100MB -> needs to be like max 5-10 secs
+*/
 PostResponder::PostResponder(Request & request ) : request(request)
 {
 	if (request.header.find("Transfer-Encoding: chunked") != std::string::npos)
 	{
 		//TO-DO create the right file name, and create new file per reuest atm im appending it
 		LOG_YELLOW("chunked body!!!!");
-		int start;
-		int end;
 		std::string cleanBody;
 
 		std::string filename = "Felix";
 
 		emptyUploadFile(filename);
-		while (request.body.find("\r\n\r\n") != std::string::npos)
+
+		int i = 0;
+		std::string tmp;
+		std::istringstream tmp_body;
+		tmp_body.str(request.body);
+		std::getline(tmp_body, cleanBody);
+		LOG_YELLOW("START LOOP");
+		while(cleanBody.front() != '0' && cleanBody.size() != 1)
 		{
-			//LOG("clean chunked body");
-			start = extractStartChunk();
-			//LOG_RED(start);
-			end = extractEndChunk();
-			//LOG_RED(end);
-			if (end == 3)
-				break;
-			createUploadFile(filename, request.body.substr(start, end));
-			cleanBody += request.body.substr(start, end);
-			//LOG_BLACK(body);
-			request.body = request.body.substr(end + 2 + extractStartChunk(), request.body.length());
-			//LOG_BLACK(body);
-			//request.body = request.body;
+			if (i % 2)
+			{
+				cleanBody.pop_back();
+				tmp.append(cleanBody);
+			}
+			i++;
+			std::getline(tmp_body, cleanBody);
 		}
-		request.body = cleanBody;
+		LOG_YELLOW("END LOOP");
+
+		createUploadFile(filename, tmp);
+
+
 		//LOG_GREEN(request.body);
 		if (request.cgi_request) {
 			Cgi cgi(request);

@@ -74,14 +74,16 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */)
 }
 
 void	writeToSocket(int socket, std::string text) {
-	LOG_YELLOW("text.length(): " << text.length());
-	size_t test = 0;
-	while (test < text.size())
+	//LOG_YELLOW("text.length(): " << text.length());
+	size_t toWrite = text.length();
+	size_t written = 0;
+	while (written < toWrite)
 	{
-		test = write(socket, text.c_str(), text.length());
-		LOG_YELLOW(test);
-		//FIX THIS SHIT
+		written += write(socket, text.c_str()+written, toWrite);
+		toWrite -= written;
+		//LOG_YELLOW("test");
 	}
+	// TO-DO find logic if file to big for write it in one time !! CALL SELECT BEFORE WRITE AGAIN
 }
 
 char ** mapToArray(std::map<std::string, std::string> map) {
