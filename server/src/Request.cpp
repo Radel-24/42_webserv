@@ -350,7 +350,9 @@ void	Request::readBodyChunked() {
 		bytes_read += tmp_bytes_read;
 	}
 	else {
-		LOG_RED("weird shit going on with select");
+		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
+		//TO-DO close socket and delete out of socket list
+		return;
 	}
 	//LOG_BLACK("bytes read after recv: " << bytes_read);
 	if (body.find("\r\n\r\n") != std::string::npos) {
@@ -381,7 +383,9 @@ void Request::readBodyLength() {
 		bytes_read += tmp_bytes_read;
 	}
 	else {
-		LOG_YELLOW("weird shit going on with select, socket: " << socket);
+		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
+		//TO-DO close socket and delete out of socket list
+		return;
 	}
 	LOG_BLACK("bytes read after recv: " << bytes_read);
 	LOG_BLACK("body size " << body.size());

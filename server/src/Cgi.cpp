@@ -20,11 +20,12 @@ void	Cgi::setEnv() {
 	env["PATH_INFO"] = toAbsolutPath(request.server->cgi_path); // path to uploaded file?
 	//env["PATH_INFO"] = "./";
 	//env["REQUEST_URI"] = toAbsolutPath(request.server->cgi_path); // path to uploaded file?
-	//env["REDIRECT_STATUS"] = "200";
+	env["REDIRECT_STATUS"] = "200";
 	//env["REDIRECT_STATUS"] = "CGI";
 	//env["SCRIPT_NAME"] = toAbsolutPath(request.server->cgi_path);
 	//env["PATH_TRANSLATED"] = toAbsolutPath(request.server->cgi_path);
-	env["CONTENT_TYPE"] = request.headerValues["Content-type"];
+	env["CONTENT_TYPE"] = request.headerValues["Content-type"]; //empty??
+	//env["CONTENT_TYPE"] = "test/file";
 	//env["CONTENT_LENGTH"] = std::to_string(request.getBody().length());
 	//env["QUERY_STRING"] = request.getBody();
 
@@ -41,18 +42,16 @@ void	Cgi::setEnv() {
 void	Cgi::runCgi() {
 	char ** localEnv = mapToArray(env);
 
-	//size_t index = 0;
-	//while (localEnv[index]) {
-	//	LOG_BLUE(localEnv[index]);
-	//	++index;
-	//}
+	size_t index = 0;
+	while (localEnv[index]) {
+		LOG_BLUE(localEnv[index]);
+		++index;
+	}
 	//char * cgi_path = const_cast<char *>(toAbsolutPath(request.server->cgi_path).c_str());
 	int fin = fileno(inFile);
 	//int fout = fileno(outFile); // TODO maybe write to outfile and let host send the answer back to the client
 	int fout = open("/Users/fharing/42/webserv/server/cgiOutput.txt", O_RDWR);
 	LOG_CYAN_INFO("cgi file opened");
-
-
 
 	pid_t pid = fork();
 	if (pid == -1) {

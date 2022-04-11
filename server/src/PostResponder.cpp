@@ -166,14 +166,13 @@ WRITE BODY TO FILE TAKES 20 SECS
 */
 PostResponder::PostResponder(Request & request ) : request(request)
 {
+	//----------------------------------------------------------------------------------------------------------------------------
 	if (request.header.find("Transfer-Encoding: chunked") != std::string::npos)
 	{
 		//TO-DO create the right file name, and create new file per reuest atm im appending it
 		LOG_YELLOW("chunked body!!!!");
 		std::string cleanBody;
-
 		std::string filename = "Felix";
-
 		emptyUploadFile(filename);
 
 		int i = 0;
@@ -195,16 +194,16 @@ PostResponder::PostResponder(Request & request ) : request(request)
 		LOG_YELLOW("END LOOP");
 		LOG_YELLOW("CREATE FILE");
 		createUploadFile(filename, tmp);
-		request.body = tmp;
+		//request.body = tmp;
 		LOG_YELLOW("FILE CREATED");
 
-
-		//LOG_GREEN(request.body);
 		if (request.cgi_request) {
 			LOG_GREEN("RUN CGI");
 			Cgi cgi(request);
+			LOG_GREEN("END CGI");
 			return ;
 		}
+		//------------------------------------------------------------------------------------------------------------------------------------------
 		writeStatus(201, request.socket);
 		return ;
 	}

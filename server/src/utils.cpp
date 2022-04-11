@@ -79,9 +79,11 @@ void	writeToSocket(int socket, std::string text) {
 	size_t written = 0;
 	while (written < toWrite)
 	{
-		written += write(socket, text.c_str()+written, toWrite);
+		int tmp = write(socket, text.c_str()+written, toWrite);
+		if (tmp == -1)
+			LOG_BLACK("WRITE ERROR!!!");
+		written += tmp;
 		toWrite -= written;
-		//LOG_YELLOW("test");
 	}
 	// TO-DO find logic if file to big for write it in one time !! CALL SELECT BEFORE WRITE AGAIN
 }
