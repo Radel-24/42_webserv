@@ -212,15 +212,19 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 			setPath();
 			changePath();
 			setType();
+			//LOG_YELLOW("START");
+			//LOG_YELLOW(getHeader());
+			//LOG_BLACK(getBody());
+			//LOG_YELLOW("END");
 			checkRequest();
 			if (status >= 100)
 				return ;
 			// LOG_RED_INFO(getRequestKey());
 			//LOG_WHITE(getHeader());
 			// start new alex
-			// LOG_GREEN("START HEADER VALUES");
-			// printHeaderValues();
-			// LOG_GREEN("END HEADER VALUES");
+			LOG_GREEN("START HEADER VALUES");
+			printHeaderValues();
+			LOG_GREEN("END HEADER VALUES");
 			LOG_BLUE("HEADER END ------------------------");
 			// end new alex
 			if (status == DONE_READING) {
@@ -233,7 +237,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 		status = DONE_READING;
 		return ;
 	}
-	else if (status == HEADER_READ && (getRequestKey() == POST || getRequestKey() == PUT)) {
+	if (status == HEADER_READ && (getRequestKey() == POST || getRequestKey() == PUT)) {
 		if (headerValues.find("Transfer-Encoding")->second == "chunked") {
 			//readBodyChunked();
 			//LOG_GREEN_INFO("READ BODY CHUNKED");
@@ -342,6 +346,12 @@ void	Request::readBodyChunked() {
 	//	buffer_size = chunk_size;
 	char * read_body = NULL;
 	read_body = new char[buffer_size];
+
+	if (body.find("\r\n\r\n") != std::string::npos)
+	{
+		status = DONE_READING;
+		return;
+	}
 	ssize_t tmp_bytes_read = recv(socket, read_body, buffer_size, 0);
 	//if ()
 	//std::string	sizeInfo =

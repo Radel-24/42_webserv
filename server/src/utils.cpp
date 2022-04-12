@@ -80,6 +80,7 @@ void	writeToSocket(int socket, std::string text) {
 	while (written < toWrite)
 	{
 		int tmp = write(socket, text.c_str()+written, toWrite);
+		LOG_BLACK("Written Bytes:" << tmp);
 		if (tmp == -1)
 			LOG_BLACK("WRITE ERROR!!!");
 		written += tmp;

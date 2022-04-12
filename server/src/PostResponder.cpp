@@ -166,6 +166,10 @@ WRITE BODY TO FILE TAKES 20 SECS
 */
 PostResponder::PostResponder(Request & request ) : request(request)
 {
+
+	//LOG_YELLOW("START");
+	//LOG_YELLOW(request.header);
+	//LOG_YELLOW("END");
 	//----------------------------------------------------------------------------------------------------------------------------
 	if (request.header.find("Transfer-Encoding: chunked") != std::string::npos)
 	{
