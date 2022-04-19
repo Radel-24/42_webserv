@@ -179,7 +179,6 @@ void	Cgi::answerCgi() {
 	//	LOG_RED_INFO("found n " << pos);
 	//response += "\r\n\r\n";
 	LOG_GREEN_INFO("cgi body length: " << body.length());
-<<<<<<< HEAD
 	char * tmp = const_cast<char *>(response.c_str());
 	int bytes_written = writeToSocket(request.socket, tmp + request.bytes_written);
 	LOG_BLACK_INFO("bytes written " << bytes_written);
@@ -193,20 +192,6 @@ void	Cgi::answerCgi() {
 		request.status = DONE_WRITING;
 		LOG_GREEN("FINISHED CGI");
 	}
-=======
-	writeToSocket(request.socket, response);
-
-	// std::string	pwd = std::string(getcwd(NULL, FILENAME_MAX));
-	// std::string	filePath1 = pwd + "/www/42testServer/upload/Felix";
-	// std::string	removeFile1 = "rm " + filePath1;
-	// system(removeFile1.c_str());
-
-	// std::string	filePath2 = pwd + "/cgiOutput.txt";
-	// std::string	removeFile2 = "rm " + filePath2;
-	// system(removeFile2.c_str());
-
-	LOG_GREEN("FINISHED CGI");
->>>>>>> master
 
 	//int fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR);
 	//writeToSocket(fout, response);
