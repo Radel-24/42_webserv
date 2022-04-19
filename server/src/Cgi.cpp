@@ -184,7 +184,7 @@ void	Cgi::parseCgi() {
 	std::string	fullPath = pwd + "/cgiOutput.txt";
 	std::ifstream t(fullPath);
 	std::stringstream buffer;
-	buffer << t.rdbuf();		
+	buffer << t.rdbuf();
 	//answer = readFile(fullPath);
 	answer = buffer.str();
 	//LOG_RED_INFO("file read " << answer);
@@ -197,7 +197,7 @@ void	Cgi::parseCgi() {
 }
 
 void	Cgi::answerCgi() {
-	LOG_RED_INFO("body length " << body.length());
+	//LOG_RED_INFO("body length " << body.length());
 	std::string response = "HTTP/1.1 200 OK\r\nContent-Length: ";
 	response += std::to_string(body.length());
 	response += "\r\n\r\n";
@@ -207,24 +207,20 @@ void	Cgi::answerCgi() {
 	//if (size_t pos = body.find("\n"))
 	//	LOG_RED_INFO("found n " << pos);
 	//response += "\r\n\r\n";
-	LOG_GREEN_INFO("cgi response length: " << response.length());
+	//LOG_GREEN_INFO("cgi response length: " << response.length());
 	char * tmp = const_cast<char *>(response.c_str());
 	int bytes_written = writeToSocket(request.socket, tmp + request.bytes_written);
-	LOG_BLACK_INFO("bytes written " << bytes_written);
+	//LOG_BLACK_INFO("bytes written " << bytes_written);
 	if (bytes_written == -1) {
 		request.status = DONE_WRITING;
 		LOG_BLACK_INFO("write failed");
 		return ;
 	}
 	request.bytes_written += bytes_written;
-	LOG_BLACK_INFO("total written " << request.bytes_written);
+	//LOG_BLACK_INFO("total written " << request.bytes_written);
 	if ((size_t)request.bytes_written >= response.length()) {
 		request.init();
 		request.status = DONE_WRITING_CGI;
-		//request.file_created = false;
-		//request.body.clear();
-		//request.bytes_written = 0;
-		//request.header.clear();
 		LOG_GREEN("FINISHED CGI");
 	}
 
