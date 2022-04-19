@@ -171,6 +171,7 @@ void	Cgi::parseCgi() {
 void	Cgi::answerCgi() {
 	std::string response = "HTTP/1.1 200 OK\r\nContent-Length: ";
 	response += std::to_string(body.length());
+	response += "\r\nConnection: keep-alive";
 	response += "\r\n\r\n";
 	response += body;
 	//if (size_t pos = body.find("\r"))
