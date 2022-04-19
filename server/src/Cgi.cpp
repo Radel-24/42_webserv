@@ -7,15 +7,19 @@ void	Cgi::init() {
 }
 
 Cgi::Cgi(Request & request) : request(request) {
-	if (request.file_created == false)
-	{
+	//if (request.file_created == false)
+	//{
 		init();
 		setEnv();
 		runCgi();
 		request.file_created = true;
-	}
+	//}
 	parseCgi();
 	answerCgi();
+}
+
+Cgi::~Cgi() {
+	request.file_created = false;
 }
 
 void	Cgi::setEnv() {
@@ -193,6 +197,7 @@ void	Cgi::parseCgi() {
 }
 
 void	Cgi::answerCgi() {
+	LOG_RED_INFO("body length " << body.length());
 	std::string response = "HTTP/1.1 200 OK\r\nContent-Length: ";
 	response += std::to_string(body.length());
 	response += "\r\n\r\n";

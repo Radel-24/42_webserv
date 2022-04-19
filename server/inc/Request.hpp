@@ -44,6 +44,7 @@ class	Request {
 		std::string							body;
 		std::string							header;
 		ssize_t								bytes_written;
+		PostResponder *	postResponder;
 
 
 	private:

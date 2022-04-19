@@ -21,7 +21,7 @@ class PostResponder {
 		int				_numOfBoundaries;
 
 		Request &		request;
-		
+		Cgi * cgi;
 
 		std::string	extractBoundary( void );
 		int			countBoundaries( void );
@@ -37,4 +37,5 @@ class PostResponder {
 	public:
 		// TODO pass server and request by reference?
 		PostResponder(Request & request );
+		void	run();
 };

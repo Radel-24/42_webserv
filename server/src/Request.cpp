@@ -15,6 +15,7 @@ void	Request::init() {
 	requestKey = NIL;
 	cgi_request = false;
 	file_created = false;
+	postResponder = NULL;
 }
 
 Request::Request() { init(); }
@@ -272,7 +273,10 @@ void	Request::writeRequest() {
 		status =  DONE_WRITING;
 	}
 	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
-		PostResponder pR(*this);
+		if (!postResponder)
+			postResponder = new PostResponder(*this);
+		postResponder->run();
+		//PostResponder pR(*this);
 		return ;
 	}
 	else if (status == DONE_READING && getRequestKey() == GET) {

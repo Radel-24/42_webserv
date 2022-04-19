@@ -22,8 +22,9 @@ class Cgi {
 		void	setEnv();
 		void	runCgi();
 		void	parseCgi();
-		void	answerCgi();
 
 	public:
 		Cgi(Request & request);
+		~Cgi();
+		void	answerCgi();
 };

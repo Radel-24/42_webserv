@@ -166,7 +166,9 @@ WRITE BODY TO FILE TAKES 20 SECS
 */
 PostResponder::PostResponder(Request & request ) : request(request)
 {
+}
 
+void PostResponder::run() {
 	//LOG_YELLOW("START");
 	//LOG_YELLOW(request.header);
 	//LOG_YELLOW("END");
@@ -205,7 +207,8 @@ PostResponder::PostResponder(Request & request ) : request(request)
 		if (request.cgi_request) {
 			//request.status = DONE_READING;
 			LOG_GREEN("RUN CGI");
-			Cgi cgi(request);
+			cgi = new Cgi(request);
+			//Cgi cgi(request);
 			LOG_GREEN("END CGI");
 			return ;
 		}
@@ -217,8 +220,12 @@ PostResponder::PostResponder(Request & request ) : request(request)
 	if (request.cgi_request && request.file_created) {
 			request.status = DONE_READING;
 			LOG_GREEN("RUN CGI");
-			Cgi cgi(request);
-			LOG_GREEN("END CGI");
+			cgi->answerCgi();
+			if (request.status == DONE_WRITING_CGI) {
+				delete cgi;
+				LOG_GREEN("END CGI");
+			}
+			//Cgi cgi(request);
 			return ;
 		}
 	if (request.body.size() == 0) {
