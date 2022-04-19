@@ -156,8 +156,10 @@ void	Cgi::parseCgi() {
 //	std::ifstream instream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt");
 //	std::stringstream strStr;
 //	strStr << instream;
+	//std::string	pwd = std::string(getcwd(NULL, FILENAME_MAX));
+	//std::string	fullPath = pwd + "/www/42testServer/upload/Felix";
 	std::string	pwd = std::string(getcwd(NULL, FILENAME_MAX));
-	std::string	fullPath = pwd + "/www/42testServer/upload/Felix";
+	std::string	fullPath = pwd + "/cgiOutput.txt";
 	answer = readFile(fullPath);
 	//LOG_RED_INFO("file read " << answer);
 	//size_t	bodyBegin = answer.find("\r\n") + 2;
@@ -171,7 +173,6 @@ void	Cgi::parseCgi() {
 void	Cgi::answerCgi() {
 	std::string response = "HTTP/1.1 200 OK\r\nContent-Length: ";
 	response += std::to_string(body.length());
-	response += "\r\nConnection: keep-alive";
 	response += "\r\n\r\n";
 	response += body;
 	//if (size_t pos = body.find("\r"))
