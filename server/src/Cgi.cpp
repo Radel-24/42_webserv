@@ -39,6 +39,18 @@ void	Cgi::setEnv() {
 
 }
 
+void	emptyUploadFile( std::string path )
+{
+	//LOG_YELLOW("depug upload path: " << path);
+	std::ofstream	file(path, std::ios_base::out);
+	if (file.is_open()) {
+		file << ""; // else error
+		// LOG_YELLOW("upload file is opened");
+	}
+	//std::cout << "HEX\n" << ToHex(content, 0) << "\n";
+	file.close();
+}
+
 void	Cgi::runCgi() {
 	char ** localEnv = mapToArray(env);
 
@@ -53,6 +65,7 @@ void	Cgi::runCgi() {
 
 	std::string	pwd = std::string(getcwd(NULL, FILENAME_MAX));
 	std::string	fullPath = pwd + "/cgiOutput.txt";
+	emptyUploadFile(fullPath);
 	int fout = open(fullPath.c_str(), O_RDWR);
 	LOG_CYAN_INFO("cgi file opened");
 
@@ -62,6 +75,7 @@ void	Cgi::runCgi() {
 		request.status = 500;
 	}
 	if (pid == 0) {
+		//LOG_CYAN_INFO(request.body);
 
 		// !!!!!!!! Don't write log messages in here !!!!!!!
 
@@ -160,12 +174,16 @@ void	Cgi::parseCgi() {
 	//std::string	fullPath = pwd + "/www/42testServer/upload/Felix";
 	std::string	pwd = std::string(getcwd(NULL, FILENAME_MAX));
 	std::string	fullPath = pwd + "/cgiOutput.txt";
-	answer = readFile(fullPath);
+	std::ifstream t(fullPath);
+	std::stringstream buffer;
+	buffer << t.rdbuf();		
+	//answer = readFile(fullPath);
+	answer = buffer.str();
 	//LOG_RED_INFO("file read " << answer);
-	//size_t	bodyBegin = answer.find("\r\n") + 2;
+	size_t	bodyBegin = answer.find("\r\n\r\n") + 4;
 	//LOG_GREEN_INFO("body begin: " << bodyBegin);
 	//LOG_GREEN_INFO("std::string::npos: " << std::string::npos);
-	body = answer;
+	body = answer.substr(bodyBegin, std::string::npos);
 	//std::getline(std::ifstream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt"), answer, '\0');
 	//LOG_BLUE_INFO(body);
 }

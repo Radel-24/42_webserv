@@ -195,6 +195,7 @@ PostResponder::PostResponder(Request & request ) : request(request)
 			i++;
 			std::getline(tmp_body, cleanBody);
 		}
+		request.body = tmp;
 		LOG_YELLOW("END LOOP");
 		LOG_YELLOW("CREATE FILE");
 		createUploadFile(filename, tmp);
