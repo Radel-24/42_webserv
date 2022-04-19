@@ -184,17 +184,10 @@ void	Cgi::parseCgi() {
 	//answer = readFile(fullPath);
 	answer = buffer.str();
 	//LOG_RED_INFO("file read " << answer);
-<<<<<<< HEAD
 	size_t	bodyBegin = answer.find("\r\n\r\n") + 4;
 	//LOG_GREEN_INFO("body begin: " << bodyBegin);
 	//LOG_GREEN_INFO("std::string::npos: " << std::string::npos);
 	body = answer.substr(bodyBegin, std::string::npos);
-=======
-	size_t	bodyBegin = answer.find("\r\n") + 2;
-	LOG_GREEN_INFO("body begin: " << bodyBegin);
-	LOG_GREEN_INFO("std::string::npos: " << std::string::npos);
-	body = answer;
->>>>>>> 28ac20a3df56b44003403e8d8098247213d47a5e
 	//std::getline(std::ifstream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt"), answer, '\0');
 	//LOG_BLUE_INFO(body);
 }
@@ -209,7 +202,7 @@ void	Cgi::answerCgi() {
 	//if (size_t pos = body.find("\n"))
 	//	LOG_RED_INFO("found n " << pos);
 	//response += "\r\n\r\n";
-	LOG_GREEN_INFO("cgi body length: " << body.length());
+	LOG_GREEN_INFO("cgi response length: " << response.length());
 	char * tmp = const_cast<char *>(response.c_str());
 	int bytes_written = writeToSocket(request.socket, tmp + request.bytes_written);
 	LOG_BLACK_INFO("bytes written " << bytes_written);
@@ -219,6 +212,7 @@ void	Cgi::answerCgi() {
 		return ;
 	}
 	request.bytes_written += bytes_written;
+	LOG_BLACK_INFO("total written " << request.bytes_written);
 	if ((size_t)request.bytes_written >= response.length()) {
 		request.status = DONE_WRITING;
 		LOG_GREEN("FINISHED CGI");
