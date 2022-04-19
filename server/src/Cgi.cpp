@@ -62,12 +62,12 @@ void	Cgi::runCgi() {
 
 		// !!!!!!!! Don't write log messages in here !!!!!!!
 
-		write(fin, request.body.c_str(), request.body.size());
 		dup2(fin, STDIN_FILENO);
 
 		//fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR); // TODO only for testing
 
 		dup2(fout, STDOUT_FILENO); // TODO comment this line in to write back the answer to the client
+		write(fin, request.body.c_str(), request.body.size());
 
 		lseek(fin, 0, SEEK_SET);
 		close(fin);

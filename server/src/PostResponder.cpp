@@ -213,7 +213,7 @@ PostResponder::PostResponder(Request & request ) : request(request)
 	}
 	if (request.body.size() == 0) {
 		LOG_RED_INFO("empty body in post request");
-		LOG_RED_INFO(request.header);
+		//LOG_RED_INFO(request.header);
 		writeStatus(204, request.socket);
 		return ;
 	}

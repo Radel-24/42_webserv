@@ -300,7 +300,7 @@ void	Request::setRequestKey(unsigned int KeyIn) {
 }
 
 void	Request::setType() {
-	 LOG_RED_INFO("find: " << header);
+	// LOG_RED_INFO("find: " << header);
 	if (header.find("GET") == 0 ) { setRequestKey(GET); }// if keyword not always at the beginning, us find("GET")
 	else if (header.find("POST") == 0) { setRequestKey(POST); }
 	else if (header.find("PUT") == 0) { setRequestKey(PUT); }
@@ -318,7 +318,7 @@ void Request::readHeader() {
 
 	if (checkHeaderRead()) {
 		status = HEADER_READ;
-		LOG_WHITE_INFO(header);
+		//LOG_WHITE_INFO(header);
 
 		size_t	posHeaderEnd = header.find("\r\n\r\n");
 		if (posHeaderEnd != header.size() - 4) {
