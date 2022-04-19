@@ -73,7 +73,7 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */)
 	return ret.str();
 }
 
-int	writeToSocket(int socket, std::string text) {
+ssize_t	writeToSocket(int socket, std::string text) {
 	//LOG_YELLOW("text.length(): " << text.length());
 	return (write(socket, text.c_str(), text.length()));
 	// TO-DO CALL SELECT BEFORE WRITE AGAIN IF NOT ALL AT ONCE IS WRITTEN

@@ -49,7 +49,7 @@ bool	findInVector(std::vector<T> vec, T needle) {
 	return false;
 }
 
-int	writeToSocket(int socket, std::string text);
+ssize_t	writeToSocket(int socket, std::string text);
 
 char **	mapToArray(std::map<std::string, std::string> map);
 
