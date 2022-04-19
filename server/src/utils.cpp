@@ -74,5 +74,74 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */)
 }
 
 void	writeToSocket(int socket, std::string text) {
-	write(socket, text.c_str(), text.length());
+	//LOG_YELLOW("text.length(): " << text.length());
+	size_t toWrite = text.length();
+	size_t written = 0;
+	while (written < toWrite)
+	{
+		int tmp = write(socket, text.c_str()+written, toWrite);
+		LOG_BLACK("Written Bytes:" << tmp);
+		if (tmp == -1)
+			LOG_BLACK("WRITE ERROR!!!");
+		written += tmp;
+		toWrite -= written;
+	}
+	// TO-DO CALL SELECT BEFORE WRITE AGAIN IF NOT ALL AT ONCE IS WRITTEN
+}
+
+char ** mapToArray(std::map<std::string, std::string> map) {
+	char ** array = (char **)calloc(sizeof(char *), map.size() + 1);
+	size_t index = 0;
+
+	for (std::map<std::string, std::string>::iterator iter = map.begin(); iter != map.end(); ++iter) {
+		std::string str = iter->first + "=" + iter->second;
+		char * c_str = (char *)calloc(sizeof(char *), str.length());
+		char * helpStr = const_cast<char *>(str.c_str());
+		size_t i = 0;
+		while (helpStr[i]) {
+			c_str[i] = helpStr[i];
+			++i;
+		}
+		array[index] = c_str;
+		++index;
+	}
+	array[index] = NULL;
+	return array;
+}
+
+std::string toAbsolutPath(std::string path) {
+	char * buf = getcwd(NULL, FILENAME_MAX);
+	std::string retStr = buf;
+	retStr += "/" + path;
+	return (retStr);
+}
+
+int hex_to_decimal(std::string hex)
+{
+	std::transform(hex.begin(), hex.end(),hex.begin(), ::toupper);
+	int len = hex.size();
+	// Initializing base value to 1, i.e 16^0
+	int base = 1;
+	int dec_val = 0;
+	// Extracting characters as digits from last
+	// character
+	for (int i = len - 1; i >= 0; i--) {
+		// if character lies in '0'-'9', converting
+		// it to integral 0-9 by subtracting 48 from
+		// ASCII value
+		if (hex[i] >= '0' && hex[i] <= '9') {
+			dec_val += (int(hex[i]) - 48) * base;
+			// incrementing base by power
+			base = base * 16;
+		}
+		// if character lies in 'A'-'F' , converting
+		// it to integral 10 - 15 by subtracting 55
+		// from ASCII value
+		else if (hex[i] >= 'A' && hex[i] <= 'F') {
+			dec_val += (int(hex[i]) - 55) * base;
+			// incrementing base by power
+			base = base * 16;
+		}
+	}
+	return dec_val;
 }

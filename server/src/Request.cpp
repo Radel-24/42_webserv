@@ -1,6 +1,7 @@
 #include "Request.hpp"
 #include "PostResponder.hpp"
 
+#include <sys/stat.h>
 
 void	Request::init() {
 	header = "";
@@ -8,6 +9,8 @@ void	Request::init() {
 	bytes_read = 0;
 	location = NULL;
 	status = READING_HEADER;
+	requestKey = NIL;
+	cgi_request = false;
 }
 
 Request::Request() { init(); }
@@ -40,9 +43,19 @@ void	Request::appendHeader(std::string input) {
 void	Request::changePath() { // TODO make hacking save when relative path is given in request
 	for (std::map<std::string, Location *>::reverse_iterator riter = server->locations.rbegin(); riter != server->locations.rend(); ++riter) {
 		if (path.find(riter->first) == 0) {
+			LOG_CYAN_INFO("path: " << path << " riter first " << riter->first);
 			location = riter->second;
+			LOG_CYAN_INFO("root: " << riter->second->root);
+			LOG_CYAN_INFO("path: " << path);
 			path = path.substr(riter->first.length(), std::string::npos);
 			path = riter->second->root + path;
+			LOG_CYAN_INFO("modified path: " << path);
+			struct stat path_stat; // TODO, I don't think this is allowed
+			stat(path.c_str(), &path_stat);
+			if (S_ISDIR(path_stat.st_mode)) {
+				path += "/" + location->default_file;
+				LOG_CYAN_INFO("default file request: " << path);
+			}
 			// LOG_BLUE("after replace: |" << path << "|");
 			break ;
 		}
@@ -59,6 +72,12 @@ void	Request::setPath() {
 		return ;
 	}
 	path = header.substr(posBegin, posEnd - posBegin);
+	LOG_GREEN_INFO("path: |" << path << "|");
+	LOG_GREEN_INFO("find: " << path.find_last_of(server->cgi_extension));
+	LOG_GREEN_INFO("length path: " << path.length() << " cgi Length " << server->cgi_extension.length());
+	if (path.find_last_of(server->cgi_extension) == (path.length() - 1)) {
+		cgi_request = true;
+	}
 	// LOG_BLUE("before replace: |" << path << "|");
 }
 
@@ -87,25 +106,10 @@ std::pair<std::string, std::string>	Request::splitToken( std::string token )
 	return std::make_pair(key, value);
 }
 
-/* currently only checking if host is included */
+
 void	Request::checkHeaderValues( void )
 {
-	//bool											flag = false;
-	//std::map<std::string, std::string>::iterator	iter = headerValues.begin();
-
-	//while (iter != headerValues.end()) {
-	//	if (iter->first == "Host")
-	//		flag = true;
-	//	++iter;
-	//}
-	//if (flag == false)
-	//{
-	//	LOG_RED("error: request is missing host");
-	//	return EXIT_FAILURE;
-	//}
-	//return EXIT_SUCCESS;
-
-
+	LOG_GREEN_INFO("request key: " << requestKey);
 	if (headerValues.find("Host") == headerValues.end()) {
 		status = 400; // TODO don't know error code
 		LOG_RED("error: request is missing host");
@@ -156,7 +160,7 @@ void Request::detectCorrectServer(std::map<int, Server *> & servers) {
 
 void Request::checkRequest() {
 
-	if (requestKey == NIL) { status = 400; }
+	if (requestKey == NIL) { status = 405; }
 	else if (requestKey == GET) {
 		if (!findInVector(location->methods, std::string("GET")))
 			status = 405; // TODO compulsory method mustn't be deactivated: https://developer.mozilla.org/de/docs/Web/HTTP/Status
@@ -192,12 +196,13 @@ void Request::checkRequest() {
 
 void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if request is allowed, otherwise return DECLINE
 	//server->updateFilesHTML(); // TODO put to uesful position
-	LOG_PINK_INFO("server name: " << getServer()->server_name);
-	LOG_PINK_INFO("sock: " << getServer()->sock);
-	LOG_RED_INFO("request status " << status << " request key " << requestKey);
+	//LOG_PINK_INFO("server name: " << getServer()->server_name);
+	//LOG_PINK_INFO("sock: " << getServer()->sock);
+	//LOG_RED_INFO("request status " << status << " request key " << requestKey);
 	if (status == READING_HEADER) {
 		readHeader();
 		if (status == HEADER_READ) {
+			//LOG_GREEN_INFO(header);
 			parseHeader(header);
 			checkHeaderValues();
 			printHeaderValues();
@@ -207,15 +212,19 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 			setPath();
 			changePath();
 			setType();
+			//LOG_YELLOW("START");
+			//LOG_YELLOW(getHeader());
+			//LOG_BLACK(getBody());
+			//LOG_YELLOW("END");
 			checkRequest();
 			if (status >= 100)
 				return ;
 			// LOG_RED_INFO(getRequestKey());
 			//LOG_WHITE(getHeader());
 			// start new alex
-			// LOG_GREEN("START HEADER VALUES");
-			// printHeaderValues();
-			// LOG_GREEN("END HEADER VALUES");
+			LOG_GREEN("START HEADER VALUES");
+			printHeaderValues();
+			LOG_GREEN("END HEADER VALUES");
 			LOG_BLUE("HEADER END ------------------------");
 			// end new alex
 			if (status == DONE_READING) {
@@ -228,8 +237,16 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 		status = DONE_READING;
 		return ;
 	}
-	else if (status == HEADER_READ && getRequestKey() == POST) {
-		readBody();
+	if (status == HEADER_READ && (getRequestKey() == POST || getRequestKey() == PUT)) {
+		if (headerValues.find("Transfer-Encoding")->second == "chunked") {
+			//readBodyChunked();
+			//LOG_GREEN_INFO("READ BODY CHUNKED");
+			readBodyChunked();
+		}
+		else {
+			LOG_GREEN_INFO("READ BODY LENGTH");
+			readBodyLength();
+		}
 		if (status == DONE_READING) {
 			return ;
 		}
@@ -238,19 +255,19 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 		status = DONE_READING;
 		return ;
 	}
+	//if (status == HEADER_READ && getRequestKey() == PUT) {
+	//	status = DONE_READING;
+	//	return ;
+	//}
 }
 
 void	Request::writeRequest() {
+	//LOG_RED_INFO("request status " << status);
 	if (status >= 100 && status < 600) {
-		if (status == 405) {
-			writeToSocket(socket, "HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
-		}
-		if (status == 100) {
-			write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25);
-		}
+		writeStatus(status, socket);
 	}
-	else if (status == DONE_READING && getRequestKey() == POST) {
-		PostResponder pR(getHeader(), getBody(), socket, server);
+	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
+		PostResponder pR(*this);
 	}
 	else if (status == DONE_READING && getRequestKey() == GET) {
 		responder();
@@ -265,6 +282,7 @@ int	Request::checkBodySize(void) {
 	std::string content_length;
 	size_t	type_start = header.find("Content-Length: ") + strlen("Content-Length: ");
 	size_t	type_end = type_start;
+
 	while(header[type_end] != '\n')
 		type_end++;
 	content_length = header.substr(type_start, type_end - type_start - 1); // TODO protect when content_lengt not written in header
@@ -281,7 +299,7 @@ void	Request::setRequestKey(unsigned int KeyIn) {
 }
 
 void	Request::setType() {
-	// LOG_RED("find: " << header.find("DELETE"));
+	 LOG_RED_INFO("find: " << header);
 	if (header.find("GET") == 0 ) { setRequestKey(GET); }// if keyword not always at the beginning, us find("GET")
 	else if (header.find("POST") == 0) { setRequestKey(POST); }
 	else if (header.find("PUT") == 0) { setRequestKey(PUT); }
@@ -290,7 +308,6 @@ void	Request::setType() {
 }
 
 void Request::readHeader() {
-	std::cout << std::endl;
 	LOG_BLUE("HEADER START ----------------------");
 	char	buffer[10000]; // TODO if buffer[5000] not possible to upload felix.jpg with browser
 	memset(buffer, 0, 10000 * sizeof(char));
@@ -300,18 +317,19 @@ void Request::readHeader() {
 
 	if (checkHeaderRead()) {
 		status = HEADER_READ;
+		LOG_WHITE_INFO(header);
 
 		size_t	posHeaderEnd = header.find("\r\n\r\n");
 		if (posHeaderEnd != header.size() - 4) {
 			LOG_BLACK("takes body out of header; pos header end: " << posHeaderEnd);
 			body = header;
 			body.erase(0, posHeaderEnd + 4);
-			LOG_RED_INFO("header: " << header << "\nbody: " << body);
+			//LOG_RED_INFO("header: " << header << "\nbody: " << body);
 
 			LOG_BLACK("body size " << body.size() << "check size " << checkBodySize());
 			if ((int)body.size() == checkBodySize()) {
 				status = DONE_READING;
-				LOG_WHITE_INFO(header);
+				//LOG_WHITE_INFO(header);
 			}
 		}
 		else {
@@ -320,8 +338,45 @@ void Request::readHeader() {
 	}
 }
 
-void Request::readBody() {
-	LOG_CYAN(std::endl << "BODY START ----------------------");
+void	Request::readBodyChunked() {
+	int buffer_size = 200000;
+	//if (chunk_size == -1)
+	//	buffer_size = 4096;
+	//else
+	//	buffer_size = chunk_size;
+	char * read_body = NULL;
+	read_body = new char[buffer_size];
+
+	if (body.find("\r\n\r\n") != std::string::npos)
+	{
+		status = DONE_READING;
+		return;
+	}
+	ssize_t tmp_bytes_read = recv(socket, read_body, buffer_size, 0);
+	//if ()
+	//std::string	sizeInfo =
+	if (tmp_bytes_read > 0) {
+		appendBody(read_body, tmp_bytes_read);
+		bytes_read += tmp_bytes_read;
+	}
+	else {
+		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
+		//TO-DO close socket and delete out of socket list
+		return;
+	}
+	//LOG_BLACK("bytes read after recv: " << bytes_read);
+	if (body.find("\r\n\r\n") != std::string::npos) {
+		status = DONE_READING;
+		//std::cout << getBody() << std::endl;
+		//LOG_BLACK("body read true" << body.size());
+	}
+	delete read_body;
+	//LOG_BLUE_INFO(body);
+	//LOG_CYAN(std::endl << "BODY END ------------------------");
+}
+
+void Request::readBodyLength() {
+	//LOG_CYAN(std::endl << "BODY START ----------------------");
 
 	int max_size = checkBodySize();
 	LOG_BLACK("body size: " << max_size);
@@ -332,30 +387,31 @@ void Request::readBody() {
 
 	char * read_body = NULL;
 	read_body = new char[max_size];
-	//write(socket, "HTTP/1.1 100 Continue\r\n\r\n", 25); // much faster when sending huge files with curl; not allowed without checking with select for write rights
-	LOG_YELLOW("bytes read before recv: " << bytes_read);
 	ssize_t tmp_bytes_read = recv(socket, read_body, max_size, 0);
 	if (tmp_bytes_read > 0) {
 		appendBody(read_body, tmp_bytes_read);
 		bytes_read += tmp_bytes_read;
 	}
 	else {
-		LOG_RED("weird shit going on with select");
+		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
+		//TO-DO close socket and delete out of socket list
+		return;
 	}
 	LOG_BLACK("bytes read after recv: " << bytes_read);
+	LOG_BLACK("body size " << body.size());
 	if ((int)body.size() == checkBodySize()) {
 		status = DONE_READING;
 		//std::cout << getBody() << std::endl;
-		LOG_BLACK("body read true");
+		LOG_BLACK("body read true" << body.size());
 	}
 	delete read_body;
-
-	LOG_CYAN(std::endl << "BODY END ------------------------");
+	//LOG_BLUE_INFO(body);
+	//LOG_CYAN(std::endl << "BODY END ------------------------");
 }
 
 
 // TODO put following 2 functions into utils file
-std::string	readFile( std::string filename ) {
+std::string	Request::readFile( std::string filename ) {
 	std::ifstream	newFile;
 	std::string		ret;
 	std::string		binary = "/Users/fharing/42/webserv/server/";
@@ -377,9 +433,15 @@ std::string	readFile( std::string filename ) {
 		return "EXEC";
 	}
 
-	newFile.open(filename, std::ios::in);
-	if (!newFile)
+	LOG_CYAN_INFO("trying to open: " << filename);
+	if (open(filename.c_str(), std::ios::in) == -1) {
+		status = 404;
 		return "";
+	}
+	newFile.open(filename, std::ios::in);
+	if (!newFile){
+		return "";
+	}
 	while (!newFile.eof())
 	{
 		newFile >> std::noskipws >> c;
@@ -398,6 +460,7 @@ std::string	formatString( std::string file_content ) {
 	length = std::to_string(file_content.length()) + "\n\n";
 	full_header = header.append(length);
 	ret = full_header.append(file_content);
+	//LOG_RED_INFO("response: " << ret);
 	return ret;
 }
 
@@ -425,6 +488,18 @@ void	Request::responder() {
 	std::string	file_content;
 	std::string	formatted;
 
+	LOG_PINK_INFO("test:	" << path);
+	struct stat path_stat; // TODO, I don't think this is allowed
+	std::string	temp = "." + path;
+	stat(temp.c_str(), &path_stat);
+	if (S_ISDIR(path_stat.st_mode)) {
+		path += "/" + location->default_file;
+		LOG_CYAN_INFO("default dir request: " << path);
+	}
+	if (S_ISREG(path_stat.st_mode)) {
+		//path += "/" + location->default_file;
+		LOG_CYAN_INFO("default file request: " << path);
+	}
 	if (path == (server->root + "/"))
 	{
 		file_content = readFile( "." + server->root + "/index.html");
@@ -433,8 +508,14 @@ void	Request::responder() {
 	else
 	{
 		file_content = readFile(path.substr(1, std::string::npos));
-		if (file_content.empty())
+		if (status == 404){
+			LOG_RED_INFO("404 gets sent");
+			writeToSocket(socket, "HTTP/1.1 404 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
+			return ;
+		}
+		if (file_content.empty()) {
 			formatted = formatString("error: 404"); //TODO check if this is reached
+		}
 		else
 			formatted = formatString(file_content);
 	}

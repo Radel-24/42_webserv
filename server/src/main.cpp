@@ -36,13 +36,20 @@ void accepter(std::map<int, Server *> & servers)
 	fd_set	watching_write_sockets;
 	std::map<int, Request *> requests;
 
+	int	highestSocket = 0;
+
 	FD_ZERO(&watching_read_sockets);
 	FD_ZERO(&watching_write_sockets);
 
 	for (std::map<int, Server *>::iterator iter = servers.begin(); iter != servers.end(); ++iter) {
 		LOG_GREEN("Server " << iter->second->sock << " added to waching read sockets");
 		FD_SET(iter->second->sock, &watching_read_sockets);
+		if (highestSocket < iter->second->sock) {
+			highestSocket = iter->second->sock;
+		}
 	}
+
+	LOG_RED_INFO("highest socket " << highestSocket);
 
 
 
@@ -50,10 +57,12 @@ void accepter(std::map<int, Server *> & servers)
 		fd_set read_sockets = watching_read_sockets;
 		fd_set write_sockets = watching_write_sockets;
 
-		std::cout << std::endl;
-		LOG_YELLOW("before select ---------------------");
+		// TODO speed this up
+		// TODO can fcntl(...) be used to get currently highest fd?
 		int amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, NULL);
-		LOG_YELLOW("after select: amount ready socks: " << amount_ready_socks);
+
+		//LOG("after select");
+
 		if (amount_ready_socks < 0)
 		{
 			perror("select error");
@@ -62,13 +71,16 @@ void accepter(std::map<int, Server *> & servers)
 
 		// TODO read steps should be: default server reads header, requested server checks header, and maybe assigns new server socket with accept (close old socket!) and processes request
 
-		for (int check_socket = 0; check_socket < FD_SETSIZE; ++check_socket) {
+		for (int check_socket = 0; check_socket <= highestSocket; ++check_socket) {
 			if (FD_ISSET(check_socket, &read_sockets)) {
 				std::map<int, Server *>::iterator server_elem = servers.find(check_socket);
 				if (server_elem != servers.end()) {
 					struct sockaddr_in address = (server_elem->second)->g_address;
 					int addrlen = sizeof(address);
 					int new_socket = accept((server_elem->second)->sock, (struct sockaddr *)&address, (socklen_t *)&addrlen);
+					if (highestSocket < new_socket) {
+						highestSocket = new_socket;
+					}
 					FD_SET(new_socket, &watching_read_sockets);
 					requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket, server_elem->second)));
 				}
@@ -83,7 +95,8 @@ void accepter(std::map<int, Server *> & servers)
 					// LOG_RED(request.getServer()->port);
 					// request.printHeaderValues();
 					/* end alex new */
-					LOG_RED_INFO("request status: " << request.status);
+
+					//LOG_RED_INFO("request status: " << request.status);
 
 					if (request.status >= 100 || request.status == DONE_READING) {
 						FD_CLR(request.socket, &watching_read_sockets);
@@ -92,7 +105,7 @@ void accepter(std::map<int, Server *> & servers)
 				}
 			}
 		}
-		for (int check_socket = 0; check_socket < FD_SETSIZE; ++check_socket) {
+		for (int check_socket = 0; check_socket <= highestSocket; ++check_socket) {
 			if (FD_ISSET(check_socket, &write_sockets)) {
 				Request &	request = *(requests[check_socket]);
 				LOG_RED_INFO("request status: " << request.status);
@@ -105,7 +118,7 @@ void accepter(std::map<int, Server *> & servers)
 				if (request.status == DONE_READING || (request.status >= 200 && request.status < 600)) {
 					requests[check_socket]->writeRequest();
 					FD_CLR(request.socket, &watching_write_sockets);
-					close(request.socket);
+					close(request.socket); // TODO close socket in Request destructor
 					delete &request;
 					requests.erase(requests.find(check_socket));
 					LOG_RED("request removed from map");
@@ -137,3 +150,5 @@ int	main(int argc, char ** argv)
 
 	return 0;
 }
+
+// TODO check file sizes after put, maybe clearing file at first call and then appending

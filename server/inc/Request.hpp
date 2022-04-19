@@ -10,6 +10,9 @@
 #include "PostResponder.hpp"
 #include "utils.hpp"
 
+class Server;
+class PostResponder;
+
 enum ReqKeys {
 	NIL,
 	GET,
@@ -33,15 +36,18 @@ class	Request {
 		int	status;
 		int									socket;
 		Server *							server;
+		bool	cgi_request;
+		std::map<std::string, std::string>	headerValues;
+		std::string							body;
+		std::string							header;
+
 
 	private:
-		std::string							header;
-		std::string							body;
-		std::map<std::string, std::string>	headerValues;
 		unsigned int						requestKey;
 		ssize_t								bytes_read;
 		std::string							path;
 		Location *							location;
+		std::string	chunk;
 
 
 	private:
@@ -58,7 +64,7 @@ class	Request {
 		int			checkBodySize(void);
 
 		void	appendHeader(std::string input);
-		void	appendBody(char *, int);
+		void	appendBody( char *, int);
 		// void	setHeaderValues(std::pair<std::string, std::string> pair);
 
 		//void	clearBody();
@@ -75,7 +81,12 @@ class	Request {
 		void	changePath();
 		void	setPath();
 		void	readHeader();
-		void	readBody();
+		void	readBodyLength();
+		void	readBodyChunked();
+
+		int	checkBodySizeChunk();
+		int	chunkSize();
+
 
 		void	responder();
 		std::string	getFilename();
@@ -83,7 +94,7 @@ class	Request {
 		void	printHeaderValues() {
 			std::map<std::string, std::string>::iterator iter = headerValues.begin();
 			while (iter != headerValues.end()) {
-				std::cout << iter->first << " | " << iter->second << "\n";
+				LOG_WHITE(iter->first << " | " << iter->second);
 				++iter;
 			}
 		}
@@ -103,6 +114,7 @@ class	Request {
 		void									checkHeaderValues( void );
 
 		void	checkRequest();
+		std::string	readFile( std::string filename );
 
 		std::string							getHostName( void ) const {
 			std::map<std::string, std::string>::const_iterator	iter = headerValues.begin();
@@ -117,3 +129,5 @@ class	Request {
 		/* end alex new */
 
 };
+
+

@@ -9,10 +9,12 @@ SRC =	main.cpp		\
 		utils.cpp		\
 		PostResponder.cpp \
 		Config.cpp		\
-		Server.cpp
+		Server.cpp		\
+		Cgi.cpp			\
+		writeStatus.cpp
 
 
-HEADER = Request.hpp utils.hpp PostResponder.hpp
+HEADER = Request.hpp utils.hpp PostResponder.hpp Cgi.hpp
 
 INC = -Iinc
 
