@@ -171,7 +171,7 @@ PostResponder::PostResponder(Request & request ) : request(request)
 	//LOG_YELLOW(request.header);
 	//LOG_YELLOW("END");
 	//----------------------------------------------------------------------------------------------------------------------------
-	if (request.header.find("Transfer-Encoding: chunked") != std::string::npos)
+	if (request.header.find("Transfer-Encoding: chunked") != std::string::npos && request.file_created == false)
 	{
 		//TO-DO create the right file name, and create new file per reuest atm im appending it
 		LOG_YELLOW("chunked body!!!!");
@@ -199,6 +199,7 @@ PostResponder::PostResponder(Request & request ) : request(request)
 		LOG_YELLOW("CREATE FILE");
 		createUploadFile(filename, tmp);
 		//request.body = tmp;
+		request.file_created = true;
 		LOG_YELLOW("FILE CREATED");
 
 		if (request.cgi_request) {
@@ -213,6 +214,13 @@ PostResponder::PostResponder(Request & request ) : request(request)
 		request.status = DONE_WRITING;
 		return ;
 	}
+	if (request.cgi_request && request.file_created) {
+			request.status = DONE_READING;
+			LOG_GREEN("RUN CGI");
+			Cgi cgi(request);
+			LOG_GREEN("END CGI");
+			return ;
+		}
 	if (request.body.size() == 0) {
 		LOG_RED_INFO("empty body in post request");
 		//LOG_RED_INFO(request.header);

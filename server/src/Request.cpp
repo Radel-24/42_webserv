@@ -12,6 +12,7 @@ void	Request::init() {
 	status = READING_HEADER;
 	requestKey = NIL;
 	cgi_request = false;
+	file_created = false;
 }
 
 Request::Request() { init(); }

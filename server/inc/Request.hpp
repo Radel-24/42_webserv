@@ -33,6 +33,7 @@ enum Status {
 
 class	Request {
 	public:
+		int file_created;
 		int	status;
 		int									socket;
 		Server *							server;
