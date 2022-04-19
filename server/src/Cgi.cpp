@@ -180,6 +180,16 @@ void	Cgi::answerCgi() {
 	//response += "\r\n\r\n";
 	LOG_GREEN_INFO("cgi body length: " << body.length());
 	writeToSocket(request.socket, response);
+
+	// std::string	pwd = std::string(getcwd(NULL, FILENAME_MAX));
+	// std::string	filePath1 = pwd + "/www/42testServer/upload/Felix";
+	// std::string	removeFile1 = "rm " + filePath1;
+	// system(removeFile1.c_str());
+
+	// std::string	filePath2 = pwd + "/cgiOutput.txt";
+	// std::string	removeFile2 = "rm " + filePath2;
+	// system(removeFile2.c_str());
+
 	LOG_GREEN("FINISHED CGI");
 
 	//int fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR);
