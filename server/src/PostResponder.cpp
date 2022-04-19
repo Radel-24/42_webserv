@@ -203,7 +203,7 @@ PostResponder::PostResponder(Request & request ) : request(request)
 		LOG_YELLOW("FILE CREATED");
 
 		if (request.cgi_request) {
-			request.status = DONE_READING;
+			//request.status = DONE_READING;
 			LOG_GREEN("RUN CGI");
 			Cgi cgi(request);
 			LOG_GREEN("END CGI");

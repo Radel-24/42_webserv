@@ -214,7 +214,12 @@ void	Cgi::answerCgi() {
 	request.bytes_written += bytes_written;
 	LOG_BLACK_INFO("total written " << request.bytes_written);
 	if ((size_t)request.bytes_written >= response.length()) {
-		request.status = DONE_WRITING;
+		request.init();
+		request.status = DONE_WRITING_CGI;
+		//request.file_created = false;
+		//request.body.clear();
+		//request.bytes_written = 0;
+		//request.header.clear();
 		LOG_GREEN("FINISHED CGI");
 	}
 

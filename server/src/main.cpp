@@ -49,7 +49,7 @@ void accepter(std::map<int, Server *> & servers)
 		}
 	}
 
-	LOG_RED_INFO("highest socket " << highestSocket);
+	//LOG_RED_INFO("highest socket " << highestSocket);
 
 
 
@@ -61,7 +61,7 @@ void accepter(std::map<int, Server *> & servers)
 		// TODO can fcntl(...) be used to get currently highest fd?
 		int amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, NULL);
 
-		//LOG("after select");
+		//LOG_PINK("after select");
 
 		if (amount_ready_socks < 0)
 		{
@@ -102,6 +102,13 @@ void accepter(std::map<int, Server *> & servers)
 						FD_CLR(request.socket, &watching_read_sockets);
 						FD_SET(request.socket, &watching_write_sockets);
 					}
+					if (request.status == CLIENT_CLOSED_CONNECTION) {
+						FD_CLR(request.socket, &watching_read_sockets);
+						close(request.socket); // TODO close socket in Request destructor
+						delete &request;
+						requests.erase(requests.find(check_socket));
+						LOG_RED("request removed from map");
+					}
 				}
 			}
 		}
@@ -124,7 +131,19 @@ void accepter(std::map<int, Server *> & servers)
 						requests.erase(requests.find(check_socket));
 						LOG_RED("request removed from map");
 					}
+					if (request.status == DONE_WRITING_CGI) {
+						FD_CLR(request.socket, &watching_write_sockets);
+						FD_SET(request.socket, &watching_read_sockets);
+						request.status = READING_HEADER;
+					}
 				}
+				if (request.status == CLIENT_CLOSED_CONNECTION) {
+						FD_CLR(request.socket, &watching_write_sockets);
+						close(request.socket); // TODO close socket in Request destructor
+						delete &request;
+						requests.erase(requests.find(check_socket));
+						LOG_RED("request removed from map");
+					}
 			}
 		}
 	}

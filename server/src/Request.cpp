@@ -366,6 +366,7 @@ void	Request::readBodyChunked() {
 	}
 	else {
 		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
+		status = CLIENT_CLOSED_CONNECTION;
 		//TO-DO close socket and delete out of socket list
 		return;
 	}
@@ -399,6 +400,7 @@ void Request::readBodyLength() {
 	}
 	else {
 		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
+		status = CLIENT_CLOSED_CONNECTION;
 		//TO-DO close socket and delete out of socket list
 		return;
 	}

@@ -28,7 +28,9 @@ enum Status {
 	READING_BODY,
 	DONE_READING,
 	WRITING,
-	DONE_WRITING
+	DONE_WRITING,
+	DONE_WRITING_CGI,
+	CLIENT_CLOSED_CONNECTION
 };
 
 class	Request {
@@ -53,9 +55,9 @@ class	Request {
 
 
 	private:
-		void	init();
 
 	public:
+		void	init();
 		Request();
 		Request(int socket, Server * server);
 		~Request();
