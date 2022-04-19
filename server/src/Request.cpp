@@ -427,24 +427,24 @@ void Request::readBodyLength() {
 std::string	Request::readFile( std::string filename ) {
 	std::ifstream	newFile;
 	std::string		ret;
-	std::string		binary = "/Users/radelwar/42/webserv/server/";
+	// std::string		binary = "/Users/radelwar/42/webserv/server/";
 	std::string		values;
-	std::string		execute = "/Users/radelwar/42/webserv/server/cgi/php-cgi -f ";
-	size_t			found;
+	// std::string		execute = "/Users/radelwar/42/webserv/server/cgi/php-cgi -f ";
+	// size_t			found;
 	char			c;
-	if ((found = filename.find("cgi/", 0)) != std::string::npos)
-	{
-		if ((found = filename.find("?",0)) != std::string::npos)
-		{
-			binary = binary + filename.substr(0,found);
-			values = filename.substr(found + 1,filename.length());
-			std::replace(values.begin(),values.end(), '&', ' ');
-		}
-		execute = execute + binary + " " + values + " > out";
-		//std::cout << execute << std::endl;
-		system(execute.c_str());
-		return "EXEC";
-	}
+	// if ((found = filename.find("cgi/", 0)) != std::string::npos)
+	// {
+	// 	if ((found = filename.find("?",0)) != std::string::npos)
+	// 	{
+	// 		binary = binary + filename.substr(0,found);
+	// 		values = filename.substr(found + 1,filename.length());
+	// 		std::replace(values.begin(),values.end(), '&', ' ');
+	// 	}
+	// 	execute = execute + binary + " " + values + " > out";
+	// 	//std::cout << execute << std::endl;
+	// 	system(execute.c_str());
+	// 	return "EXEC";
+	// }
 
 	LOG_CYAN_INFO("trying to open: " << filename);
 	if (open(filename.c_str(), std::ios::in) == -1) {

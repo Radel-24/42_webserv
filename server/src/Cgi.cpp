@@ -3,7 +3,12 @@
 // LOGIC: <request.body php-cgi >response -> socket
 void	Cgi::init() {
 	inFile = tmpfile();
-	outFile = tmpfile();
+	// outFile = tmpfile();
+	tempFile = tmpfile();
+	answer = "";
+	answer.clear();
+	body = "";
+	body.clear();
 }
 
 Cgi::Cgi(Request & request) : request(request) {
@@ -71,10 +76,11 @@ void	Cgi::runCgi() {
 	int fin = fileno(inFile);
 	//int fout = fileno(outFile); // TODO maybe write to outfile and let host send the answer back to the client
 
-	std::string	pwd = std::string(getcwd(NULL, FILENAME_MAX));
-	std::string	fullPath = pwd + "/cgiOutput.txt";
-	emptyUploadFile(fullPath);
-	int fout = open(fullPath.c_str(), O_RDWR);
+	// std::string	pwd = std::string(getcwd(NULL, FILENAME_MAX));
+	// std::string	fullPath = pwd + "/cgiOutput.txt";
+	// emptyUploadFile(fullPath);
+	// int fout = open(fullPath.c_str(), O_RDWR);
+	int fout = fileno(tempFile);
 	LOG_CYAN_INFO("cgi file opened");
 
 	pid_t pid = fork();
@@ -91,9 +97,9 @@ void	Cgi::runCgi() {
 
 		//fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR); // TODO only for testing
 
+		
 		dup2(fout, STDOUT_FILENO); // TODO comment this line in to write back the answer to the client
 		write(fin, request.body.c_str(), request.body.size());
-
 		lseek(fin, 0, SEEK_SET);
 		close(fin);
 		close(fout);
@@ -104,7 +110,7 @@ void	Cgi::runCgi() {
 		}
 	} else {
 		close(fin);
-		close(fout);
+		// close(fout);
 		// TODO no clue what to do
 		int exit_status;
 		wait(&exit_status);
@@ -120,78 +126,54 @@ void	Cgi::runCgi() {
 	}
 }
 
-
-std::string	readFile( std::string filename ) {
-	std::ifstream	newFile;
-	std::string		ret = "";
-	std::string		binary = std::string(getcwd(NULL, FILENAME_MAX)) + "/";
-	std::string		values;
-	std::string		execute = std::string(getcwd(NULL, FILENAME_MAX)) + "/cgi/php-cgi -f ";
-	size_t			found;
-	//char			c;
-	if ((found = filename.find("cgi/", 0)) != std::string::npos)
-	{
-		if ((found = filename.find("?",0)) != std::string::npos)
-		{
-			binary = binary + filename.substr(0,found);
-			values = filename.substr(found + 1,filename.length());
-			std::replace(values.begin(),values.end(), '&', ' ');
-		}
-		execute = execute + binary + " " + values + " > out";
-
-		//std::cout << execute << std::endl;
-		system(execute.c_str());
-		return "EXEC";
-	}
-
-	LOG_CYAN_INFO("trying to open: " << filename);
-	if (open(filename.c_str(), std::ios::in) == -1) {
-		//status = 404;
-		return "";
-	}
-	newFile.open(filename, std::ios::in);
-	if (!newFile){
-		LOG_RED_INFO("openeing " << filename << " failed");
-		return "";
-	}
-	std::string buffer;
-	while (!newFile.eof())
-	{
-		std::getline(newFile, buffer);
-		ret.append(buffer);
-	}
-	// LOG_YELLOW("i: " << i);
-	// LOG_WHITE("ret1 = " << ret.substr(0, 80));
-
-	// unsigned long pos = ret.find("\r\n");
-	// LOG_GREEN("pos = " << pos);
-	// if (pos != std::string::npos)
-	// {
-	// 	LOG_GREEN("pos = " << pos);
-	// 	ret = ret.substr(pos + 2, ret.length());
-	// }
-	newFile.close();
-	return ret;
-}
-
 void	Cgi::parseCgi() {
 //	std::ifstream instream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt");
 //	std::stringstream strStr;
 //	strStr << instream;
 	//std::string	pwd = std::string(getcwd(NULL, FILENAME_MAX));
 	//std::string	fullPath = pwd + "/www/42testServer/upload/Felix";
-	std::string	pwd = std::string(getcwd(NULL, FILENAME_MAX));
-	std::string	fullPath = pwd + "/cgiOutput.txt";
-	std::ifstream t(fullPath);
-	std::stringstream buffer;
-	buffer << t.rdbuf();		
-	//answer = readFile(fullPath);
-	answer = buffer.str();
+	// std::string	pwd = std::string(getcwd(NULL, FILENAME_MAX));
+	// std::string	fullPath = pwd + "/cgiOutput.txt";
+	// std::ifstream t(fullPath);
+	// std::stringstream buffer;
+	// buffer << t.rdbuf();
+
+	// int fout = fileno(request.tempFile);
+	char *buffer;
+
+	 // obtain file size:
+	fseek (tempFile , 0 , SEEK_END);
+	long lSize = ftell (tempFile);
+	rewind (tempFile);
+
+	buffer = (char*) calloc (lSize, sizeof(char));
+	if (buffer == NULL)
+		LOG_RED_INFO("MALLOC FAILED");
+
+	long result = fread (buffer, 1,lSize ,tempFile);
+
+	LOG_RED(lSize);
+	LOG_RED(result);
+
+  	if (result != lSize)
+	  	LOG_RED("ERROR");
+	answer = std::string(buffer);
+	free(buffer);
+	int fout = fileno(tempFile);
+	close(fout);
 	//LOG_RED_INFO("file read " << answer);
 	size_t	bodyBegin = answer.find("\r\n\r\n") + 4;
+
+	LOG_PINK("body begin: " << bodyBegin);
 	//LOG_GREEN_INFO("body begin: " << bodyBegin);
 	//LOG_GREEN_INFO("std::string::npos: " << std::string::npos);
 	body = answer.substr(bodyBegin, std::string::npos);
+
+	LOG_PINK(body.substr(0, 20));
+	LOG_PINK(body.substr(body.length() - 20, std::string::npos));
+	size_t pp = body.find_first_not_of("C");
+	LOG_PINK(body.substr(pp, 30));
+
 	//std::getline(std::ifstream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt"), answer, '\0');
 	//LOG_BLUE_INFO(body);
 }
@@ -222,6 +204,8 @@ void	Cgi::answerCgi() {
 		request.init();
 		request.status = DONE_WRITING_CGI;
 		//request.file_created = false;
+		fclose(tempFile);
+		fclose(inFile);
 		//request.body.clear();
 		//request.bytes_written = 0;
 		//request.header.clear();

@@ -47,6 +47,7 @@ class	Request {
 		PostResponder *	postResponder;
 
 
+
 	private:
 		unsigned int						requestKey;
 		ssize_t								bytes_read;
