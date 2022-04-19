@@ -21,6 +21,7 @@ class PostResponder {
 		int				_numOfBoundaries;
 
 		Request &		request;
+		
 
 		std::string	extractBoundary( void );
 		int			countBoundaries( void );
