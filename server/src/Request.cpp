@@ -212,15 +212,19 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 			setPath();
 			changePath();
 			setType();
+			//LOG_YELLOW("START");
+			//LOG_YELLOW(getHeader());
+			//LOG_BLACK(getBody());
+			//LOG_YELLOW("END");
 			checkRequest();
 			if (status >= 100)
 				return ;
 			// LOG_RED_INFO(getRequestKey());
 			//LOG_WHITE(getHeader());
 			// start new alex
-			// LOG_GREEN("START HEADER VALUES");
-			// printHeaderValues();
-			// LOG_GREEN("END HEADER VALUES");
+			LOG_GREEN("START HEADER VALUES");
+			printHeaderValues();
+			LOG_GREEN("END HEADER VALUES");
 			LOG_BLUE("HEADER END ------------------------");
 			// end new alex
 			if (status == DONE_READING) {
@@ -233,7 +237,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 		status = DONE_READING;
 		return ;
 	}
-	else if (status == HEADER_READ && (getRequestKey() == POST || getRequestKey() == PUT)) {
+	if (status == HEADER_READ && (getRequestKey() == POST || getRequestKey() == PUT)) {
 		if (headerValues.find("Transfer-Encoding")->second == "chunked") {
 			//readBodyChunked();
 			//LOG_GREEN_INFO("READ BODY CHUNKED");
@@ -320,7 +324,7 @@ void Request::readHeader() {
 			LOG_BLACK("takes body out of header; pos header end: " << posHeaderEnd);
 			body = header;
 			body.erase(0, posHeaderEnd + 4);
-			LOG_RED_INFO("header: " << header << "\nbody: " << body);
+			//LOG_RED_INFO("header: " << header << "\nbody: " << body);
 
 			LOG_BLACK("body size " << body.size() << "check size " << checkBodySize());
 			if ((int)body.size() == checkBodySize()) {
@@ -335,13 +339,19 @@ void Request::readHeader() {
 }
 
 void	Request::readBodyChunked() {
-	int buffer_size = 4096;
+	int buffer_size = 200000;
 	//if (chunk_size == -1)
 	//	buffer_size = 4096;
 	//else
 	//	buffer_size = chunk_size;
 	char * read_body = NULL;
 	read_body = new char[buffer_size];
+
+	if (body.find("\r\n\r\n") != std::string::npos)
+	{
+		status = DONE_READING;
+		return;
+	}
 	ssize_t tmp_bytes_read = recv(socket, read_body, buffer_size, 0);
 	//if ()
 	//std::string	sizeInfo =
@@ -350,7 +360,9 @@ void	Request::readBodyChunked() {
 		bytes_read += tmp_bytes_read;
 	}
 	else {
-		LOG_RED("weird shit going on with select");
+		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
+		//TO-DO close socket and delete out of socket list
+		return;
 	}
 	//LOG_BLACK("bytes read after recv: " << bytes_read);
 	if (body.find("\r\n\r\n") != std::string::npos) {
@@ -381,7 +393,9 @@ void Request::readBodyLength() {
 		bytes_read += tmp_bytes_read;
 	}
 	else {
-		LOG_YELLOW("weird shit going on with select, socket: " << socket);
+		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
+		//TO-DO close socket and delete out of socket list
+		return;
 	}
 	LOG_BLACK("bytes read after recv: " << bytes_read);
 	LOG_BLACK("body size " << body.size());
