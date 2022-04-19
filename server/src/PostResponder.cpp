@@ -176,8 +176,8 @@ PostResponder::PostResponder(Request & request ) : request(request)
 		//TO-DO create the right file name, and create new file per reuest atm im appending it
 		LOG_YELLOW("chunked body!!!!");
 		std::string cleanBody;
-		std::string filename = "Felix";
-		emptyUploadFile(filename);
+		//std::string filename = "Felix";
+		//emptyUploadFile(filename);
 
 		int i = 0;
 		std::string tmp;
@@ -198,9 +198,8 @@ PostResponder::PostResponder(Request & request ) : request(request)
 		request.body = tmp;
 		LOG_YELLOW("END LOOP");
 		LOG_YELLOW("CREATE FILE");
-		createUploadFile(filename, tmp);
+		//createUploadFile(filename, tmp);
 		//request.body = tmp;
-		request.file_created = true;
 		LOG_YELLOW("FILE CREATED");
 
 		if (request.cgi_request) {
