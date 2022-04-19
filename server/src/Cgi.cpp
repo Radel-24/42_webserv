@@ -7,9 +7,13 @@ void	Cgi::init() {
 }
 
 Cgi::Cgi(Request & request) : request(request) {
-	init();
-	setEnv();
-	runCgi();
+	if (request.file_created == false)
+	{
+		init();
+		setEnv();
+		runCgi();
+		request.file_created = true;
+	}
 	parseCgi();
 	answerCgi();
 }
@@ -162,9 +166,9 @@ void	Cgi::parseCgi() {
 	std::string	fullPath = pwd + "/cgiOutput.txt";
 	answer = readFile(fullPath);
 	//LOG_RED_INFO("file read " << answer);
-	//size_t	bodyBegin = answer.find("\r\n") + 2;
-	//LOG_GREEN_INFO("body begin: " << bodyBegin);
-	//LOG_GREEN_INFO("std::string::npos: " << std::string::npos);
+	size_t	bodyBegin = answer.find("\r\n") + 2;
+	LOG_GREEN_INFO("body begin: " << bodyBegin);
+	LOG_GREEN_INFO("std::string::npos: " << std::string::npos);
 	body = answer;
 	//std::getline(std::ifstream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt"), answer, '\0');
 	//LOG_BLUE_INFO(body);
