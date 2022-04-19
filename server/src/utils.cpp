@@ -86,7 +86,7 @@ void	writeToSocket(int socket, std::string text) {
 		written += tmp;
 		toWrite -= written;
 	}
-	// TO-DO find logic if file to big for write it in one time !! CALL SELECT BEFORE WRITE AGAIN
+	// TO-DO CALL SELECT BEFORE WRITE AGAIN IF NOT ALL AT ONCE IS WRITTEN
 }
 
 char ** mapToArray(std::map<std::string, std::string> map) {
