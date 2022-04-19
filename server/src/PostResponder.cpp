@@ -202,6 +202,7 @@ PostResponder::PostResponder(Request & request ) : request(request)
 		LOG_YELLOW("FILE CREATED");
 
 		if (request.cgi_request) {
+			request.status = DONE_READING;
 			LOG_GREEN("RUN CGI");
 			Cgi cgi(request);
 			LOG_GREEN("END CGI");
@@ -209,12 +210,14 @@ PostResponder::PostResponder(Request & request ) : request(request)
 		}
 		//------------------------------------------------------------------------------------------------------------------------------------------
 		writeStatus(201, request.socket);
+		request.status = DONE_WRITING;
 		return ;
 	}
 	if (request.body.size() == 0) {
 		LOG_RED_INFO("empty body in post request");
 		//LOG_RED_INFO(request.header);
 		writeStatus(204, request.socket);
+		request.status = DONE_WRITING;
 		return ;
 	}
 	_boundary = extractBoundary();
@@ -222,6 +225,7 @@ PostResponder::PostResponder(Request & request ) : request(request)
 	{
 		// es gibt kein boundary, also wuden keine files geschickt und ich muss irgendwas anderes tun
 		writeToSocket(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: extractBoundary");
+		request.status = DONE_WRITING;
 		return ;
 	}
 
@@ -230,6 +234,7 @@ PostResponder::PostResponder(Request & request ) : request(request)
 	{
 		// kann eigentlich nicht sein, keine ahnung was dann passieren soll mrrrrrrkkk
 		writeToSocket(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries");
+		request.status = DONE_WRITING;
 		return ;
 	}
 
@@ -241,6 +246,7 @@ PostResponder::PostResponder(Request & request ) : request(request)
 			return ;
 		}
 		writeStatus(201, request.socket);
+		request.status = DONE_WRITING;
 		return ;
 	}
 
@@ -248,5 +254,6 @@ PostResponder::PostResponder(Request & request ) : request(request)
 	char redirection[] = "HTTP/1.1 301 Moved Permanently\nLocation: http://127.0.0.1:1000/index.html\n\n"; //TODO include path from rerouting
 
 	writeToSocket(request.socket, redirection);
+	request.status = DONE_WRITING;
 }
 

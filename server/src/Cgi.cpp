@@ -50,7 +50,7 @@ void	Cgi::runCgi() {
 	//char * cgi_path = const_cast<char *>(toAbsolutPath(request.server->cgi_path).c_str());
 	int fin = fileno(inFile);
 	//int fout = fileno(outFile); // TODO maybe write to outfile and let host send the answer back to the client
-	int fout = open("/Users/fharing/42/webserv/server/cgiOutput.txt", O_RDWR);
+	int fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR);
 	LOG_CYAN_INFO("cgi file opened");
 
 	pid_t pid = fork();
@@ -88,7 +88,7 @@ void	Cgi::runCgi() {
 		//if (WEXITSTATUS(exit_status) == 1)
 		//	request.status = 500;
 		//else
-			request.status = DONE_WRITING;
+			//request.status = DONE_WRITING;
 		LOG_GREEN_INFO("finished runCgi");
 		//write(request.socket, fout, )
 		//LOG_BLUE_INFO(fout);
@@ -153,7 +153,7 @@ void	Cgi::parseCgi() {
 //	std::ifstream instream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt");
 //	std::stringstream strStr;
 //	strStr << instream;
-	answer = readFile("/Users/fharing/42/webserv/server/www/42testServer/upload/Felix");
+	answer = readFile("/Users/radelwar/Documents/42_webserv/server/www/42testServer/upload/Felix");
 	//LOG_RED_INFO("file read " << answer);
 	//size_t	bodyBegin = answer.find("\r\n") + 2;
 	//LOG_GREEN_INFO("body begin: " << bodyBegin);
@@ -174,7 +174,8 @@ void	Cgi::answerCgi() {
 	//	LOG_RED_INFO("found n " << pos);
 	//response += "\r\n\r\n";
 	LOG_GREEN_INFO("cgi body length: " << body.length());
-	int bytes_written = writeToSocket(request.socket, response.c_str() + request.bytes_written);
+	char * tmp = const_cast<char *>(response.c_str());
+	int bytes_written = writeToSocket(request.socket, tmp + request.bytes_written);
 	LOG_BLACK_INFO("bytes written " << bytes_written);
 	if (bytes_written == -1) {
 		request.status = DONE_WRITING;
@@ -182,9 +183,10 @@ void	Cgi::answerCgi() {
 		return ;
 	}
 	request.bytes_written += bytes_written;
-	if ((size_t)request.bytes_written >= response.length())
+	if ((size_t)request.bytes_written >= response.length()) {
 		request.status = DONE_WRITING;
-	LOG_GREEN("FINISHED CGI");
+		LOG_GREEN("FINISHED CGI");
+	}
 
 	//int fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR);
 	//writeToSocket(fout, response);

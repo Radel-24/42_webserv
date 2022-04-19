@@ -266,17 +266,20 @@ void	Request::writeRequest() {
 	//LOG_RED_INFO("request status " << status);
 	if (status >= 100 && status < 600) {
 		writeStatus(status, socket);
+		status =  DONE_WRITING;
 	}
 	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
 		PostResponder pR(*this);
+		return ;
 	}
 	else if (status == DONE_READING && getRequestKey() == GET) {
 		responder();
+		status =  DONE_WRITING;
 	}
 	else if (status == DONE_READING && getRequestKey() == DELETE) {
 		deleteResponder();
+		status =  DONE_WRITING;
 	}
-	status =  DONE_WRITING;
 }
 
 int	Request::checkBodySize(void) {
@@ -415,9 +418,9 @@ void Request::readBodyLength() {
 std::string	Request::readFile( std::string filename ) {
 	std::ifstream	newFile;
 	std::string		ret;
-	std::string		binary = "/Users/fharing/42/webserv/server/";
+	std::string		binary = "/Users/radelwar/42/webserv/server/";
 	std::string		values;
-	std::string		execute = "/Users/fharing/42/webserv/server/cgi/php-cgi -f ";
+	std::string		execute = "/Users/radelwar/42/webserv/server/cgi/php-cgi -f ";
 	size_t			found;
 	char			c;
 	if ((found = filename.find("cgi/", 0)) != std::string::npos)
