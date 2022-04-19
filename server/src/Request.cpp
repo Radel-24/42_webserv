@@ -6,6 +6,8 @@
 void	Request::init() {
 	header = "";
 	body = "";
+	header.clear();
+	body.clear();
 	bytes_read = 0;
 	bytes_written = 0;
 	location = NULL;
