@@ -276,6 +276,10 @@ void	Request::writeRequest() {
 		if (!postResponder)
 			postResponder = new PostResponder(*this);
 		postResponder->run();
+		if (status == DONE_WRITING_CGI) {
+			delete (postResponder);
+			postResponder = NULL;
+		}
 		//PostResponder pR(*this);
 		return ;
 	}

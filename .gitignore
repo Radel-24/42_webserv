@@ -1,3 +1,4 @@
 files.html
 server/files/*
+server/cgiOutput.txt
 *DS_Store
