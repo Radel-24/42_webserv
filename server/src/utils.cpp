@@ -73,19 +73,9 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */)
 	return ret.str();
 }
 
-void	writeToSocket(int socket, std::string text) {
+int	writeToSocket(int socket, std::string text) {
 	//LOG_YELLOW("text.length(): " << text.length());
-	size_t toWrite = text.length();
-	size_t written = 0;
-	while (written < toWrite)
-	{
-		int tmp = write(socket, text.c_str()+written, toWrite);
-		LOG_BLACK("Written Bytes:" << tmp);
-		if (tmp == -1)
-			LOG_BLACK("WRITE ERROR!!!");
-		written += tmp;
-		toWrite -= written;
-	}
+	return (write(socket, text.c_str(), text.length()));
 	// TO-DO CALL SELECT BEFORE WRITE AGAIN IF NOT ALL AT ONCE IS WRITTEN
 }
 

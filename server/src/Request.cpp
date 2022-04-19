@@ -7,6 +7,7 @@ void	Request::init() {
 	header = "";
 	body = "";
 	bytes_read = 0;
+	bytes_written = 0;
 	location = NULL;
 	status = READING_HEADER;
 	requestKey = NIL;

@@ -174,7 +174,16 @@ void	Cgi::answerCgi() {
 	//	LOG_RED_INFO("found n " << pos);
 	//response += "\r\n\r\n";
 	LOG_GREEN_INFO("cgi body length: " << body.length());
-	writeToSocket(request.socket, response);
+	int bytes_written = writeToSocket(request.socket, response.c_str() + request.bytes_written);
+	LOG_BLACK_INFO("bytes written " << bytes_written);
+	if (bytes_written == -1) {
+		request.status = DONE_WRITING;
+		LOG_BLACK_INFO("write failed");
+		return ;
+	}
+	request.bytes_written += bytes_written;
+	if ((size_t)request.bytes_written >= response.length())
+		request.status = DONE_WRITING;
 	LOG_GREEN("FINISHED CGI");
 
 	//int fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR);

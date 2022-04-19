@@ -40,6 +40,7 @@ class	Request {
 		std::map<std::string, std::string>	headerValues;
 		std::string							body;
 		std::string							header;
+		ssize_t								bytes_written;
 
 
 	private:

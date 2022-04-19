@@ -117,11 +117,13 @@ void accepter(std::map<int, Server *> & servers)
 				}
 				if (request.status == DONE_READING || (request.status >= 200 && request.status < 600)) {
 					requests[check_socket]->writeRequest();
-					FD_CLR(request.socket, &watching_write_sockets);
-					close(request.socket); // TODO close socket in Request destructor
-					delete &request;
-					requests.erase(requests.find(check_socket));
-					LOG_RED("request removed from map");
+					if (request.status == DONE_WRITING) {
+						FD_CLR(request.socket, &watching_write_sockets);
+						close(request.socket); // TODO close socket in Request destructor
+						delete &request;
+						requests.erase(requests.find(check_socket));
+						LOG_RED("request removed from map");
+					}
 				}
 			}
 		}
