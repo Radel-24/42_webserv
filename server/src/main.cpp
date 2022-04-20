@@ -85,6 +85,10 @@ void accepter(std::map<int, Server *> & servers)
 					requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket, server_elem->second)));
 				}
 				else {
+					if ((requests[check_socket]) == NULL) {
+						LOG_RED_INFO("finds null pointer");
+						continue;
+					}
 					Request &	request = *(requests[check_socket]);
 					request.readRequest(servers);
 
@@ -104,6 +108,10 @@ void accepter(std::map<int, Server *> & servers)
 		}
 		for (int check_socket = 0; check_socket <= highestSocket; ++check_socket) {
 			if (FD_ISSET(check_socket, &write_sockets)) {
+				if ((requests[check_socket]) == NULL) {
+					LOG_RED_INFO("finds null pointer");
+					continue;
+				}
 				Request &	request = *(requests[check_socket]);
 				LOG_RED_INFO("request status: " << request.status);
 				if (request.status >= 100 && request.status < 200) {
@@ -163,3 +171,10 @@ int	main(int argc, char ** argv)
 }
 
 // TODO check file sizes after put, maybe clearing file at first call and then appending
+
+/*
+-g flag in Makefile
+Terminal: lldb
+target create webserv
+r
+*/

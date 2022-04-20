@@ -135,7 +135,7 @@ static std::string const getReason(const int &code) {
 }
 
 void	writeStatus(int status, int socket) {
-	LOG_RED_INFO("status request: " << status);
+	LOG_RED_INFO("write status request: " << status);
 	std::string protocol = "HTTP/1.1 ";
 	std::string response = getReason(status);
 	std::string contLength = "\r\nContent-Length: 0\r\n\r\n";

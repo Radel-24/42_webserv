@@ -22,7 +22,7 @@ enum ReqKeys {
 };
 
 enum Status {
-	NILL,
+	SHITY,
 	READING_HEADER,
 	HEADER_READ,
 	READING_BODY,

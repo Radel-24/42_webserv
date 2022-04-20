@@ -533,8 +533,9 @@ void	Request::responder() {
 	{
 		file_content = readFile(path.substr(1, std::string::npos));
 		if (status == 404){
-			LOG_RED_INFO("404 gets sent");
-			writeToSocket(socket, "HTTP/1.1 404 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
+			//LOG_RED_INFO("404 gets sent");
+			//writeToSocket(socket, "HTTP/1.1 404 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
+			writeStatus(404, socket);
 			return ;
 		}
 		if (file_content.empty()) {
