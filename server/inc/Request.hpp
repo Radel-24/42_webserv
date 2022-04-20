@@ -52,6 +52,7 @@ class	Request {
 		unsigned int						requestKey;
 		ssize_t								bytes_read;
 		std::string							path;
+		std::string							uploadPath;
 		Location *							location;
 		std::string	chunk;
 
@@ -86,6 +87,8 @@ class	Request {
 		void	setType();
 		void	changePath();
 		void	setPath();
+		std::string	getPath();
+		std::string	getUploadPath();
 		void	readHeader();
 		void	readBodyLength();
 		void	readBodyChunked();

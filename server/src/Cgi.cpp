@@ -34,12 +34,16 @@ void	Cgi::setEnv() {
 	//env["SCRIPT_NAME"] = toAbsolutPath(request.server->cgi_path);
 	//env["PATH_TRANSLATED"] = toAbsolutPath(request.server->cgi_path);
 	env["CONTENT_TYPE"] = request.headerValues["Content-Type"]; //empty??
-	if (request.body.length() < 200000) {
-		env["X-Secret-Header-For-Test"] = request.headerValues["X-Secret-Header-For-Test"];
-	}
 	//env["CONTENT_TYPE"] = "test/file";
 	//env["CONTENT_LENGTH"] = std::to_string(request.getBody().length());
 	//env["QUERY_STRING"] = request.getBody();
+
+	std::map<std::string, std::string>::const_iterator it = request.headerValues.begin();
+	while (it != request.headerValues.end())
+	{
+		env["HTTP_" + it->first] = it->second;
+		it++;
+	}
 
 
 	//for (std::map<std::string, std::string>::iterator iter = env.begin(); iter != env.end(); ++iter) {
@@ -90,7 +94,7 @@ void	Cgi::runCgi() {
 
 		//fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR); // TODO only for testing
 
-		
+
 		dup2(fout, STDOUT_FILENO); // TODO comment this line in to write back the answer to the client
 		write(fin, request.body.c_str(), request.body.size());
 		lseek(fin, 0, SEEK_SET);

@@ -13,7 +13,7 @@ Location::Location(std::string path) : path(path) { default_init(); }
 
 void	Server::default_init() {
 	port = 80;
-	backlog = 10;
+	backlog = 150;
 	client_max_body_size = -1;
 }
 

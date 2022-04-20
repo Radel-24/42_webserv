@@ -171,8 +171,6 @@ void PostResponder::run() {
 		//TO-DO create the right file name, and create new file per reuest atm im appending it
 		LOG_YELLOW("chunked body!!!!");
 		std::string cleanBody;
-		//std::string filename = "Felix";
-		//emptyUploadFile(filename);
 
 		int i = 0;
 		std::string tmp;
@@ -193,9 +191,59 @@ void PostResponder::run() {
 		request.body.clear();
 		request.body = tmp;
 		LOG_YELLOW("END LOOP");
+
+
+
+		//TO-DO check server config file(server class) if something is forbidden/allowd and return error code!
+		int method = 0;
+		std::map<std::string, Location*>::const_iterator it = request.server->locations.begin();
+		while (it != request.server->locations.end())
+		{
+			// LOG_BLUE("First " << it->first);
+			// LOG_BLUE("Sec size " << it->second->client_max_body_size);
+			// LOG_BLUE("Sec Method " << it->second->methods[0]);
+			if (it->second->methods[0] == "GET")
+				method = GET;
+			if (it->second->methods[0] == "POST")
+				method = POST;
+			if (it->second->methods[0] == "PUT")
+				method = PUT;
+			if (it->second->methods[0] == "DELETE")
+				method = DELETE;
+			// if ( request.getUploadPath() == it->first)
+			// 	LOG_BLACK("PATH TRUE");
+			// if ( it->second->client_max_body_size != -1)
+			// 	LOG_BLACK("NON DEFAULT BODY TRUE");
+			// if ( tmp.size() > (unsigned long)it->second->client_max_body_size)
+			// 	LOG_BLACK("MAX BODY TRUE");
+			// if ( request.getRequestKey() == method)
+			// 	LOG_BLACK("REQUEST TRUE");
+			if ( request.getUploadPath() == it->first
+				&& it->second->client_max_body_size != -1
+				&& tmp.size() > (unsigned long)it->second->client_max_body_size
+				&& request.getRequestKey() == method)
+			{
+				LOG_YELLOW("TRUE");
+				writeStatus(413, request.socket);
+				request.status = DONE_WRITING;
+				return;
+			}
+			//LOG_BLUE(it->first);
+			method = 0;
+			it++;
+		}
+		//LOG_YELLOW("MAX SIZE: " << request.server->locations["client_max_body_size"]);
+			//tmp.size() > (unsigned long)request.server->client_max_body_size
+
+
+
 		LOG_YELLOW("CREATE FILE");
-		//createUploadFile(filename, tmp);
-		//request.body = tmp;
+		if (!request.cgi_request)
+		{
+			std::string filename = "Felix";
+			emptyUploadFile(filename);
+			createUploadFile(filename, tmp);
+		}
 		LOG_YELLOW("FILE CREATED");
 
 		if (request.cgi_request) {
@@ -207,6 +255,7 @@ void PostResponder::run() {
 			return ;
 		}
 		//------------------------------------------------------------------------------------------------------------------------------------------
+		//LOG_BLACK("FLEX");
 		writeStatus(201, request.socket);
 		request.status = DONE_WRITING;
 		return ;

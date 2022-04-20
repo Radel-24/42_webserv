@@ -51,6 +51,7 @@ int	location_parser(std::ifstream &fin, Location &location) {
 		//	// TODO error handling
 		//	exit(EXIT_SUCCESS);
 		//}
+		//LOG_BLUE(location.client_max_body_size);
 	}
 	return SUCCESS;
 }

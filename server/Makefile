@@ -41,6 +41,7 @@ clean:
 	$(RM) tree
 	$(RM) files/*
 	$(RM) binary.file
+	> /Users/fharing/42/webserv/server/www/42testServer/upload/Felix
 
 #removes executable
 fclean: clean
