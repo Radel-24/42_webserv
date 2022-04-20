@@ -83,6 +83,7 @@ void	Request::setPath() {
 	LOG_GREEN_INFO("path: |" << path << "|");
 	LOG_GREEN_INFO("find: " << path.find_last_of(server->cgi_extension));
 	LOG_GREEN_INFO("length path: " << path.length() << " cgi Length " << server->cgi_extension.length());
+	LOG_BLACK(header);
 	if (path.find_last_of(server->cgi_extension) == (path.length() - 1)) {
 		cgi_request = true;
 	}

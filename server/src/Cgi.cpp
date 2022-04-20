@@ -4,6 +4,9 @@
 void	Cgi::init() {
 	inFile = tmpfile();
 	tempFile = tmpfile();
+	if (inFile == NULL || tempFile == NULL) {
+		LOG_RED_INFO("tempfile failed");
+	}
 	answer = "";
 	answer.clear();
 	body = "";
@@ -90,14 +93,20 @@ void	Cgi::runCgi() {
 
 		// !!!!!!!! Don't write log messages in here !!!!!!!
 
-		dup2(fin, STDIN_FILENO);
+		if (dup2(fin, STDIN_FILENO) == -1) {
+			LOG_RED_INFO("dup2 failed");
+		}
 
 		//fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR); // TODO only for testing
 
 
-		dup2(fout, STDOUT_FILENO); // TODO comment this line in to write back the answer to the client
+		if (dup2(fout, STDOUT_FILENO) == -1) { // TODO comment this line in to write back the answer to the client
+			LOG_RED_INFO("dup2 failed");
+		}
 		write(fin, request.body.c_str(), request.body.size());
-		lseek(fin, 0, SEEK_SET);
+		if (lseek(fin, 0, SEEK_SET) == -1) {
+			LOG_RED_INFO("lseek failed");
+		}
 		close(fin);
 		close(fout);
 		//LOG_RED_INFO("first " << toAbsolutPath(request.server->cgi_path).c_str());
