@@ -133,7 +133,7 @@ void accepter(std::map<int, Server *> & servers)
 						delete &request;
 						requests.erase(requests.find(check_socket));
 						LOG_RED("request removed from map");
-					}
+				}
 			}
 		}
 	}

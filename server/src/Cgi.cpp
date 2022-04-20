@@ -33,7 +33,10 @@ void	Cgi::setEnv() {
 	//env["REDIRECT_STATUS"] = "CGI";
 	//env["SCRIPT_NAME"] = toAbsolutPath(request.server->cgi_path);
 	//env["PATH_TRANSLATED"] = toAbsolutPath(request.server->cgi_path);
-	env["CONTENT_TYPE"] = request.headerValues["Content-type"]; //empty??
+	env["CONTENT_TYPE"] = request.headerValues["Content-Type"]; //empty??
+	if (request.body.length() < 200000) {
+		env["X-Secret-Header-For-Test"] = request.headerValues["X-Secret-Header-For-Test"];
+	}
 	//env["CONTENT_TYPE"] = "test/file";
 	//env["CONTENT_LENGTH"] = std::to_string(request.getBody().length());
 	//env["QUERY_STRING"] = request.getBody();
@@ -144,10 +147,22 @@ void	Cgi::parseCgi() {
 	response += std::to_string(body.length());
 	response += "\r\n\r\n";
 	response += body;
+
+	LOG_GREEN_INFO("body length " << body.length());
+	if (body.length() < 200000) {
+		LOG_BLACK(request.header);
+	//	LOG_GREEN(request.body);
+	//	LOG_BLUE_INFO(request.body.length());
+	}
 }
 
 void	Cgi::answerCgi() {
 	LOG_GREEN_INFO("cgi response length: " << response.length());
+	if (request.body.length() < 200000) {
+		LOG_BLUE(response);
+	//	LOG_GREEN(request.body);
+	//	LOG_BLUE_INFO(request.body.length());
+	}
 	ssize_t bytes_written = writeToSocket(request.socket, response.c_str() + request.bytes_written);
 	LOG_BLACK_INFO("bytes written " << bytes_written);
 	if (bytes_written == -1) {

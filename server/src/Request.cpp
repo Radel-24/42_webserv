@@ -333,6 +333,7 @@ void Request::readHeader() {
 	if (bytes_read == -1) {
 		status = CLIENT_CLOSED_CONNECTION;
 		LOG_RED_INFO("bytes read -1 means error according to manual");
+		return;
 	}
 	if (bytes_read == 0) {
 		status = CLIENT_CLOSED_CONNECTION;
@@ -388,8 +389,6 @@ void	Request::readBodyChunked() {
 	ssize_t tmp_bytes_read = recv(socket, read_body, buffer_size, 0);
 	//if ()
 	//std::string	sizeInfo =
-	if (tmp_bytes_read <= 0)
-		LOG_BLACK_INFO(tmp_bytes_read);
 	if (tmp_bytes_read > 0) {
 		appendBody(read_body, tmp_bytes_read);
 		bytes_read += tmp_bytes_read;
