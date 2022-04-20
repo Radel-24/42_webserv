@@ -79,6 +79,7 @@ void	Request::setPath() {
 		return ;
 	}
 	path = header.substr(posBegin, posEnd - posBegin);
+	uploadPath = path;
 	LOG_GREEN_INFO("path: |" << path << "|");
 	LOG_GREEN_INFO("find: " << path.find_last_of(server->cgi_extension));
 	LOG_GREEN_INFO("length path: " << path.length() << " cgi Length " << server->cgi_extension.length());
@@ -271,6 +272,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 void	Request::writeRequest() {
 	//LOG_RED_INFO("request status " << status);
 	if (status >= 100 && status < 600) {
+		LOG_RED_INFO("request status " << status);
 		writeStatus(status, socket);
 		status =  DONE_WRITING;
 	}
@@ -552,4 +554,14 @@ std::string	Request::getFilename() {
 	std::string	file = converted.substr(start, end - start);
 	LOG_CYAN_INFO("filename: " << file);
 	return file;
+}
+
+std::string	Request::getPath()
+{
+	return this->path;
+}
+
+std::string	Request::getUploadPath()
+{
+	return this->uploadPath;
 }
