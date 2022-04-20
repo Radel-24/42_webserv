@@ -16,8 +16,9 @@ class Cgi {
 		std::string							answer;
 		std::string 						body;
 
-		FILE *								inFile; // TODO change to pipe?
+		FILE *								inFile; 
 		FILE *								tempFile;
+		std::string							response;
 
 		void	init();
 		void	setEnv();

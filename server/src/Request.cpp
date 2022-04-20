@@ -36,13 +36,15 @@ int	Request::checkHeaderRead(void) {
 	return (0);
 }
 
-void	Request::appendHeader(std::string input) {
-	if (this->header.empty()) {
-		this->header = input;
-	}
-	else {
-		this->header = this->header + input;
-	}
+void	Request::appendHeader(char * input, size_t size) {
+	//if (this->header.empty()) {
+	//	this->header = input;
+	//}
+	//else {
+		std::string tmp(input, size);
+		//this->header = this->header + input;
+		this->header += tmp;
+	//}
 }
 
 void	Request::changePath() { // TODO make hacking save when relative path is given in request
@@ -276,6 +278,10 @@ void	Request::writeRequest() {
 		if (!postResponder)
 			postResponder = new PostResponder(*this);
 		postResponder->run();
+		if (status == DONE_WRITING_CGI) {
+			delete (postResponder);
+			postResponder = NULL;
+		}
 		//PostResponder pR(*this);
 		return ;
 	}
@@ -300,7 +306,7 @@ int	Request::checkBodySize(void) {
 	return (std::atol(content_length.c_str()));
 }
 
-void	Request::appendBody(char *body_in, int size) {
+void	Request::appendBody(char *body_in, size_t size) {
 	std::string tmp(body_in, size);
 	this->body += tmp;
 }
@@ -324,7 +330,15 @@ void Request::readHeader() {
 	memset(buffer, 0, 10000 * sizeof(char));
 	ssize_t bytes_read = recv(socket, buffer, 10000, 0);
 	LOG_BLACK("header read bytes: " << bytes_read << std::endl);
-	appendHeader(buffer);
+	if (bytes_read == -1) {
+		status = CLIENT_CLOSED_CONNECTION;
+		LOG_RED_INFO("bytes read -1 means error according to manual");
+	}
+	if (bytes_read == 0) {
+		status = CLIENT_CLOSED_CONNECTION;
+		LOG_PINK_INFO("bytes read 0 means client closed connection according to manual");
+	}
+	appendHeader(buffer, bytes_read);
 
 	if (checkHeaderRead()) {
 		status = HEADER_READ;
@@ -356,16 +370,26 @@ void	Request::readBodyChunked() {
 	//else
 	//	buffer_size = chunk_size;
 	char * read_body = NULL;
+
+	//read_body = (char *)calloc(buffer_size, sizeof(char));
+	//if (read_body == NULL) {
+	//	LOG_RED_INFO("SHIT!!!!!!");
+	//	exit(0);
+	//}
 	read_body = new char[buffer_size];
 
 	if (body.find("\r\n\r\n") != std::string::npos)
 	{
 		status = DONE_READING;
+		//free(read_body);
+		delete read_body;
 		return;
 	}
 	ssize_t tmp_bytes_read = recv(socket, read_body, buffer_size, 0);
 	//if ()
 	//std::string	sizeInfo =
+	if (tmp_bytes_read <= 0)
+		LOG_BLACK_INFO(tmp_bytes_read);
 	if (tmp_bytes_read > 0) {
 		appendBody(read_body, tmp_bytes_read);
 		bytes_read += tmp_bytes_read;
@@ -373,6 +397,8 @@ void	Request::readBodyChunked() {
 	else {
 		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
 		status = CLIENT_CLOSED_CONNECTION;
+		delete read_body;
+		//free(read_body);
 		//TO-DO close socket and delete out of socket list
 		return;
 	}
@@ -382,6 +408,7 @@ void	Request::readBodyChunked() {
 		//std::cout << getBody() << std::endl;
 		//LOG_BLACK("body read true" << body.size());
 	}
+	//free(read_body);
 	delete read_body;
 	//LOG_BLUE_INFO(body);
 	//LOG_CYAN(std::endl << "BODY END ------------------------");
@@ -418,8 +445,6 @@ void Request::readBodyLength() {
 		LOG_BLACK("body read true" << body.size());
 	}
 	delete read_body;
-	//LOG_BLUE_INFO(body);
-	//LOG_CYAN(std::endl << "BODY END ------------------------");
 }
 
 
@@ -427,24 +452,8 @@ void Request::readBodyLength() {
 std::string	Request::readFile( std::string filename ) {
 	std::ifstream	newFile;
 	std::string		ret;
-	// std::string		binary = "/Users/radelwar/42/webserv/server/";
 	std::string		values;
-	// std::string		execute = "/Users/radelwar/42/webserv/server/cgi/php-cgi -f ";
-	// size_t			found;
 	char			c;
-	// if ((found = filename.find("cgi/", 0)) != std::string::npos)
-	// {
-	// 	if ((found = filename.find("?",0)) != std::string::npos)
-	// 	{
-	// 		binary = binary + filename.substr(0,found);
-	// 		values = filename.substr(found + 1,filename.length());
-	// 		std::replace(values.begin(),values.end(), '&', ' ');
-	// 	}
-	// 	execute = execute + binary + " " + values + " > out";
-	// 	//std::cout << execute << std::endl;
-	// 	system(execute.c_str());
-	// 	return "EXEC";
-	// }
 
 	LOG_CYAN_INFO("trying to open: " << filename);
 	if (open(filename.c_str(), std::ios::in) == -1) {
@@ -502,7 +511,7 @@ void	Request::responder() {
 	std::string	formatted;
 
 	LOG_PINK_INFO("test:	" << path);
-	struct stat path_stat; // TODO, I don't think this is allowed
+	struct stat path_stat;
 	std::string	temp = "." + path;
 	stat(temp.c_str(), &path_stat);
 	if (S_ISDIR(path_stat.st_mode)) {
@@ -532,16 +541,7 @@ void	Request::responder() {
 		else
 			formatted = formatString(file_content);
 	}
-	if (file_content == "EXEC")
-	{
-		file_content = readFile("/Users/fharing/42/webserv/server/out");
-		formatted = formatString(file_content);
-		write(socket, formatted.c_str(), formatted.length());
-		close(socket); // TODO is this good?
-		return;
-	}
 	formatted = formatString(file_content);
-	//std::cout << formatted << std::endl;
 	write(socket, formatted.c_str(), formatted.length());
 }
 

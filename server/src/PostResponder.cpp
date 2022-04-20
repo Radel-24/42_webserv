@@ -41,9 +41,6 @@ void	PostResponder::uploadFiles( void )
 	std::string		content_type;
 	std::string		bodyContent;
 
-	// LOG_RED("_numOfBoundaries :	" << _numOfBoundaries);
-	// LOG_RED("_boundary :		" << _boundary);
-
 	while (_numOfBoundaries > 1)
 	{
 		pos = request.body.find(_boundary, pos2 + 1) + _boundary.length() + 2;
@@ -79,10 +76,6 @@ void	PostResponder::uploadFiles( void )
 
 		size_t	dblNewline = cutBody.find("\r\n\r\n");
 		bodyContent = cutBody.substr(dblNewline + 4, cutBody.length() - dblNewline - 4);
-
-		// LOG_RED("content_type :		" << content_type);
-		// LOG_RED("filename :		" << filename);
-		// LOG_RED("name :			" << name);
 
 		// remove new
 		createUploadFile(filename, bodyContent);
@@ -197,6 +190,7 @@ void PostResponder::run() {
 			i++;
 			std::getline(tmp_body, cleanBody);
 		}
+		request.body.clear();
 		request.body = tmp;
 		LOG_YELLOW("END LOOP");
 		LOG_YELLOW("CREATE FILE");
@@ -247,7 +241,6 @@ void PostResponder::run() {
 	_numOfBoundaries = countBoundaries();
 	if (!_numOfBoundaries)
 	{
-		// kann eigentlich nicht sein, keine ahnung was dann passieren soll mrrrrrrkkk
 		writeToSocket(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries");
 		request.status = DONE_WRITING;
 		return ;

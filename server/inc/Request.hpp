@@ -69,8 +69,8 @@ class	Request {
 		int			checkHeaderRead(void);
 		int			checkBodySize(void);
 
-		void	appendHeader(std::string input);
-		void	appendBody( char *, int);
+		void	appendHeader(char * input, size_t size);
+		void	appendBody( char *, size_t);
 		// void	setHeaderValues(std::pair<std::string, std::string> pair);
 
 		//void	clearBody();

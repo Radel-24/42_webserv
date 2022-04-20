@@ -88,16 +88,6 @@ void accepter(std::map<int, Server *> & servers)
 					Request &	request = *(requests[check_socket]);
 					request.readRequest(servers);
 
-					/* start alex new */
-					// printServerMap(servers);
-					// LOG_RED(server_elem->first << " | " << server_elem->second);
-					// LOG_RED(request.getServer()->server_name);
-					// LOG_RED(request.getServer()->port);
-					// request.printHeaderValues();
-					/* end alex new */
-
-					//LOG_RED_INFO("request status: " << request.status);
-
 					if (request.status >= 100 || request.status == DONE_READING) {
 						FD_CLR(request.socket, &watching_read_sockets);
 						FD_SET(request.socket, &watching_write_sockets);
