@@ -36,13 +36,15 @@ int	Request::checkHeaderRead(void) {
 	return (0);
 }
 
-void	Request::appendHeader(std::string input) {
-	if (this->header.empty()) {
-		this->header = input;
-	}
-	else {
-		this->header = this->header + input;
-	}
+void	Request::appendHeader(char * input, size_t size) {
+	//if (this->header.empty()) {
+	//	this->header = input;
+	//}
+	//else {
+		std::string tmp(input, size);
+		//this->header = this->header + input;
+		this->header += tmp;
+	//}
 }
 
 void	Request::changePath() { // TODO make hacking save when relative path is given in request
@@ -304,7 +306,7 @@ int	Request::checkBodySize(void) {
 	return (std::atol(content_length.c_str()));
 }
 
-void	Request::appendBody(char *body_in, int size) {
+void	Request::appendBody(char *body_in, size_t size) {
 	std::string tmp(body_in, size);
 	this->body += tmp;
 }
@@ -336,7 +338,7 @@ void Request::readHeader() {
 		status = CLIENT_CLOSED_CONNECTION;
 		LOG_PINK_INFO("bytes read 0 means client closed connection according to manual");
 	}
-	appendHeader(buffer);
+	appendHeader(buffer, bytes_read);
 
 	if (checkHeaderRead()) {
 		status = HEADER_READ;
@@ -368,16 +370,26 @@ void	Request::readBodyChunked() {
 	//else
 	//	buffer_size = chunk_size;
 	char * read_body = NULL;
+
+	//read_body = (char *)calloc(buffer_size, sizeof(char));
+	//if (read_body == NULL) {
+	//	LOG_RED_INFO("SHIT!!!!!!");
+	//	exit(0);
+	//}
 	read_body = new char[buffer_size];
 
 	if (body.find("\r\n\r\n") != std::string::npos)
 	{
 		status = DONE_READING;
+		//free(read_body);
+		delete read_body;
 		return;
 	}
 	ssize_t tmp_bytes_read = recv(socket, read_body, buffer_size, 0);
 	//if ()
 	//std::string	sizeInfo =
+	if (tmp_bytes_read <= 0)
+		LOG_BLACK_INFO(tmp_bytes_read);
 	if (tmp_bytes_read > 0) {
 		appendBody(read_body, tmp_bytes_read);
 		bytes_read += tmp_bytes_read;
@@ -385,6 +397,8 @@ void	Request::readBodyChunked() {
 	else {
 		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
 		status = CLIENT_CLOSED_CONNECTION;
+		delete read_body;
+		//free(read_body);
 		//TO-DO close socket and delete out of socket list
 		return;
 	}
@@ -394,6 +408,7 @@ void	Request::readBodyChunked() {
 		//std::cout << getBody() << std::endl;
 		//LOG_BLACK("body read true" << body.size());
 	}
+	//free(read_body);
 	delete read_body;
 	//LOG_BLUE_INFO(body);
 	//LOG_CYAN(std::endl << "BODY END ------------------------");

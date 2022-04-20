@@ -197,6 +197,7 @@ void PostResponder::run() {
 			i++;
 			std::getline(tmp_body, cleanBody);
 		}
+		request.body.clear();
 		request.body = tmp;
 		LOG_YELLOW("END LOOP");
 		LOG_YELLOW("CREATE FILE");

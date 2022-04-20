@@ -17,6 +17,7 @@ class Cgi {
 		FILE *	outFile;
 		std::string	answer;
 		std::string body;
+		std::string response;
 
 		void	init();
 		void	setEnv();

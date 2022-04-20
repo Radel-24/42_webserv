@@ -4,6 +4,8 @@
 void	Cgi::init() {
 	inFile = tmpfile();
 	outFile = tmpfile();
+	response = "";
+	response.clear();
 }
 
 Cgi::Cgi(Request & request) : request(request) {
@@ -191,26 +193,22 @@ void	Cgi::parseCgi() {
 	size_t	bodyBegin = answer.find("\r\n\r\n") + 4;
 	//LOG_GREEN_INFO("body begin: " << bodyBegin);
 	//LOG_GREEN_INFO("std::string::npos: " << std::string::npos);
-	body = answer.substr(bodyBegin, std::string::npos);
+	body = answer.substr(bodyBegin, std::string::npos); // TODO delete after debugging, body not needed any more
+	response = "HTTP/1.1 200 OK\r\nContent-Length: ";
+	response += std::to_string(body.length());
+	response += "\r\n\r\n";
+	response += answer.substr(bodyBegin, std::string::npos);
 	//std::getline(std::ifstream("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt"), answer, '\0');
 	//LOG_BLUE_INFO(body);
 }
 
 void	Cgi::answerCgi() {
 	//LOG_RED_INFO("body length " << body.length());
-	std::string response = "HTTP/1.1 200 OK\r\nContent-Length: ";
-	response += std::to_string(body.length());
-	response += "\r\n\r\n";
-	response += body;
-	//if (size_t pos = body.find("\r"))
-	//	LOG_RED_INFO("found r " << pos);
-	//if (size_t pos = body.find("\n"))
-	//	LOG_RED_INFO("found n " << pos);
-	//response += "\r\n\r\n";
-	//LOG_GREEN_INFO("cgi response length: " << response.length());
-	char * tmp = const_cast<char *>(response.c_str());
-	int bytes_written = writeToSocket(request.socket, tmp + request.bytes_written);
-	//LOG_BLACK_INFO("bytes written " << bytes_written);
+	LOG_GREEN_INFO("cgi response length: " << response.length());
+	//char * tmp = const_cast<char *>(response.c_str());
+	ssize_t bytes_written = writeToSocket(request.socket, response.c_str() + request.bytes_written);
+	LOG_BLACK_INFO("bytes written " << bytes_written);
+	//LOG_RED_INFO("first not C " << body.find_first_not_of("C", 100));
 	if (bytes_written == -1) {
 		request.status = DONE_WRITING;
 		LOG_BLACK_INFO("write failed");
