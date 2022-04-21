@@ -22,6 +22,7 @@ void	Request::init() {
 	location = NULL;
 	postResponder = NULL;
 	chunk.clear();
+	filename.clear();
 }
 
 Request::Request() { init(); }
@@ -73,6 +74,7 @@ void	Request::changePath() { // TODO make hacking save when relative path is giv
 }
 
 void	Request::setPath() {
+	LOG_PINK_INFO("IN SET PATH");
 	size_t posBegin = header.find("/");
 	size_t posEnd = header.find_first_of(" \t", posBegin + 1);
 	if (posBegin == std::string::npos || posEnd == std::string::npos) { // TODO usually not needed, except when header is wrong
@@ -199,10 +201,24 @@ void Request::checkRequest() {
 
 }
 
+void	Request::extractFilename() {
+	// LOG_WHITE("ABC: uploadPath: " << uploadPath);
+	size_t	pos = uploadPath.find_last_of("/") + 1;
+	std::string		file = uploadPath.substr(pos, uploadPath.length() - pos);
+	// LOG_WHITE("ABC: filename: " << filename);
+	// LOG_GREEN("ABC -----------");
+	filename = file;
+}
+
 void	Request::readRequest(std::map<int, Server *> & servers) {
+	//server->updateFilesHTML(); // TODO put to uesful position
+	//LOG_PINK_INFO("server name: " << getServer()->server_name);
+	//LOG_PINK_INFO("sock: " << getServer()->sock);
+	//LOG_RED_INFO("request status " << status << " request key " << requestKey);
 	if (status == READING_HEADER) {
 		readHeader();
 		if (status == HEADER_READ) {
+			LOG_YELLOW("START READ REQUEST ---------------------------------------------");
 			//LOG_GREEN_INFO(header);
 			parseHeader(header);
 			checkHeaderValues();
@@ -213,6 +229,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) {
 			setPath();
 			changePath();
 			setType();
+			extractFilename();
 			checkRequest();
 			if (status >= 100)
 				return ;
@@ -222,6 +239,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) {
 			LOG_GREEN("END HEADER VALUES");
 
 			LOG_BLUE("HEADER END ------------------------");
+			LOG_YELLOW("END READ REQUEST ---------------------------------------------");
 			// end new alex
 			if (status == DONE_READING) {
 				LOG_GREEN("read all in one");
