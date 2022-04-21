@@ -62,10 +62,10 @@ void accepter(std::map<int, Server *> & servers)
 	timeval tv;
 	tv.tv_sec = 10;
 
-	int check_socket = 0;
+	int check_socket = 2;
 	LOG_PINK_INFO("check socket " << &check_socket);
 	LOG_PINK_INFO("amount ready socks " << &amount_ready_socks);
-	sleep(5);
+	//sleep(5);
 
 	while (true){
 		LABEL:
@@ -75,7 +75,8 @@ void accepter(std::map<int, Server *> & servers)
 		// TODO speed this up
 		// TODO can fcntl(...) be used to get currently highest fd?
 		LOG_PINK("bevore select");
-		amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, &tv);
+		usleep(50);
+		amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, &tv); // TODO add &tv for timeout
 
 		LOG_PINK("after select " << amount_ready_socks);
 
@@ -93,8 +94,9 @@ void accepter(std::map<int, Server *> & servers)
 
 		// TODO read steps should be: default server reads header, requested server checks header, and maybe assigns new server socket with accept (close old socket!) and processes request
 
-		check_socket = 0;
-		for (; check_socket < FD_SETSIZE; ++check_socket) {
+		check_socket = 2;
+		for (; check_socket < FD_SETSIZE; check_socket++) {
+			//LOG_BLUE_INFO("read chapter");
 			if (FD_ISSET(check_socket, &read_sockets)) {
 				std::map<int, Server *>::iterator server_elem = servers.find(check_socket);
 				if (server_elem != servers.end()) {
@@ -106,6 +108,7 @@ void accepter(std::map<int, Server *> & servers)
 					//}
 					FD_SET(new_socket, &watching_read_sockets);
 					requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket, server_elem->second)));
+					LOG_YELLOW_INFO("new connection set up");
 				}
 				else {
 					//if ((requests[check_socket]) == NULL) {
@@ -116,6 +119,7 @@ void accepter(std::map<int, Server *> & servers)
 					request.readRequest(servers);
 
 					if (request.status >= 100 || request.status == DONE_READING) {
+						LOG_RED_INFO("new request status " << request.status);
 						FD_CLR(request.socket, &watching_read_sockets);
 						FD_SET(request.socket, &watching_write_sockets);
 					}
@@ -129,8 +133,9 @@ void accepter(std::map<int, Server *> & servers)
 				goto LABEL;
 			}
 		}
-		check_socket = 0;
-		for (; check_socket < FD_SETSIZE; ++check_socket) {
+		check_socket = 2;
+		for (; check_socket < FD_SETSIZE; check_socket++) {
+			//LOG_BLUE_INFO("write chapter");
 			if (FD_ISSET(check_socket, &write_sockets)) {
 				//if ((requests[check_socket]) == NULL) {
 				//	LOG_RED_INFO("finds null pointer");

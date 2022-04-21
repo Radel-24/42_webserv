@@ -4,8 +4,8 @@
 #include <sys/stat.h>
 
 void	Request::init() {
-	header = "";
-	body = "";
+	//header = "";
+	//body = "";
 	header.clear();
 	body.clear();
 	bytes_read = 0;
@@ -16,6 +16,12 @@ void	Request::init() {
 	cgi_request = false;
 	file_created = false;
 	postResponder = NULL;
+	headerValues.clear();
+	path.clear();
+	uploadPath.clear();
+	location = NULL;
+	postResponder = NULL;
+	chunk.clear();
 }
 
 Request::Request() { init(); }
@@ -518,13 +524,13 @@ void	Request::responder() {
 	struct stat path_stat;
 	std::string	temp = "." + path;
 	stat(temp.c_str(), &path_stat);
-	if (S_ISDIR(path_stat.st_mode)) {
-		path += "/" + location->default_file;
-		LOG_CYAN_INFO("default dir request: " << path);
-	}
 	if (S_ISREG(path_stat.st_mode)) {
 		//path += "/" + location->default_file;
 		LOG_CYAN_INFO("default file request: " << path);
+	}
+	if (S_ISDIR(path_stat.st_mode)) {
+		path += "/" + location->default_file;
+		LOG_CYAN_INFO("default dir request: " << path);
 	}
 	if (path == (server->root + "/"))
 	{
@@ -541,12 +547,14 @@ void	Request::responder() {
 			return ;
 		}
 		if (file_content.empty()) {
+			LOG_RED_INFO("here");
 			formatted = formatString("error: 404"); //TODO check if this is reached
 		}
 		else
 			formatted = formatString(file_content);
 	}
 	formatted = formatString(file_content);
+	LOG_RED_INFO("writes " << formatted);
 	write(socket, formatted.c_str(), formatted.length());
 }
 

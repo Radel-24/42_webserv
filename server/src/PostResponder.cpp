@@ -282,7 +282,8 @@ void PostResponder::run() {
 	if (_boundary == "error")
 	{
 		// es gibt kein boundary, also wuden keine files geschickt und ich muss irgendwas anderes tun
-		writeToSocket(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: extractBoundary");
+		writeStatus(200, request.socket);
+		//writeToSocket(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: extractBoundary");
 		request.status = DONE_WRITING;
 		return ;
 	}
@@ -290,7 +291,8 @@ void PostResponder::run() {
 	_numOfBoundaries = countBoundaries();
 	if (!_numOfBoundaries)
 	{
-		writeToSocket(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries");
+		writeStatus(200, request.socket);
+		//writeToSocket(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries");
 		request.status = DONE_WRITING;
 		return ;
 	}
