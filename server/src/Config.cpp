@@ -141,7 +141,7 @@ int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 			server_parser(fin, *server);
 			server->configure(servers);
 			servers.insert(std::pair<int, Server *>(server->sock, server));
-			test_script_for_root_folder(server); // alex new
+			//test_script_for_root_folder(server); // alex new
 		}
 		else if (line.empty()) { continue; }
 		else {
