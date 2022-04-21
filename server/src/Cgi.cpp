@@ -127,9 +127,6 @@ void	Cgi::parseCgi() {
 
 	long result = fread (buffer, 1,lSize ,tempFile);
 
-	LOG_RED(lSize);
-	LOG_RED(result);
-
   	if (result != lSize)
 	  	LOG_RED("ERROR");
 	answer = std::string(buffer);
@@ -139,7 +136,6 @@ void	Cgi::parseCgi() {
 	//LOG_RED_INFO("file read " << answer);
 	size_t	bodyBegin = answer.find("\r\n\r\n") + 4;
 
-	LOG_PINK("body begin: " << bodyBegin);
 
 	body = answer.substr(bodyBegin, std::string::npos);
 

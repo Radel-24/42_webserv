@@ -20,6 +20,8 @@
 
 #include <set>
 
+#include <signal.h>
+
 /* start alex new */
 void	printServerMap(std::map<int, Server *> & servers) {
 	std::map<int, Server *>::iterator iter = servers.begin();
@@ -89,9 +91,12 @@ void accepter(std::map<int, Server *> & servers)
 		amount_ready_socks = select(highestSocket + 1, &read_sockets, &write_sockets, NULL, &tv);
 
 		if (amount_ready_socks == 0) {
+			LOG_GREEN_INFO("get the clients out of here");
+			for (std::map<int, Request *>::iterator iter = requests.begin(); iter != requests.end(); ++iter) {
+				delete (iter->second);
+			}
 			requests.clear();
 			initAccepter(servers, watching_read_sockets, watching_write_sockets, highestSocket);
-			LOG_GREEN_INFO("get the clients out of here");
 			continue ;
 		}
 
@@ -143,14 +148,21 @@ void accepter(std::map<int, Server *> & servers)
 					FD_SET(request.socket, &watching_read_sockets);
 					request.status = HEADER_READ;
 				}
-				else if (request.status == DONE_READING || (request.status >= 200 && request.status < 600)) {
+				else if (request.status == DONE_READING){
 					requests[check_socket]->writeRequest();
 					if (request.status == DONE_WRITING_CGI || request.status == DONE_WRITING) {
 						FD_CLR(request.socket, &watching_write_sockets);
 						FD_SET(request.socket, &watching_read_sockets);
-						request.status = READING_HEADER;
 						request.init();
 					}
+				}
+				else if (request.status >= 400 && request.status < 600) {
+					requests[check_socket]->writeRequest();
+					usleep(1000);
+					FD_CLR(request.socket, &watching_write_sockets);
+					delete &request;
+					requests.erase(requests.find(check_socket));
+					LOG_RED("request removed from map");
 				}
 				else if (request.status == CLOSE_CONNECTION) {
 						FD_CLR(request.socket, &watching_write_sockets);
@@ -163,9 +175,15 @@ void accepter(std::map<int, Server *> & servers)
 	}
 }
 
+//void	sig_handler(int signum) {
+//	(void)signum;
+//	LOG_GREEN_INFO("Hah, you can't harm our server!");
+//}
 
 int	main(int argc, char ** argv)
 {
+	//signal(SIGINT, SIG_IGN); // TODO doesn't work
+
 	LOG_RED_INFO(getcwd(NULL, FILENAME_MAX));
 	std::string configFile;
 	//check if there is a config file in argv, if not we take the default server config file

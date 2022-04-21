@@ -166,7 +166,7 @@ void Request::detectCorrectServer(std::map<int, Server *> & servers) {
 void Request::checkRequest() {
 
 	if (requestKey == NIL) { status = 405; }
-	else if (requestKey == GET) {
+	else if (requestKey == GET || requestKey == HEAD) {
 		if (!findInVector(location->methods, std::string("GET")))
 			status = 405; // TODO compulsory method mustn't be deactivated: https://developer.mozilla.org/de/docs/Web/HTTP/Status
 	}
@@ -199,11 +199,7 @@ void Request::checkRequest() {
 
 }
 
-void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if request is allowed, otherwise return DECLINE
-	//server->updateFilesHTML(); // TODO put to uesful position
-	//LOG_PINK_INFO("server name: " << getServer()->server_name);
-	//LOG_PINK_INFO("sock: " << getServer()->sock);
-	//LOG_RED_INFO("request status " << status << " request key " << requestKey);
+void	Request::readRequest(std::map<int, Server *> & servers) {
 	if (status == READING_HEADER) {
 		readHeader();
 		if (status == HEADER_READ) {
@@ -217,15 +213,9 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 			setPath();
 			changePath();
 			setType();
-			//LOG_YELLOW("START");
-			//LOG_YELLOW(getHeader());
-			//LOG_BLACK(getBody());
-			//LOG_YELLOW("END");
 			checkRequest();
 			if (status >= 100)
 				return ;
-			// LOG_RED_INFO(getRequestKey());
-			//LOG_WHITE(getHeader());
 
 			LOG_GREEN("START HEADER VALUES");
 			printHeaderValues(); // TODO why is this needed so that the tester is running?!
@@ -257,7 +247,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 			return ;
 		}
 	}
-	if (status == HEADER_READ && getRequestKey() == GET) {
+	if (status == HEADER_READ && (getRequestKey() == GET || getRequestKey() == HEAD)) {
 		status = DONE_READING;
 		return ;
 	}
@@ -272,10 +262,10 @@ void	Request::writeRequest() {
 	if (status >= 100 && status < 600) {
 		LOG_RED_INFO("request status " << status);
 		writeStatus(status, socket);
-		if (status >= 400 && status < 600)
-			status = CLOSE_CONNECTION;
-		else
-			status =  DONE_WRITING;
+		//if (status >= 400 && status < 600)
+		//	status = CLOSE_CONNECTION;
+		//else
+		status =  DONE_WRITING;
 	}
 	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
 		if (!postResponder)
@@ -287,7 +277,7 @@ void	Request::writeRequest() {
 		}
 		return ;
 	}
-	else if (status == DONE_READING && getRequestKey() == GET) {
+	else if (status == DONE_READING && (getRequestKey() == GET || getRequestKey() == HEAD)) {
 		responder();
 		status =  DONE_WRITING;
 	}
@@ -323,14 +313,15 @@ void	Request::setType() {
 	else if (header.find("POST") == 0) { setRequestKey(POST); }
 	else if (header.find("PUT") == 0) { setRequestKey(PUT); }
 	else if (header.find("DELETE") == 0) { setRequestKey(DELETE);}
+	//else if (header.find("HEAD") == 0) { setRequestKey(HEAD); }
 	else { setRequestKey(NIL); }
 }
 
 void Request::readHeader() {
 	LOG_BLUE("HEADER START ----------------------");
-	char	buffer[10000]; // TODO if buffer[5000] not possible to upload felix.jpg with browser
-	memset(buffer, 0, 10000 * sizeof(char));
-	ssize_t bytes_read = recv(socket, buffer, 10000, 0);
+	char	buffer[20000]; // TODO if buffer[5000] not possible to upload felix.jpg with browser
+	memset(buffer, 0, 20000 * sizeof(char));
+	ssize_t bytes_read = recv(socket, buffer, 20000, 0);
 	LOG_BLACK("header read bytes: " << bytes_read << std::endl);
 	if (bytes_read == -1) {
 		status = CLOSE_CONNECTION;
@@ -365,56 +356,38 @@ void Request::readHeader() {
 
 void	Request::readBodyChunked() {
 	int buffer_size = 200000;
-	//if (chunk_size == -1)
-	//	buffer_size = 4096;
-	//else
-	//	buffer_size = chunk_size;
 	char * read_body = NULL;
 
-	//read_body = (char *)calloc(buffer_size, sizeof(char));
-	//if (read_body == NULL) {
-	//	LOG_RED_INFO("SHIT!!!!!!");
-	//	exit(0);
-	//}
 	read_body = new char[buffer_size];
 
 	if (body.find("\r\n\r\n") != std::string::npos)
 	{
 		status = DONE_READING;
-		//free(read_body);
 		delete read_body;
 		return;
 	}
 	ssize_t tmp_bytes_read = recv(socket, read_body, buffer_size, 0);
-	//if ()
-	//std::string	sizeInfo =
 	if (tmp_bytes_read > 0) {
 		appendBody(read_body, tmp_bytes_read);
 		bytes_read += tmp_bytes_read;
 	}
-	else {
-		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
+	else if (tmp_bytes_read == 0) {
+		LOG_YELLOW_INFO("CLIENT CLOSED CONNECTION: " << socket << " bytes read " << tmp_bytes_read);
 		status = CLOSE_CONNECTION;
 		delete read_body;
-		//free(read_body);
-		//TO-DO close socket and delete out of socket list
 		return;
 	}
-	//LOG_BLACK("bytes read after recv: " << bytes_read);
+	else {
+		LOG_RED_INFO("recv error occured"); // TODO this is weird shit
+		sleep(1);
+	}
 	if (body.find("\r\n\r\n") != std::string::npos) {
 		status = DONE_READING;
-		//std::cout << getBody() << std::endl;
-		//LOG_BLACK("body read true" << body.size());
 	}
-	//free(read_body);
 	delete read_body;
-	//LOG_BLUE_INFO(body);
-	//LOG_CYAN(std::endl << "BODY END ------------------------");
 }
 
 void Request::readBodyLength() {
-	//LOG_CYAN(std::endl << "BODY START ----------------------");
-
 	int max_size = checkBodySize();
 	LOG_BLACK("body size: " << max_size);
 	if (max_size < 1) {
@@ -430,13 +403,10 @@ void Request::readBodyLength() {
 		bytes_read += tmp_bytes_read;
 	}
 	else {
-		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
+		LOG_YELLOW_INFO("CLIENT CLOSED CONNECTION: " << socket << " bytes read " << tmp_bytes_read);
 		status = CLOSE_CONNECTION;
-		//TO-DO close socket and delete out of socket list
 		return;
 	}
-	LOG_BLACK("bytes read after recv: " << bytes_read);
-	LOG_BLACK("body size " << body.size());
 	if ((int)body.size() == checkBodySize()) {
 		status = DONE_READING;
 		//std::cout << getBody() << std::endl;
@@ -474,7 +444,7 @@ std::string	Request::readFile( std::string filename ) {
 	return ret;
 }
 
-std::string	formatString( std::string file_content ) {
+std::string	Request::formatString( std::string file_content ) {
 	std::string	header;
 	std::string	length;
 	std::string	full_header;
@@ -482,6 +452,8 @@ std::string	formatString( std::string file_content ) {
 	header = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
 	length = std::to_string(file_content.length()) + "\n\n";
 	full_header = header.append(length);
+	if (requestKey == HEAD)
+		return full_header;
 	ret = full_header.append(file_content);
 	//LOG_RED_INFO("response: " << ret);
 	return ret;
@@ -532,13 +504,10 @@ void	Request::responder() {
 	{
 		file_content = readFile(path.substr(1, std::string::npos));
 		if (status == 404){
-			//LOG_RED_INFO("404 gets sent");
-			//writeToSocket(socket, "HTTP/1.1 404 Method Not Allowed\r\nContent-Length: 0\r\n\r\n");
 			writeStatus(404, socket);
 			return ;
 		}
 		if (file_content.empty()) {
-			LOG_RED_INFO("here");
 			formatted = formatString("error: 404"); //TODO check if this is reached
 		}
 		else
@@ -546,7 +515,7 @@ void	Request::responder() {
 	}
 	formatted = formatString(file_content);
 	LOG_RED_INFO("writes " << formatted);
-	write(socket, formatted.c_str(), formatted.length());
+	writeToSocket(socket, formatted);
 }
 
 std::string	Request::getFilename() {

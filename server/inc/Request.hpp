@@ -16,6 +16,7 @@ class PostResponder;
 enum ReqKeys {
 	NIL,
 	GET,
+	HEAD,
 	POST,
 	PUT,
 	DELETE
@@ -95,6 +96,8 @@ class	Request {
 
 		int	checkBodySizeChunk();
 		int	chunkSize();
+
+		std::string	formatString( std::string file_content);
 
 
 		void	responder();
