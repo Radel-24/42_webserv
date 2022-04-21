@@ -58,20 +58,14 @@ void	Request::appendHeader(char * input, size_t size) {
 void	Request::changePath() { // TODO make hacking save when relative path is given in request
 	for (std::map<std::string, Location *>::reverse_iterator riter = server->locations.rbegin(); riter != server->locations.rend(); ++riter) {
 		if (path.find(riter->first) == 0) {
-			LOG_CYAN_INFO("path: " << path << " riter first " << riter->first);
 			location = riter->second;
-			LOG_CYAN_INFO("root: " << riter->second->root);
-			LOG_CYAN_INFO("path: " << path);
 			path = path.substr(riter->first.length(), std::string::npos);
 			path = riter->second->root + path;
-			LOG_CYAN_INFO("modified path: " << path);
 			struct stat path_stat; // TODO, I don't think this is allowed
 			stat(path.c_str(), &path_stat);
 			if (S_ISDIR(path_stat.st_mode)) {
 				path += "/" + location->default_file;
-				LOG_CYAN_INFO("default file request: " << path);
 			}
-			// LOG_BLUE("after replace: |" << path << "|");
 			break ;
 		}
 	}
@@ -88,17 +82,11 @@ void	Request::setPath() {
 	}
 	path = header.substr(posBegin, posEnd - posBegin);
 	uploadPath = path;
-	LOG_GREEN_INFO("path: |" << path << "|");
-	LOG_GREEN_INFO("find: " << path.find_last_of(server->cgi_extension));
-	LOG_GREEN_INFO("length path: " << path.length() << " cgi Length " << server->cgi_extension.length());
-	LOG_BLACK(header);
 	if (path.find_last_of(server->cgi_extension) == (path.length() - 1)) {
 		cgi_request = true;
 	}
-	// LOG_BLUE("before replace: |" << path << "|");
 }
 
-/* START ALEX NEW */
 /* maybe map needs to be reset after handling */
 void	Request::setHeaderValues( const std::pair<std::string, std::string> &pair )
 {
@@ -164,18 +152,8 @@ void	Request::parseHeader(std::string header)
 /* else we use the default server, which is the first from the config file, that uses the same port */
 /* PORT HAS TO FIT AS WELL !!!!!!!!!!!!!!!!!!!!! */
 void Request::detectCorrectServer(std::map<int, Server *> & servers) {
-	if (servers.empty()) {
-		LOG_RED_INFO("this shit again");
-	}
-	if (server == NULL) {
-		LOG_RED_INFO("FUUUUU");
-	}
 	std::map<int, Server *>::iterator	iter = servers.begin();
 	while (iter != servers.end()) {
-		if (iter->second == NULL) {
-			LOG_RED_INFO("Haaaaa " << iter->first);
-		}
-		LOG_BLUE_INFO("port " << iter->second->port);
 		if (iter->second->port == server->port && iter->second->server_name == getHostName()) {
 			server = iter->second;
 			return;
@@ -248,10 +226,11 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 				return ;
 			// LOG_RED_INFO(getRequestKey());
 			//LOG_WHITE(getHeader());
-			// start new alex
+
 			LOG_GREEN("START HEADER VALUES");
-			printHeaderValues();
+			printHeaderValues(); // TODO why is this needed so that the tester is running?!
 			LOG_GREEN("END HEADER VALUES");
+
 			LOG_BLUE("HEADER END ------------------------");
 			// end new alex
 			if (status == DONE_READING) {
@@ -293,11 +272,10 @@ void	Request::writeRequest() {
 	if (status >= 100 && status < 600) {
 		LOG_RED_INFO("request status " << status);
 		writeStatus(status, socket);
-		if (status == 405) {
+		if (status >= 400 && status < 600)
 			status = CLOSE_CONNECTION;
-			return;
-		}
-		status =  DONE_WRITING;
+		else
+			status =  DONE_WRITING;
 	}
 	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
 		if (!postResponder)
@@ -307,7 +285,6 @@ void	Request::writeRequest() {
 			delete (postResponder);
 			postResponder = NULL;
 		}
-		//PostResponder pR(*this);
 		return ;
 	}
 	else if (status == DONE_READING && getRequestKey() == GET) {
@@ -382,9 +359,6 @@ void Request::readHeader() {
 				status = DONE_READING;
 				//LOG_WHITE_INFO(header);
 			}
-		}
-		else {
-			LOG_BLACK_INFO("only header sent");
 		}
 	}
 }
@@ -479,7 +453,6 @@ std::string	Request::readFile( std::string filename ) {
 	std::string		values;
 	char			c;
 
-	LOG_CYAN_INFO("trying to open: " << filename);
 	int fd = open(filename.c_str(), std::ios::in);
 	if (fd == -1) {
 		status = 404;

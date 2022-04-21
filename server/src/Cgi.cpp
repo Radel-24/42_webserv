@@ -48,14 +48,6 @@ void	Cgi::setEnv() {
 		it++;
 	}
 
-
-	//for (std::map<std::string, std::string>::iterator iter = env.begin(); iter != env.end(); ++iter) {
-	//	LOG_BLACK(iter->first << " | " << iter->second);
-	//}
-
-	LOG_GREEN_INFO("path info " << env["PATH_INFO"]);
-	LOG_GREEN_INFO("request uri " << env["REQUEST_URI"]);
-
 }
 
 void	emptyUploadFile( std::string path )
@@ -73,11 +65,6 @@ void	emptyUploadFile( std::string path )
 void	Cgi::runCgi() {
 	char ** localEnv = mapToArray(env);
 
-	size_t index = 0;
-	while (localEnv[index]) {
-		LOG_BLUE(localEnv[index]);
-		++index;
-	}
 	int fin = fileno(inFile);
 
 	int fout = fileno(tempFile);
@@ -164,15 +151,11 @@ void	Cgi::parseCgi() {
 
 void	Cgi::answerCgi() {
 	LOG_GREEN_INFO("cgi response length: " << response.length());
-	if (request.body.length() < 200000) {
-		LOG_BLUE(response);
-	//	LOG_GREEN(request.body);
-	//	LOG_BLUE_INFO(request.body.length());
-	}
+
 	ssize_t bytes_written = writeToSocket(request.socket, response.c_str() + request.bytes_written);
 	LOG_BLACK_INFO("bytes written " << bytes_written);
 	if (bytes_written == -1) {
-		request.status = DONE_WRITING;
+		request.status = CLOSE_CONNECTION;
 		LOG_BLACK_INFO("write failed");
 		return ;
 	}
