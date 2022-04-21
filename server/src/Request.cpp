@@ -22,7 +22,9 @@ Request::Request() { init(); }
 
 Request::Request(int socket, Server * server) : socket(socket), server(server) { init(); }
 
-Request::~Request() { }
+Request::~Request() {
+	close(socket);
+}
 
 int	Request::getRequestKey() const { return requestKey; }
 
