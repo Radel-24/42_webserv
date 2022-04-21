@@ -46,14 +46,19 @@ void	initAccepter(std::map<int, Server *> & servers, fd_set & watching_read_sock
 	}
 }
 
-void accepter(std::map<int, Server *> & servers)
+void accepter(std::map<int, Server *> & serve)
 {
+	std::map<int, Server*> servers = serve;
 	//Server server;
 	fd_set	watching_read_sockets;
 	fd_set	watching_write_sockets;
 
 	std::set<int> set_read_sockets;
 	std::set<int> set_write_sockets;
+	for (std::map<int, Server *>::iterator iter = servers.begin(); iter != servers.end(); ++iter) {
+		set_read_sockets.insert(iter->second->sock);
+		LOG_BLUE_INFO("server sock added " << iter->second->sock);
+	}
 
 	std::map<int, Request *> requests;
 
@@ -80,8 +85,16 @@ void accepter(std::map<int, Server *> & servers)
 		LABEL:
 		FD_ZERO(&read_sockets);
 		FD_ZERO(&write_sockets);
-		read_sockets = watching_read_sockets;
-		write_sockets = watching_write_sockets;
+		for (std::set<int>::iterator iter = set_read_sockets.begin(); iter != set_read_sockets.end(); ++iter) {
+			FD_SET(*iter, &read_sockets);
+			LOG_BLUE_INFO("read socket " << *iter);
+		}
+		for (std::set<int>::iterator iter = set_write_sockets.begin(); iter != set_write_sockets.end(); ++iter) {
+			FD_SET(*iter, &write_sockets);
+			LOG_BLUE_INFO("write socket " << *iter);
+		}
+		//read_sockets = watching_read_sockets;
+		//write_sockets = watching_write_sockets;
 
 		// TODO speed this up
 		// TODO can fcntl(...) be used to get currently highest fd?
@@ -95,6 +108,14 @@ void accepter(std::map<int, Server *> & servers)
 			requests.clear();
 			initAccepter(servers, watching_read_sockets, watching_write_sockets);
 			LOG_GREEN_INFO("get the clients out of here");
+
+			set_read_sockets.clear();
+			set_write_sockets.clear();
+			for (std::map<int, Server *>::iterator iter = servers.begin(); iter != servers.end(); ++iter) {
+				set_read_sockets.insert(iter->second->sock);
+				LOG_BLUE_INFO("server sock added " << iter->second->sock);
+			}
+			continue ;
 		}
 
 		if (amount_ready_socks < 0)
@@ -109,7 +130,14 @@ void accepter(std::map<int, Server *> & servers)
 		for (; check_socket < FD_SETSIZE; check_socket++) {
 			if (FD_ISSET(check_socket, &read_sockets)) {
 				LOG_BLUE_INFO("read chapter " << check_socket);
-				std::map<int, Server *>::iterator server_elem = servers.find(check_socket);
+				std::map<int, Server *>::iterator server_elem;
+				LOG_BLUE_INFO("iterator created");
+				if (servers.empty()) {
+					LOG_RED_INFO("shit");
+				}
+				LOG_RED_INFO("what?! " << servers.find(check_socket)->first);
+				server_elem = servers.find(check_socket);
+				LOG_BLUE_INFO("done find");
 				if (server_elem != servers.end()) {
 					LOG_BLUE_INFO("new client");
 					struct sockaddr_in address = (server_elem->second)->g_address;
@@ -119,6 +147,7 @@ void accepter(std::map<int, Server *> & servers)
 					//	highestSocket = new_socket;
 					//}
 					FD_SET(new_socket, &watching_read_sockets);
+					set_read_sockets.insert(new_socket);
 					requests.insert(std::pair<int, Request *>(new_socket, new Request(new_socket, server_elem->second)));
 					LOG_YELLOW_INFO("new connection set up " << requests.size());
 				}
@@ -134,13 +163,16 @@ void accepter(std::map<int, Server *> & servers)
 					if (request.status >= 100 || request.status == DONE_READING) {
 						LOG_RED_INFO("new request status " << request.status);
 						FD_CLR(request.socket, &watching_read_sockets);
+						set_read_sockets.erase(request.socket);
 						FD_SET(request.socket, &watching_write_sockets);
+						set_write_sockets.insert(request.socket);
 					}
 					else if (request.status == CLIENT_CLOSED_CONNECTION) {
+						LOG_RED("request removed from map" << request.socket);
 						FD_CLR(request.socket, &watching_read_sockets);
+						set_read_sockets.erase(request.socket);
 						delete &request;
 						requests.erase(requests.find(check_socket));
-						LOG_RED("request removed from map");
 					}
 				}
 				goto LABEL;
@@ -159,7 +191,9 @@ void accepter(std::map<int, Server *> & servers)
 				if (request.status >= 100 && request.status < 200) {
 					requests[check_socket]->writeRequest();
 					FD_CLR(request.socket, &watching_write_sockets);
+					set_write_sockets.erase(request.socket);
 					FD_SET(request.socket, &watching_read_sockets);
+					set_read_sockets.insert(request.socket);
 					request.status = HEADER_READ;
 				}
 				else if (request.status == DONE_READING || (request.status >= 200 && request.status < 600)) {
@@ -172,13 +206,16 @@ void accepter(std::map<int, Server *> & servers)
 					//}
 					if (request.status == DONE_WRITING_CGI || request.status == DONE_WRITING) {
 						FD_CLR(request.socket, &watching_write_sockets);
+						set_write_sockets.erase(request.socket);
 						FD_SET(request.socket, &watching_read_sockets);
+						set_read_sockets.insert(request.socket);
 						request.status = READING_HEADER;
 						request.init();
 					}
 				}
 				else if (request.status == CLIENT_CLOSED_CONNECTION) {
 						FD_CLR(request.socket, &watching_write_sockets);
+						set_write_sockets.erase(request.socket);
 						delete &request;
 						requests.erase(requests.find(check_socket));
 						LOG_RED("request removed from map");

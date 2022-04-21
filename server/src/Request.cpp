@@ -164,8 +164,18 @@ void	Request::parseHeader(std::string header)
 /* else we use the default server, which is the first from the config file, that uses the same port */
 /* PORT HAS TO FIT AS WELL !!!!!!!!!!!!!!!!!!!!! */
 void Request::detectCorrectServer(std::map<int, Server *> & servers) {
+	if (servers.empty()) {
+		LOG_RED_INFO("this shit again");
+	}
+	if (server == NULL) {
+		LOG_RED_INFO("FUUUUU");
+	}
 	std::map<int, Server *>::iterator	iter = servers.begin();
 	while (iter != servers.end()) {
+		if (iter->second == NULL) {
+			LOG_RED_INFO("Haaaaa " << iter->first);
+		}
+		LOG_BLUE_INFO("port " << iter->second->port);
 		if (iter->second->port == server->port && iter->second->server_name == getHostName()) {
 			server = iter->second;
 			return;
@@ -454,7 +464,7 @@ void Request::readBodyLength() {
 		//std::cout << getBody() << std::endl;
 		LOG_BLACK("body read true" << body.size());
 	}
-	delete read_body;
+	//delete read_body; hhh
 }
 
 
