@@ -476,9 +476,13 @@ std::string	Request::readFile( std::string filename ) {
 	char			c;
 
 	LOG_CYAN_INFO("trying to open: " << filename);
-	if (open(filename.c_str(), std::ios::in) == -1) {
+	int fd = open(filename.c_str(), std::ios::in);
+	if (fd == -1) {
 		status = 404;
 		return "";
+	}
+	else {
+		close(fd);
 	}
 	newFile.open(filename, std::ios::in);
 	if (!newFile){

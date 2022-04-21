@@ -87,11 +87,11 @@ void accepter(std::map<int, Server *> & serve)
 		FD_ZERO(&write_sockets);
 		for (std::set<int>::iterator iter = set_read_sockets.begin(); iter != set_read_sockets.end(); ++iter) {
 			FD_SET(*iter, &read_sockets);
-			LOG_BLUE_INFO("read socket " << *iter);
+			//LOG_BLUE_INFO("read socket " << *iter);
 		}
 		for (std::set<int>::iterator iter = set_write_sockets.begin(); iter != set_write_sockets.end(); ++iter) {
 			FD_SET(*iter, &write_sockets);
-			LOG_BLUE_INFO("write socket " << *iter);
+			//LOG_BLUE_INFO("write socket " << *iter);
 		}
 		//read_sockets = watching_read_sockets;
 		//write_sockets = watching_write_sockets;
@@ -99,7 +99,7 @@ void accepter(std::map<int, Server *> & serve)
 		// TODO speed this up
 		// TODO can fcntl(...) be used to get currently highest fd?
 		LOG_PINK("before select");
-		usleep(500);
+		
 		amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, &tv); // TODO add &tv for timeout
 
 		LOG_PINK("after select " << amount_ready_socks);
