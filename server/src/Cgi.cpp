@@ -160,13 +160,6 @@ void	Cgi::parseCgi() {
 	response += std::to_string(body.length());
 	response += "\r\n\r\n";
 	response += body;
-
-	LOG_GREEN_INFO("body length " << body.length());
-	if (body.length() < 200000) {
-		LOG_BLACK(request.header);
-	//	LOG_GREEN(request.body);
-	//	LOG_BLUE_INFO(request.body.length());
-	}
 }
 
 void	Cgi::answerCgi() {

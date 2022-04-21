@@ -293,6 +293,10 @@ void	Request::writeRequest() {
 	if (status >= 100 && status < 600) {
 		LOG_RED_INFO("request status " << status);
 		writeStatus(status, socket);
+		if (status == 405) {
+			status = CLOSE_CONNECTION;
+			return;
+		}
 		status =  DONE_WRITING;
 	}
 	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
@@ -352,12 +356,12 @@ void Request::readHeader() {
 	ssize_t bytes_read = recv(socket, buffer, 10000, 0);
 	LOG_BLACK("header read bytes: " << bytes_read << std::endl);
 	if (bytes_read == -1) {
-		status = CLIENT_CLOSED_CONNECTION;
+		status = CLOSE_CONNECTION;
 		LOG_RED_INFO("bytes read -1 means error according to manual");
 		return;
 	}
 	if (bytes_read == 0) {
-		status = CLIENT_CLOSED_CONNECTION;
+		status = CLOSE_CONNECTION;
 		LOG_PINK_INFO("bytes read 0 means client closed connection according to manual");
 	}
 	appendHeader(buffer, bytes_read);
@@ -416,7 +420,7 @@ void	Request::readBodyChunked() {
 	}
 	else {
 		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
-		status = CLIENT_CLOSED_CONNECTION;
+		status = CLOSE_CONNECTION;
 		delete read_body;
 		//free(read_body);
 		//TO-DO close socket and delete out of socket list
@@ -453,7 +457,7 @@ void Request::readBodyLength() {
 	}
 	else {
 		LOG_YELLOW("CLIENT CLOSED CONNECTION: " << socket);
-		status = CLIENT_CLOSED_CONNECTION;
+		status = CLOSE_CONNECTION;
 		//TO-DO close socket and delete out of socket list
 		return;
 	}

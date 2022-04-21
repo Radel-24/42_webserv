@@ -76,13 +76,12 @@ void accepter(std::map<int, Server *> & serve)
 	int check_socket = 2;
 	LOG_PINK_INFO("check socket " << &check_socket);
 	LOG_PINK_INFO("amount ready socks " << &amount_ready_socks);
-	//sleep(5);
 
 	fd_set read_sockets;
 	fd_set write_sockets;
 
 	while (true){
-		LABEL:
+		//LABEL:
 		FD_ZERO(&read_sockets);
 		FD_ZERO(&write_sockets);
 		for (std::set<int>::iterator iter = set_read_sockets.begin(); iter != set_read_sockets.end(); ++iter) {
@@ -99,8 +98,8 @@ void accepter(std::map<int, Server *> & serve)
 		// TODO speed this up
 		// TODO can fcntl(...) be used to get currently highest fd?
 		LOG_PINK("before select");
-		
-		amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, &tv); // TODO add &tv for timeout
+		//usleep(100);
+		amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, &tv);
 
 		LOG_PINK("after select " << amount_ready_socks);
 
@@ -167,7 +166,7 @@ void accepter(std::map<int, Server *> & serve)
 						FD_SET(request.socket, &watching_write_sockets);
 						set_write_sockets.insert(request.socket);
 					}
-					else if (request.status == CLIENT_CLOSED_CONNECTION) {
+					else if (request.status == CLOSE_CONNECTION) {
 						LOG_RED("request removed from map" << request.socket);
 						FD_CLR(request.socket, &watching_read_sockets);
 						set_read_sockets.erase(request.socket);
@@ -175,7 +174,7 @@ void accepter(std::map<int, Server *> & serve)
 						requests.erase(requests.find(check_socket));
 					}
 				}
-				goto LABEL;
+				//goto LABEL;
 			}
 		}
 		check_socket = 2;
@@ -213,14 +212,14 @@ void accepter(std::map<int, Server *> & serve)
 						request.init();
 					}
 				}
-				else if (request.status == CLIENT_CLOSED_CONNECTION) {
+				else if (request.status == CLOSE_CONNECTION) {
 						FD_CLR(request.socket, &watching_write_sockets);
 						set_write_sockets.erase(request.socket);
 						delete &request;
 						requests.erase(requests.find(check_socket));
 						LOG_RED("request removed from map");
 				}
-			goto LABEL;
+			//goto LABEL;
 			}
 		}
 	}
