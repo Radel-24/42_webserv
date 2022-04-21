@@ -22,6 +22,7 @@ void	Request::init() {
 	location = NULL;
 	postResponder = NULL;
 	chunk.clear();
+	filename.clear();
 }
 
 Request::Request() { init(); }
@@ -58,13 +59,13 @@ void	Request::appendHeader(char * input, size_t size) {
 void	Request::changePath() { // TODO make hacking save when relative path is given in request
 	for (std::map<std::string, Location *>::reverse_iterator riter = server->locations.rbegin(); riter != server->locations.rend(); ++riter) {
 		if (path.find(riter->first) == 0) {
-			LOG_CYAN_INFO("path: " << path << " riter first " << riter->first);
+			// LOG_CYAN_INFO("path: " << path << " riter first " << riter->first);
 			location = riter->second;
-			LOG_CYAN_INFO("root: " << riter->second->root);
-			LOG_CYAN_INFO("path: " << path);
+			// LOG_CYAN_INFO("root: " << riter->second->root);
+			// LOG_CYAN_INFO("path: " << path);
 			path = path.substr(riter->first.length(), std::string::npos);
 			path = riter->second->root + path;
-			LOG_CYAN_INFO("modified path: " << path);
+			// LOG_CYAN_INFO("modified path: " << path);
 			struct stat path_stat; // TODO, I don't think this is allowed
 			stat(path.c_str(), &path_stat);
 			if (S_ISDIR(path_stat.st_mode)) {
@@ -79,6 +80,7 @@ void	Request::changePath() { // TODO make hacking save when relative path is giv
 }
 
 void	Request::setPath() {
+	LOG_PINK_INFO("IN SET PATH");
 	size_t posBegin = header.find("/");
 	size_t posEnd = header.find_first_of(" \t", posBegin + 1);
 	if (posBegin == std::string::npos || posEnd == std::string::npos) { // TODO usually not needed, except when header is wrong
@@ -88,10 +90,12 @@ void	Request::setPath() {
 	}
 	path = header.substr(posBegin, posEnd - posBegin);
 	uploadPath = path;
-	LOG_GREEN_INFO("path: |" << path << "|");
-	LOG_GREEN_INFO("find: " << path.find_last_of(server->cgi_extension));
-	LOG_GREEN_INFO("length path: " << path.length() << " cgi Length " << server->cgi_extension.length());
-	LOG_BLACK(header);
+	// LOG_GREEN_INFO("path: |" << path << "|");
+	// LOG_GREEN_INFO("find: " << path.find_last_of(server->cgi_extension));
+	// LOG_GREEN_INFO("length path: " << path.length() << " cgi Length " << server->cgi_extension.length());
+	LOG("");
+	LOG_PINK(header.substr(0, 200));
+	LOG("");
 	if (path.find_last_of(server->cgi_extension) == (path.length() - 1)) {
 		cgi_request = true;
 	}
@@ -221,6 +225,15 @@ void Request::checkRequest() {
 
 }
 
+void	Request::extractFilename() {
+	// LOG_WHITE("ABC: uploadPath: " << uploadPath);
+	size_t	pos = uploadPath.find_last_of("/") + 1;
+	std::string		file = uploadPath.substr(pos, uploadPath.length() - pos);
+	// LOG_WHITE("ABC: filename: " << filename);
+	// LOG_GREEN("ABC -----------");
+	filename = file;
+}
+
 void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if request is allowed, otherwise return DECLINE
 	//server->updateFilesHTML(); // TODO put to uesful position
 	//LOG_PINK_INFO("server name: " << getServer()->server_name);
@@ -229,6 +242,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 	if (status == READING_HEADER) {
 		readHeader();
 		if (status == HEADER_READ) {
+			LOG_YELLOW("START READ REQUEST ---------------------------------------------");
 			//LOG_GREEN_INFO(header);
 			parseHeader(header);
 			checkHeaderValues();
@@ -239,6 +253,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 			setPath();
 			changePath();
 			setType();
+			extractFilename();
 			//LOG_YELLOW("START");
 			//LOG_YELLOW(getHeader());
 			//LOG_BLACK(getBody());
@@ -253,6 +268,7 @@ void	Request::readRequest(std::map<int, Server *> & servers) { // TODO check if 
 			printHeaderValues();
 			LOG_GREEN("END HEADER VALUES");
 			LOG_BLUE("HEADER END ------------------------");
+			LOG_YELLOW("END READ REQUEST ---------------------------------------------");
 			// end new alex
 			if (status == DONE_READING) {
 				LOG_GREEN("read all in one");

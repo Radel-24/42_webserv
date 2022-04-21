@@ -97,11 +97,11 @@ void accepter(std::map<int, Server *> & serve)
 
 		// TODO speed this up
 		// TODO can fcntl(...) be used to get currently highest fd?
-		LOG_PINK("before select");
+		// LOG_PINK("before select");
 		//usleep(100);
 		amount_ready_socks = select(FD_SETSIZE, &read_sockets, &write_sockets, NULL, &tv);
 
-		LOG_PINK("after select " << amount_ready_socks);
+		// LOG_PINK("after select " << amount_ready_socks);
 
 		if (amount_ready_socks == 0) {
 			requests.clear();
@@ -128,15 +128,15 @@ void accepter(std::map<int, Server *> & serve)
 		check_socket = 2;
 		for (; check_socket < FD_SETSIZE; check_socket++) {
 			if (FD_ISSET(check_socket, &read_sockets)) {
-				LOG_BLUE_INFO("read chapter " << check_socket);
+				// LOG_BLUE_INFO("read chapter " << check_socket);
 				std::map<int, Server *>::iterator server_elem;
-				LOG_BLUE_INFO("iterator created");
+				// LOG_BLUE_INFO("iterator created");
 				if (servers.empty()) {
 					LOG_RED_INFO("shit");
 				}
-				LOG_RED_INFO("what?! " << servers.find(check_socket)->first);
+				// LOG_RED_INFO("what?! " << servers.find(check_socket)->first);
 				server_elem = servers.find(check_socket);
-				LOG_BLUE_INFO("done find");
+				// LOG_BLUE_INFO("done find");
 				if (server_elem != servers.end()) {
 					LOG_BLUE_INFO("new client");
 					struct sockaddr_in address = (server_elem->second)->g_address;
@@ -151,7 +151,7 @@ void accepter(std::map<int, Server *> & serve)
 					LOG_YELLOW_INFO("new connection set up " << requests.size());
 				}
 				else {
-					LOG_BLUE_INFO("read client");
+					// LOG_BLUE_INFO("read client");
 					//if ((requests[check_socket]) == NULL) {
 					//	LOG_RED_INFO("finds null pointer");
 					//	continue;
@@ -180,7 +180,7 @@ void accepter(std::map<int, Server *> & serve)
 		check_socket = 2;
 		for (; check_socket < FD_SETSIZE; check_socket++) {
 			if (FD_ISSET(check_socket, &write_sockets)) {
-				LOG_BLUE_INFO("write chapter");
+				// LOG_BLUE_INFO("write chapter");
 				//if ((requests[check_socket]) == NULL) {
 				//	LOG_RED_INFO("finds null pointer");
 				//	continue;

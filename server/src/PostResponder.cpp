@@ -78,6 +78,7 @@ void	PostResponder::uploadFiles( void )
 		bodyContent = cutBody.substr(dblNewline + 4, cutBody.length() - dblNewline - 4);
 
 		// remove new
+		LOG_BLACK("ABC: hallo: " << filename);
 		createUploadFile(filename, bodyContent);
 
 		_numOfBoundaries--;
@@ -237,19 +238,23 @@ void PostResponder::run() {
 
 
 
-		LOG_YELLOW("CREATE FILE");
+		LOG_YELLOW("ABC CREATE FILE");
 		if (!request.cgi_request)
 		{
-			std::string filename = "Felix";
+			std::string filename = request.filename;
+			LOG_RED("ABC: creating file: " << filename);
 			emptyUploadFile(filename);
-			createUploadFile(filename, tmp);
+			createUploadFile(filename, request.body);
 		}
 		LOG_YELLOW("FILE CREATED");
 
 		if (request.cgi_request) {
 			//request.status = DONE_READING;
-			LOG_GREEN("RUN CGI");
+			LOG_GREEN("ABC RUN CGI");
 			cgi = new Cgi(request);
+			std::string filename = request.filename;
+			emptyUploadFile(filename);
+			createUploadFile(filename, request.body);
 			//Cgi cgi(request);
 			LOG_GREEN("END CGI");
 			return ;

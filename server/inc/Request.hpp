@@ -48,6 +48,7 @@ class	Request {
 
 
 
+		std::string							filename;
 	private:
 		unsigned int						requestKey;
 		ssize_t								bytes_read;
@@ -55,6 +56,9 @@ class	Request {
 		std::string							uploadPath;
 		Location *							location;
 		std::string	chunk;
+
+
+		void					extractFilename();
 
 
 	private:
@@ -103,7 +107,7 @@ class	Request {
 		void	printHeaderValues() {
 			std::map<std::string, std::string>::iterator iter = headerValues.begin();
 			while (iter != headerValues.end()) {
-				LOG_WHITE(iter->first << " | " << iter->second);
+				LOG_GREEN(iter->first << " | " << iter->second);
 				++iter;
 			}
 		}
