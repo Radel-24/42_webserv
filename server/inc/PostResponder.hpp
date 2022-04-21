@@ -26,8 +26,6 @@ class PostResponder {
 		std::string	extractBoundary( void );
 		int			countBoundaries( void );
 		void		uploadFiles( void );
-		void		emptyUploadFile( std::string filename );
-		void		createUploadFile( std::string filename, std::string content );
 		void		writeResponse(std::string response);
 		int			checkBodySizeChuncked();
 		int			checkBodyStart();

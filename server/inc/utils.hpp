@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iostream>
 #include <istream>
+#include <fstream>
 #include <iomanip>
 #include <map>
 #include <vector>
@@ -58,3 +59,6 @@ std::string	toAbsolutPath(std::string path);
 void	writeStatus(int status, int socket);
 
 int hex_to_decimal(std::string hex);
+
+void	emptyUploadFile( std::string path);
+void	createUploadFile( std::string path, std::string content );

@@ -319,9 +319,10 @@ void	Request::setType() {
 
 void Request::readHeader() {
 	LOG_BLUE("HEADER START ----------------------");
-	char	buffer[20000]; // TODO if buffer[5000] not possible to upload felix.jpg with browser
-	memset(buffer, 0, 20000 * sizeof(char));
-	ssize_t bytes_read = recv(socket, buffer, 20000, 0);
+	int buffer_size = 20000;
+	char	buffer[buffer_size]; // TODO dirty fix so that POST tester doesn't fail at / because of broken pipe
+	memset(buffer, 0, buffer_size * sizeof(char));
+	ssize_t bytes_read = recv(socket, buffer, buffer_size, 0);
 	LOG_BLACK("header read bytes: " << bytes_read << std::endl);
 	if (bytes_read == -1) {
 		status = CLOSE_CONNECTION;

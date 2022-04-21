@@ -1,35 +1,6 @@
 #include "PostResponder.hpp"
 std::string ToHex(const std::string & s, bool upper_case /* = true */);
 
-void	PostResponder::emptyUploadFile( std::string filename )
-{
-	char * buf = getcwd(NULL, FILENAME_MAX);
-	std::string cwd(buf);
-	std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
-	//LOG_YELLOW("depug upload path: " << path);
-	std::ofstream	file(path, std::ios_base::out);
-	if (file.is_open()) {
-		file << ""; // else error
-		// LOG_YELLOW("upload file is opened");
-	}
-	//std::cout << "HEX\n" << ToHex(content, 0) << "\n";
-	file.close();
-}
-
-void	PostResponder::createUploadFile( std::string filename, std::string content )
-{
-	char * buf = getcwd(NULL, FILENAME_MAX);
-	std::string cwd(buf);
-	std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
-	//LOG_YELLOW("depug upload path: " << path);
-	std::ofstream	file(path, std::ios_base::app);
-	if (file.is_open()) {
-		file << content; // else error
-		// LOG_YELLOW("upload file is opened");
-	}
-	//std::cout << "HEX\n" << ToHex(content, 0) << "\n";
-	file.close();
-}
 
 void	PostResponder::uploadFiles( void )
 {
@@ -78,7 +49,10 @@ void	PostResponder::uploadFiles( void )
 		bodyContent = cutBody.substr(dblNewline + 4, cutBody.length() - dblNewline - 4);
 
 		// remove new
-		createUploadFile(filename, bodyContent);
+		char * buf = getcwd(NULL, FILENAME_MAX);
+		std::string cwd(buf);
+		std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
+		createUploadFile(path, bodyContent);
 
 		_numOfBoundaries--;
 
@@ -241,8 +215,11 @@ void PostResponder::run() {
 		if (!request.cgi_request)
 		{
 			std::string filename = "Felix";
-			emptyUploadFile(filename);
-			createUploadFile(filename, tmp);
+			char * buf = getcwd(NULL, FILENAME_MAX);
+			std::string cwd(buf);
+			std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
+			emptyUploadFile(path);
+			createUploadFile(path, tmp);
 		}
 		LOG_YELLOW("FILE CREATED");
 

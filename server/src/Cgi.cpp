@@ -50,18 +50,6 @@ void	Cgi::setEnv() {
 
 }
 
-void	emptyUploadFile( std::string path )
-{
-	//LOG_YELLOW("depug upload path: " << path);
-	std::ofstream	file(path, std::ios_base::out);
-	if (file.is_open()) {
-		file << ""; // else error
-		// LOG_YELLOW("upload file is opened");
-	}
-	//std::cout << "HEX\n" << ToHex(content, 0) << "\n";
-	file.close();
-}
-
 void	Cgi::runCgi() {
 	char ** localEnv = mapToArray(env);
 
@@ -76,18 +64,13 @@ void	Cgi::runCgi() {
 		request.status = 500;
 	}
 	if (pid == 0) {
-		//LOG_CYAN_INFO(request.body);
-
 		// !!!!!!!! Don't write log messages in here !!!!!!!
 
 		if (dup2(fin, STDIN_FILENO) == -1) {
 			LOG_RED_INFO("dup2 failed");
 		}
 
-		//fout = open("/Users/radelwar/Documents/42_webserv/server/cgiOutput.txt", O_RDWR); // TODO only for testing
-
-
-		if (dup2(fout, STDOUT_FILENO) == -1) { // TODO comment this line in to write back the answer to the client
+		if (dup2(fout, STDOUT_FILENO) == -1) {
 			LOG_RED_INFO("dup2 failed");
 		}
 		write(fin, request.body.c_str(), request.body.size());
@@ -96,27 +79,22 @@ void	Cgi::runCgi() {
 		}
 		close(fin);
 		close(fout);
-		//LOG_RED_INFO("first " << toAbsolutPath(request.server->cgi_path).c_str());
 		if (execve(toAbsolutPath(request.server->cgi_path).c_str(), NULL, localEnv) == -1) {
 			LOG_RED_INFO("cgi failed");
 			exit(1);
 		}
 	} else {
 		close(fin);
-		// close(fout);
-		// TODO no clue what to do
 		int exit_status;
 		wait(&exit_status);
 		LOG_GREEN_INFO("cgi ended with status " << exit_status);
-		LOG_GREEN_INFO("exit status " << WEXITSTATUS(exit_status));
-		LOG_GREEN_INFO("finished runCgi");
 	}
 }
 
 void	Cgi::parseCgi() {
 	char *buffer;
 
-	 // obtain file size:
+	// obtain file size:
 	fseek (tempFile , 0 , SEEK_END);
 	long lSize = ftell (tempFile);
 	rewind (tempFile);
@@ -133,7 +111,7 @@ void	Cgi::parseCgi() {
 	free(buffer);
 	int fout = fileno(tempFile);
 	close(fout);
-	//LOG_RED_INFO("file read " << answer);
+
 	size_t	bodyBegin = answer.find("\r\n\r\n") + 4;
 
 
@@ -146,8 +124,6 @@ void	Cgi::parseCgi() {
 }
 
 void	Cgi::answerCgi() {
-	LOG_GREEN_INFO("cgi response length: " << response.length());
-
 	ssize_t bytes_written = writeToSocket(request.socket, response.c_str() + request.bytes_written);
 	LOG_BLACK_INFO("bytes written " << bytes_written);
 	if (bytes_written == -1) {

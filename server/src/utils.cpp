@@ -135,3 +135,21 @@ int hex_to_decimal(std::string hex)
 	}
 	return dec_val;
 }
+
+
+void	emptyUploadFile( std::string path) {
+	std::ofstream	file(path, std::ios_base::out);
+	if (file.is_open()) {
+		file << "";
+	}
+	file.close();
+}
+
+void	createUploadFile( std::string path, std::string content )
+{
+	std::ofstream	file(path, std::ios_base::app);
+	if (file.is_open()) {
+		file << content; // else error
+	}
+	file.close();
+}
