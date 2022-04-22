@@ -109,32 +109,29 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 /*
 This function runs the tree command on the root of the server to list alle the uploaded files in html format.
 */
-void	Server::updateFilesHTML() {
-	char * buf = getcwd(NULL, FILENAME_MAX);
-	std::string cwd(buf);
-	std::string path = cwd + root;
-	// LOG_GREEN("path " << path);
-	std::string execPath = cwd;
-	execPath += "/tree -H ";
-	execPath += uploadPath;
-	execPath += " -T 'Your Files' -L 1 --noreport --charset utf-8 -o ";
-	execPath += cwd + root;
-	execPath += "/files.html";
-	//LOG_GREEN("path " << path);
+void	Server::updateFilesHTML( Location * location ) {
 
-	LOG_YELLOW("path: " << path);
-	LOG_YELLOW("execPath: " << execPath);
-	LOG_YELLOW("cwd: " << cwd);
-	if (!chdir(path.c_str())) // else irgendein error
-	{
+	std::string cwd = std::string(getcwd(NULL, FILENAME_MAX));
+	LOG_YELLOW_INFO("cwd: " << cwd);
+
+	std::string	path = cwd + root + "/" + server_name + location->path;
+	LOG_YELLOW_INFO("path: " << path);
+
+	if (!chdir(path.c_str())) {
+		std::string execPath = cwd;
+		execPath += "/tree -H "; // tree executable
+		execPath += "."; // which files do you want to show (cwd)
+		execPath += " -T 'Your Files' -L 1 --noreport --charset utf-8 -o ";
+		execPath += cwd + root + "/" + server_name + location->path; // where to create file
+		execPath += "/files.html"; // name of file
+		LOG_YELLOW_INFO("execPath: " << execPath);
 		if (system(execPath.c_str()) == -1)
-			LOG_RED("file tree went wrong"); // if == -1 error happened
-		chdir(cwd.c_str());
+			LOG_RED("file tree went wrong");
+		if (!chdir(cwd.c_str())) {
+			LOG_RED_INFO("ERROR: chdir: " << cwd);
+		}
 	}
-	else
-	{
-		LOG_WHITE(path.c_str());
-		LOG_RED("chdir went wrong");
+	else {
+		LOG_RED_INFO("ERROR: chdir: " << path);
 	}
-	free(buf);
 }

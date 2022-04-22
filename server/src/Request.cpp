@@ -496,9 +496,37 @@ void	Request::deleteResponder( void ) {
 }
 /* end alex new */
 
+std::string	removeDoubleSlashesFromPath( std::string path ) {
+	std::string	ret = path + "/";
+	size_t		pos;
+	while ((pos = ret.find("//")) != std::string::npos)
+		ret = ret.erase(pos);
+	return ret;
+}
+
 void	Request::responder() {
 	std::string	file_content;
 	std::string	formatted;
+
+	// TODO alex ist stuck af und hat
+	for (std::map<std::string, Location*>::iterator it = server->locations.begin(); it != server->locations.end(); it++)
+	{
+		std::string	locationPath = server->root + it->second->path;
+
+		// anstatt path muss ich wissen welche location der user requested (zb http://localhost:1000/felix)
+		std::string	comparePath = removeDoubleSlashesFromPath(path);
+		locationPath = removeDoubleSlashesFromPath(locationPath);
+
+		LOG_PINK_INFO("comparePath: " << comparePath);
+		LOG_PINK_INFO("locationPath: " << locationPath);
+
+		// TODO there should be no default file       path + "/" is hardcoded
+		if (it->second->directory_listing == true && (comparePath == locationPath)) {
+			LOG_GREEN_INFO("entering tree logic");
+			server->updateFilesHTML(it->second);
+		}
+		LOG("");
+	}
 
 	LOG_PINK_INFO("test:	" << path);
 	struct stat path_stat;

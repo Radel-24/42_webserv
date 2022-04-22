@@ -68,6 +68,6 @@ class Server {
 		Server();
 
 		void	configure( std::map<int, Server *> & servers );
-		void	updateFilesHTML();
+		void	updateFilesHTML( Location * location );
 
 };

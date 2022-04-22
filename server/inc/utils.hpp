@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include <unistd.h>
+#include <sys/stat.h>
 
 #define LOG(x) (std::cout << x << std::endl)
 
@@ -22,14 +23,14 @@
 #define LOG_CYAN(x) (std::cout << "\033[1;36m" << x << "\033[0m" << std::endl)
 #define LOG_WHITE(x) (std::cout << "\033[1;37m" << x << "\033[0m" << std::endl)
 
-#define LOG_RED_INFO(x) (std::cout << "(file: " << __FILE__ << ", line: " << __LINE__ << ") " << "\033[1;31m" << x << "\033[0m" << std::endl)
-#define LOG_GREEN_INFO(x) (std::cout << "(file: " << __FILE__ << ", line: " << __LINE__ << ") " << "\033[1;32m" << x << "\033[0m" << std::endl)
-#define LOG_YELLOW_INFO(x) (std::cout << "(file: " << __FILE__ << ", line: " << __LINE__ << ") " << "\033[1;33m" << x << "\033[0m" << std::endl)
-#define LOG_BLUE_INFO(x) (std::cout << "(file: " << __FILE__ << ", line: " << __LINE__ << ") " << "\033[1;34m" << x << "\033[0m" << std::endl)
-#define LOG_BLACK_INFO(x) (std::cout << "(file: " << __FILE__ << ", line: " << __LINE__ << ") " << "\033[1;30m" << x << "\033[0m" << std::endl)
-#define LOG_PINK_INFO(x) (std::cout << "(file: " << __FILE__ << ", line: " << __LINE__ << ") " << "\033[1;35m" << x << "\033[0m" << std::endl)
-#define LOG_CYAN_INFO(x) (std::cout << "(file: " << __FILE__ << ", line: " << __LINE__ << ") " << "\033[1;36m" << x << "\033[0m" << std::endl)
-#define LOG_WHITE_INFO(x) (std::cout << "(file: " << __FILE__ << ", line: " << __LINE__ << ") " << "\033[1;37m" << x << "\033[0m" << std::endl)
+#define LOG_RED_INFO(x) (std::cout << __FILE__ << ":" << __LINE__ << " " <<  "\033[1;31m" << x << "\033[0m" << std::endl)
+#define LOG_GREEN_INFO(x) (std::cout << __FILE__ << ":" << __LINE__ << " " << "\033[1;32m" << x << "\033[0m" << std::endl)
+#define LOG_YELLOW_INFO(x) (std::cout << __FILE__ << ":" << __LINE__ << " " << "\033[1;33m" << x << "\033[0m" << std::endl)
+#define LOG_BLUE_INFO(x) (std::cout << __FILE__ << ":" << __LINE__ << " " << "\033[1;34m" << x << "\033[0m" << std::endl)
+#define LOG_BLACK_INFO(x) (std::cout << __FILE__ << ":" << __LINE__ << " " << "\033[1;30m" << x << "\033[0m" << std::endl)
+#define LOG_PINK_INFO(x) (std::cout << __FILE__ << ":" << __LINE__ << " " << "\033[1;35m" << x << "\033[0m" << std::endl)
+#define LOG_CYAN_INFO(x) (std::cout << __FILE__ << ":" << __LINE__ << " " <<  "\033[1;36m" << x << "\033[0m" << std::endl)
+#define LOG_WHITE_INFO(x) (std::cout << __FILE__ << ":" << __LINE__ << " " << "\033[1;37m" << x << "\033[0m" << std::endl)
 
 
 std::pair<std::string, std::string>	divideString(std::string input, std::string divide);
@@ -62,3 +63,5 @@ int hex_to_decimal(std::string hex);
 
 void	emptyUploadFile( std::string path);
 void	createUploadFile( std::string path, std::string content );
+
+int		dirExists(const char *path);

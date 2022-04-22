@@ -104,29 +104,46 @@ int	server_parser(std::ifstream &fin, Server & server) {
 }
 
 /*
-This function created the main structure of the server. (directorys)
-It then copies all the data into the root directory(default server)
+	This function created the main structure of the server. (directorys)
+	It then copies all the data into the root directory(default server)
 */
-void	test_script_for_root_folder(Server *server) {
+// TODO why is root: /www/defualt server?
+void	createServerDirectory(Server *server) {
 
-	// only if cwd is /Users/akurz/42projects/projects/z_WEBSERV/server
-	// if (!strcmp(getcwd(NULL, FILENAME_MAX), "/Users/akurz/42projects/projects/z_WEBSERV/server"))
-	// {
-		std::string	directory = "mkdir ." + server->root;
-		// at the moment there is no default uploadPath for the server (i think)
-		std::string	directory2 = "mkdir ." + server->root + server->uploadPath;
-		std::string	cmd_line = directory + " && " + directory2;
-		system(cmd_line.c_str());
+	// std::string	serverWarehouse = "/www/";
+	std::string	directory1 = "." + server->root + "/" + server->server_name;
+	std::string	directory2 = "." + server->root + "/" + server->server_name + server->uploadPath;
 
-		std::string	copy = "cp -n ./www/default_server/* ." + server->root + "/"; // -n option prevents overrides
-		std::string	copy2 = "cp -n -R ./www/default_server/img ." + server->root;
+	// create server diretory
+	if (!dirExists(directory1.c_str())) {
+		std::string	createDirectory1 = "mkdir " + directory1;
+		system(createDirectory1.c_str());
+	}
+	if (!dirExists(directory2.c_str())) {
+		std::string	createDirectory2 = "mkdir " + directory2;
+		system(createDirectory2.c_str());
+	}
+
+	// copy neccesarry files over from prototype (/www/default_server)
+	if (dirExists("./www/default_server")) {
+		std::string	copy = "cp -n ./www/default_server/* " + directory1 + "/"; // -n option prevents overrides
 		system(copy.c_str());
-		system(copy2.c_str());
-	// }
+		if (dirExists("./www/default_server/img")) {
+			std::string	copy2 = "cp -n -R ./www/default_server/img " + directory1 + "/";
+			system(copy2.c_str());
+		}
+		else {
+			LOG_RED_INFO("ERROR: NO DEFAULT SERVER GIVEN");
+			// exit(0); // TODO what do do here?
+		}
+	}
+	else {
+		LOG_RED_INFO("ERROR: NO DEFAULT SERVER GIVEN");
+		// exit(0); // TODO what do do here?
+	}
 	LOG_GREEN("created: server directory");
-	// mover this here from Server.cpp
-	server->updateFilesHTML();
-	LOG_GREEN("created: files.html");
+	// server->updateFilesHTML(); TODO is this neccesary?
+	// LOG_GREEN("created: files.html");
 }
 
 
@@ -153,7 +170,7 @@ int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 			//		server->updateFilesHTML();
 			//	}
 			//}
-			//test_script_for_root_folder(server); // alex new
+			createServerDirectory(server); // alex new
 		}
 		else if (line.empty()) { continue; }
 		else {

@@ -64,7 +64,7 @@ void	PostResponder::uploadFiles( void )
 			return ;
 		}
 	}
-	request.server->updateFilesHTML();
+	// request.server->updateFilesHTML(); // TODO is this neccesary?
 }
 
 int	PostResponder::countBoundaries( void )
