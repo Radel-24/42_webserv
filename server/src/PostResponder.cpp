@@ -214,8 +214,14 @@ void PostResponder::run() {
 		LOG_YELLOW("ABC CREATE FILE");
 		if (!request.cgi_request)
 		{
-	
-	
+			std::string filename = request.filename;
+			char * buf = getcwd(NULL, FILENAME_MAX);
+			std::string cwd =(buf);
+			std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
+			LOG_RED_INFO("check this out: " << path);
+			free(buf);
+			emptyUploadFile(path);
+			createUploadFile(path, request.body);
 		}
 		LOG_YELLOW("FILE CREATED");
 
@@ -223,15 +229,14 @@ void PostResponder::run() {
 			//request.status = DONE_READING;
 			LOG_GREEN("ABC RUN CGI");
 			cgi = new Cgi(request);
-			std::string filename = request.filename;
-			char * buf = getcwd(NULL, FILENAME_MAX);
-			std::string cwd(buf);
-			std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
-			LOG_RED_INFO("check this out: " << path);
-			emptyUploadFile(path);
-			createUploadFile(path, request.body);
+			// std::string filename = request.filename;
+			// char * buf = getcwd(NULL, FILENAME_MAX);
+			// std::string cwd =(buf);
+			// std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
+			// LOG_RED_INFO("check this out: " << path);
 			//Cgi cgi(request);
 			LOG_GREEN("END CGI");
+			// free(buf);
 			return ;
 		}
 		//------------------------------------------------------------------------------------------------------------------------------------------
