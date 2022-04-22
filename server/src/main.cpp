@@ -75,8 +75,9 @@ void accepter(std::map<int, Server *> & servers)
 
 	int amount_ready_socks = 0;
 
-	timeval tv;
+	struct timeval tv;
 	tv.tv_sec = 10;
+	tv.tv_usec = 0;
 
 	fd_set read_sockets;
 	fd_set write_sockets;
