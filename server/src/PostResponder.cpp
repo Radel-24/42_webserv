@@ -214,13 +214,8 @@ void PostResponder::run() {
 		LOG_YELLOW("ABC CREATE FILE");
 		if (!request.cgi_request)
 		{
-			std::string filename = request.filename;
-			char * buf = getcwd(NULL, FILENAME_MAX);
-			std::string cwd(buf);
-			std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
-			LOG_RED_INFO("check this out: " << path);
-			emptyUploadFile(path);
-			createUploadFile(path, request.body);
+	
+	
 		}
 		LOG_YELLOW("FILE CREATED");
 

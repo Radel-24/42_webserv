@@ -23,10 +23,11 @@ struct Location {
 		std::string path;
 		std::string root;
 		std::vector<std::string> methods;
-		std::string	redirect;
+		//std::string	redirect;
 		bool	directory_listing;
 		std::string	default_file;
 		long client_max_body_size;
+		std::string	redirection;
 
 		//std::map<std::string, Location*> sub_locations; //maybe remove this
 

@@ -19,6 +19,10 @@ void	remove_whitespace(std::string &line) {
 	size_t pos = line.find_first_not_of("\t ");
 	if (pos != std::string::npos)
 		line = line.substr(pos, std::string::npos);
+	else {
+		line.clear();
+		return;
+	}
 	pos = line.find_last_not_of("\t ");
 	if (pos != std::string::npos)
 		line.erase(pos + 1);
@@ -38,6 +42,7 @@ int	location_parser(std::ifstream &fin, Location &location) {
 		if (line.find("}") != STR_END) { break; }
 		else if (size_t pos = is_parameter("root: ", line)) { location.root = line.substr(pos, STR_END); }
 		else if (size_t pos = is_parameter("default_file: ", line)) { location.default_file = line.substr(pos, STR_END); }
+		else if (size_t pos = is_parameter("return: ", line)) { location.redirection = line.substr(pos, STR_END); }
 		else if (size_t pos = is_parameter("client_max_body_size: ", line)) { location.client_max_body_size = atol(line.substr(pos).c_str()); }
 		else if (line.find("directory_listing: ") == 0) {
 			line = line.substr(strlen("directory_listing: "), std::string::npos);
@@ -46,12 +51,11 @@ int	location_parser(std::ifstream &fin, Location &location) {
 			else { return FAILURE; }
 		}
 		else if (size_t pos = is_parameter("methods: ", line)) { location.methods = stringSplit(", ", line.substr(pos, STR_END)); }
-		//else {
-		//	std::cout << "Not a valid parameter in location scope\n";
-		//	// TODO error handling
-		//	exit(EXIT_SUCCESS);
-		//}
-		//LOG_BLUE(location.client_max_body_size);
+		else if (line.empty()) { continue; }
+		else {
+			LOG_RED_INFO("Not a valid parameter in location line: " << line);
+			exit(EXIT_SUCCESS);
+		}
 	}
 	return SUCCESS;
 }
@@ -62,7 +66,6 @@ It checks for different parameter and puts them inside our server class.
 That we can access them later, and check for possible error handling.
 */
 int	server_parser(std::ifstream &fin, Server & server) {
-	// TODO add server to main data struct or something else
 	std::string line;
 	std::cout << std::endl;
 	LOG_YELLOW("server parser start");
@@ -82,18 +85,22 @@ int	server_parser(std::ifstream &fin, Server & server) {
 			std::string path = line.substr(var.length(), line.find(" {") - var.length());
 			if (line.find("{") != line.length() - 1) {
 				std::cout << "Wrong formatting\n";
-				// TODO error handling or in calling function/
 				return FAILURE;
 			}
 			Location *location = new Location(path);
 			server.locations.insert(std::pair<std::string, Location*>(path, location));
 			location_parser(fin, *location);
 		}
+		else if (line.empty()) { continue; }
+		else {
+			LOG_RED_INFO("Not a valid parameter in location line: " << line);
+			exit(EXIT_SUCCESS);
+		}
 	}
 	LOG_PINK("server name: " << server.server_name);
 	LOG_PINK("server port: " << server.port);
 	LOG_PINK("server upload path: " << server.uploadPath);
-	return SUCCESS; // TODO
+	return SUCCESS;
 }
 
 /*
@@ -141,6 +148,11 @@ int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 			server_parser(fin, *server);
 			server->configure(servers);
 			servers.insert(std::pair<int, Server *>(server->sock, server));
+			//for (std::map<std::string, Location*>::iterator iter = server->locations.begin(); iter != server->locations.end(); ++iter) {
+			//	if (iter->second->directory_listing == true) {
+			//		server->updateFilesHTML();
+			//	}
+			//}
 			//test_script_for_root_folder(server); // alex new
 		}
 		else if (line.empty()) { continue; }

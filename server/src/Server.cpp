@@ -3,6 +3,7 @@
 void	Location::default_init() {
 	directory_listing = false;
 	client_max_body_size = -1;
+	redirection = "";
 }
 
 Location::Location() {
@@ -111,7 +112,7 @@ This function runs the tree command on the root of the server to list alle the u
 void	Server::updateFilesHTML() {
 	char * buf = getcwd(NULL, FILENAME_MAX);
 	std::string cwd(buf);
-	std::string path = cwd + root + uploadPath;
+	std::string path = cwd + root;
 	// LOG_GREEN("path " << path);
 	std::string execPath = cwd;
 	execPath += "/tree -H ";
@@ -120,6 +121,10 @@ void	Server::updateFilesHTML() {
 	execPath += cwd + root;
 	execPath += "/files.html";
 	//LOG_GREEN("path " << path);
+
+	LOG_YELLOW("path: " << path);
+	LOG_YELLOW("execPath: " << execPath);
+	LOG_YELLOW("cwd: " << cwd);
 	if (!chdir(path.c_str())) // else irgendein error
 	{
 		if (system(execPath.c_str()) == -1)

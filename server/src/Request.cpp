@@ -19,8 +19,6 @@ void	Request::init() {
 	headerValues.clear();
 	path.clear();
 	uploadPath.clear();
-	location = NULL;
-	postResponder = NULL;
 	chunk.clear();
 	filename.clear();
 }
@@ -116,7 +114,6 @@ std::pair<std::string, std::string>	Request::splitToken( std::string token )
 
 void	Request::checkHeaderValues( void )
 {
-	LOG_GREEN_INFO("request key: " << requestKey);
 	if (headerValues.find("Host") == headerValues.end()) {
 		status = 400; // TODO don't know error code
 		LOG_RED("error: request is missing host");
@@ -166,11 +163,13 @@ void Request::detectCorrectServer(std::map<int, Server *> & servers) {
 /* end alex new */
 
 void Request::checkRequest() {
-
+	LOG_RED_INFO("request key " << requestKey);
 	if (requestKey == NIL) { status = 405; }
 	else if (requestKey == GET || requestKey == HEAD) {
-		if (!findInVector(location->methods, std::string("GET")))
+		if (!findInVector(location->methods, std::string("GET"))) {
 			status = 405; // TODO compulsory method mustn't be deactivated: https://developer.mozilla.org/de/docs/Web/HTTP/Status
+			LOG_RED_INFO("this shit!!!");
+		}
 	}
 	else if (requestKey == POST) {
 		if (!findInVector(location->methods, std::string("POST"))) {
@@ -219,7 +218,6 @@ void	Request::readRequest(std::map<int, Server *> & servers) {
 		readHeader();
 		if (status == HEADER_READ) {
 			LOG_YELLOW("START READ REQUEST ---------------------------------------------");
-			//LOG_GREEN_INFO(header);
 			parseHeader(header);
 			checkHeaderValues();
 			printHeaderValues();
@@ -506,6 +504,16 @@ void	Request::responder() {
 	struct stat path_stat;
 	std::string	temp = "." + path;
 	stat(temp.c_str(), &path_stat);
+	LOG_PINK_INFO("redirection " << location->redirection << "");
+	if (location->redirection != "") {
+		LOG_RED_INFO("will redirect");
+		std::string ret = "HTTP/1.1 301 Moved Permanently\r\nLocation: ";
+		ret += location->redirection;
+		ret += "\r\n\r\n";
+		LOG_PINK_INFO(ret);
+		writeToSocket(socket, ret);
+		return;
+	}
 	if (S_ISREG(path_stat.st_mode)) {
 		//path += "/" + location->default_file;
 		LOG_CYAN_INFO("default file request: " << path);
@@ -533,7 +541,7 @@ void	Request::responder() {
 			formatted = formatString(file_content);
 	}
 	formatted = formatString(file_content);
-	LOG_RED_INFO("writes " << formatted);
+	//LOG_RED_INFO("writes " << formatted);
 	writeToSocket(socket, formatted);
 }
 
