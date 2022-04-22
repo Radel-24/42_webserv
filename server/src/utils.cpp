@@ -69,7 +69,6 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */)
 			ret << "\n";
 		ret << std::hex << std::setfill('0') << std::setw(2) << (upper_case ? std::uppercase : std::nouppercase) << (int)s[i];
 	}
-
 	return ret.str();
 }
 

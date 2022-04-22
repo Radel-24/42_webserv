@@ -39,6 +39,8 @@ class	Request {
 		int file_created;
 		int	status;
 		int									socket;
+		std::string							cookie;
+		bool								newClient;
 		Server *							server;
 		bool	cgi_request;
 		std::map<std::string, std::string>	headerValues;

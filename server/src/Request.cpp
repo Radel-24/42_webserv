@@ -21,6 +21,7 @@ void	Request::init() {
 	uploadPath.clear();
 	chunk.clear();
 	filename.clear();
+	newClient = false;
 }
 
 Request::Request() { init(); }
@@ -200,6 +201,15 @@ void Request::checkRequest() {
 
 }
 
+std::string IntToHex(int in)
+{
+	std::stringstream ret;
+
+	ret << std::hex << std::uppercase << in;
+
+	return ret.str();
+}
+
 void	Request::extractFilename() {
 	// LOG_WHITE("ABC: uploadPath: " << uploadPath);
 	size_t	pos = uploadPath.find_last_of("/") + 1;
@@ -219,6 +229,24 @@ void	Request::readRequest(std::map<int, Server *> & servers) {
 		if (status == HEADER_READ) {
 			LOG_YELLOW("START READ REQUEST ---------------------------------------------");
 			parseHeader(header);
+
+			// if cookie = 0, set cookie for the first time
+			//LOG_YELLOW("BEFORE TRUE");
+			if (cookie.empty() || server->cookies.empty() || find(server->cookies.begin(), server->cookies.end(), cookie) == server->cookies.end())
+			{
+				//LOG_YELLOW("NEW COOKIE 1");
+				//TO-DO optimize becausse time is to slow and and int wuld overflow at a time
+				srand (time(NULL));
+				int id = reinterpret_cast<int>(rand());
+				std::string tmp_cookie = IntToHex(id);
+				cookie = tmp_cookie;
+				server->cookies.push_back(tmp_cookie);
+				newClient = true;
+				LOG_YELLOW("NEWCLIENT RECOGNISED");
+				//must call writeStatusCookie afterwards once
+			}
+			LOG_BLUE(cookie);
+
 			checkHeaderValues();
 			printHeaderValues();
 			if (status >= 100)
@@ -231,7 +259,6 @@ void	Request::readRequest(std::map<int, Server *> & servers) {
 			checkRequest();
 			if (status >= 100)
 				return ;
-
 			LOG_GREEN("START HEADER VALUES");
 			printHeaderValues(); // TODO why is this needed so that the tester is running?!
 			LOG_GREEN("END HEADER VALUES");
@@ -274,10 +301,18 @@ void	Request::readRequest(std::map<int, Server *> & servers) {
 }
 
 void	Request::writeRequest() {
-	//LOG_RED_INFO("request status " << status);
+	LOG_RED_INFO("request status " << status);
 	if (status >= 100 && status < 600) {
 		LOG_RED_INFO("request status " << status);
-		writeStatus(status, socket);
+		if (newClient == true)
+		{
+			LOG_RED_INFO("writeStatusCookie");
+			writeStatusCookie(status, socket, cookie);
+			newClient = false;
+		}
+		else
+			writeStatus(status, socket);
+		LOG_RED_INFO("writeStatus");
 		//if (status >= 400 && status < 600)
 		//	status = CLOSE_CONNECTION;
 		//else
@@ -466,7 +501,17 @@ std::string	Request::formatString( std::string file_content ) {
 	std::string	length;
 	std::string	full_header;
 	std::string	ret;
-	header = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
+
+	if (newClient == true)
+	{
+		LOG_RED_INFO("TRUE");
+		header = "HTTP/1.1 200 OK\nSet-Cookie: I_Like_Cookies=" + cookie + "\nContent-Type: text/html\nContent-Length: ";
+	}
+	else
+	{
+		LOG_RED_INFO("FALSE");
+		header = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
+	}
 	length = std::to_string(file_content.length()) + "\n\n";
 	full_header = header.append(length);
 	if (requestKey == HEAD)
@@ -541,7 +586,9 @@ void	Request::responder() {
 			formatted = formatString(file_content);
 	}
 	formatted = formatString(file_content);
-	//LOG_RED_INFO("writes " << formatted);
+	if (newClient == true)
+		newClient = false;
+	LOG_RED_INFO("writes " << formatted);
 	writeToSocket(socket, formatted);
 }
 

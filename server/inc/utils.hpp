@@ -57,8 +57,11 @@ char **	mapToArray(std::map<std::string, std::string> map);
 std::string	toAbsolutPath(std::string path);
 
 void	writeStatus(int status, int socket);
+void	writeStatusCookie(int status, int socket, std::string cookie);
 
 int hex_to_decimal(std::string hex);
 
 void	emptyUploadFile( std::string path);
 void	createUploadFile( std::string path, std::string content );
+
+std::string IntToHex(int in);

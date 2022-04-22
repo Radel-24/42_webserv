@@ -142,3 +142,13 @@ void	writeStatus(int status, int socket) {
 	std::string sendStr = protocol + response + contLength;
 	writeToSocket(socket, sendStr);
 }
+
+void	writeStatusCookie(int status, int socket, std::string cookie) {
+	LOG_RED_INFO("write status request: " << status);
+	std::string protocol = "HTTP/1.1 ";
+	std::string response = getReason(status);
+	std::string addCookie = "Set-Cookie: I_Like_Cookies=" + cookie;
+	std::string contLength = "\r\nContent-Length: 0\r\n\r\n";
+	std::string sendStr = protocol + response + addCookie + contLength;
+	writeToSocket(socket, sendStr);
+}

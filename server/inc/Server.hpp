@@ -46,6 +46,7 @@ class Server {
 		std::map<std::string, Location*> locations;
 		std::string root;
 		std::string uploadPath;
+		std::vector<std::string> cookies;
 
 		std::string	cgi_extension;
 		std::string	cgi_path;
