@@ -221,7 +221,7 @@ void Request::checkRequest() {
 }
 
 void	Request::extractFilename() {
-	if (uploadPath == "//") {
+	if (uploadPath == "//") { // need to this, otherwise we cant redirect to default file on root
 		filename = "/";
 		return ;
 	}

@@ -149,6 +149,7 @@ class	Request {
 
 		bool		checkDirectoryListing( void );
 		void		doDirectoryListing( void );
+		void		refreshFilesHTML( void );
 		/* end alex new */
 
 };

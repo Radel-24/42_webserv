@@ -1,5 +1,32 @@
 #include "Request.hpp"
 
+// only for website
+void	Request::refreshFilesHTML() {
+	std::string	cwd = getPWD();
+	std::string	execPath = cwd;
+
+	execPath += "/tree -H ";
+	execPath += ".";
+	execPath += " -T 'Your Files' -L 1 --nolinks --noreport --charset utf-8 -o ";
+	execPath += cwd + server->root;
+	execPath += "/files.html";
+
+	if (dirExists((cwd + server->root + server->uploadPath).c_str())) {
+		if (!chdir((cwd + server->root + server->uploadPath).c_str())) {
+			if (system(execPath.c_str()) == -1)
+				LOG_RED("file tree went wrong");
+			if (chdir(cwd.c_str()))
+				LOG_RED_INFO("error: chdir went wrong: " << cwd);
+		}
+		else {
+			LOG_RED_INFO("error: chdir went wrong: " << (cwd + server->root + server->uploadPath));
+		}
+	}
+	else {
+		LOG_RED_INFO("error: upload directory doesnt exists: " << (cwd + server->root + server->uploadPath));
+	}
+}
+
 void	Request::writeRequest() {
 	LOG_RED_INFO("request key " << requestKey);
 	if (status >= 100 && status < 600) {
@@ -15,6 +42,7 @@ void	Request::writeRequest() {
 			delete (postResponder);
 			postResponder = NULL;
 		}
+		refreshFilesHTML(); // only for website
 		return ;
 	}
 	else if (status == DONE_READING && (getRequestKey() == GET || getRequestKey() == HEAD)) {
@@ -71,7 +99,6 @@ std::string	Request::formatString( std::string file_content ) {
 	return ret;
 }
 
-/* start alex new */
 // can only delete one file
 void	Request::deleteResponder( void ) {
 	LOG_RED_INFO("deleteRequest starts here ------------------");
@@ -89,33 +116,6 @@ void	Request::deleteResponder( void ) {
 		LOG_RED_INFO("error: file not found");
 	LOG_RED_INFO("deleteRequest ends here --------------------");
 }
-/* end alex new */
-
-// void	Request::doDirectoryListing( Location * locationToList ) {
-// 	std::string fileTree = server->createFileTree(locationToList);
-// 	std::string formattedTree = formatString(fileTree);
-// 	writeToSocket(socket, formattedTree);
-// }
-
-// Location *	Request::checkDirectoryListing( std::string requestedPath ) {
-// 	LOG_BLUE_INFO("requested Location: " << requestedPath);
-// 	for (std::map<std::string, Location*>::iterator it = server->locations.begin(); it != server->locations.end(); it++)
-// 	{
-// 		std::string	locationPath = server->root + it->second->path;
-
-// 		requestedPath = convertDoubleSlashToSingle(requestedPath);
-// 		locationPath = convertDoubleSlashToSingle(locationPath);
-
-// 		// use location pointer
-// 		if (it->second->directory_listing == true && (requestedPath == locationPath)) {
-// 			if (dirExists(toAbsolutPath(requestedPath).c_str())) {
-// 				LOG_CYAN_INFO("LISTING ON REQUESTED LOCATION IS ON");
-// 				return it->second;
-// 			}
-// 		}
-// 	}
-// 	return nullptr;
-// }
 
 void	Request::doDirectoryListing( void ) {
 	std::string fileTree = server->createFileTree(location);
@@ -144,11 +144,6 @@ void	Request::responder() {
 	std::string	file_content;
 	std::string	formatted;
 
-	// TODO return deafault file when neseecary
-	LOG_YELLOW_INFO("root:\t\t" << location->root);
-	LOG_YELLOW_INFO("path:\t\t" << location->path);
-	LOG_YELLOW_INFO("listing:\t" << location->directory_listing);
-	LOG_YELLOW_INFO("default file:\t" << location->default_file);
 	if (checkDirectoryListing()) {
 		LOG_GREEN_INFO("EXECUTING DIRECTORY LISTING");
 		doDirectoryListing();
@@ -169,20 +164,14 @@ void	Request::responder() {
 		writeToSocket(socket, ret);
 		return;
 	}
-	// LOG_WHITE_INFO("temp: " << temp);
-	if (S_ISREG(path_stat.st_mode)) {
-		LOG_CYAN_INFO("default file request: " << path);
+	if (S_ISDIR(path_stat.st_mode)) {
+		path += "/" + location->default_file;
+		LOG_CYAN_INFO("default dir request: " << path);
 	}
-	// TODO: i think this does nothing
-	// if (S_ISDIR(path_stat.st_mode)) {
-	// 	path += "/" + location->default_file;
-	// 	LOG_CYAN_INFO("default dir request: " << path);
-	// }
 	if (path == (server->root + "/")) {
 		file_content = readFile( "." + server->root + "/index.html");
 	}
-	else
-	{
+	else {
 		file_content = readFile(path.substr(1, std::string::npos));
 		if (status == 404){
 			writeStatus(404, socket);
