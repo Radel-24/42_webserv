@@ -185,7 +185,7 @@ int	main(int argc, char ** argv)
 {
 	//signal(SIGINT, SIG_IGN); // TODO doesn't work
 
-	LOG_RED_INFO(getcwd(NULL, FILENAME_MAX));
+	LOG_RED_INFO(getPWD());
 	std::string configFile;
 	//check if there is a config file in argv, if not we take the default server config file
 	if (argc == 2)

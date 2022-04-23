@@ -102,6 +102,7 @@ char ** mapToArray(std::map<std::string, std::string> map) {
 std::string toAbsolutPath(std::string path) {
 	char * buf = getcwd(NULL, FILENAME_MAX);
 	std::string retStr = buf;
+	free(buf);
 	retStr += "/" + path;
 	return (retStr);
 }
@@ -158,10 +159,32 @@ int	dirExists(const char *path)
 {
 	struct stat	info;
 
-	if(stat( path, &info ) != 0)
+	if (stat(path, &info) != 0)
 		return 0;
-	else if(info.st_mode & S_IFDIR)
+	else if (info.st_mode & S_IFDIR)
 		return 1;
 	else
 		return 0;
+}
+
+std::string	convertDoubleSlashToSingle( std::string path ) {
+	std::string	ret = path;
+	size_t		pos;
+	while ((pos = ret.find("//")) != std::string::npos)
+		ret = ret.erase(pos);
+	return ret;
+}
+
+std::string	fileToString( std::string filePath ) {
+	std::ifstream		t(filePath);
+	std::stringstream	buffer;
+	buffer << t.rdbuf();
+	return buffer.str();
+}
+
+std::string	getPWD( void ) {
+	char *		buff = getcwd(NULL, FILENAME_MAX);
+	std::string	pwd = std::string(buff);
+	free(buff);
+	return pwd;
 }

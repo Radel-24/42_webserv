@@ -38,7 +38,7 @@ std::map<std::string, std::string>	stringToMap(std::string input, std::string di
 											char separate = '\n', std::string comment = "#");
 std::vector<std::string> stringSplit(std::string sep, std::string str);
 
-std::string	readFile(std::string filename);
+// std::string	readFile(std::string filename);
 
 std::string ToHex(const std::string & s, bool upper_case /* = true */);
 
@@ -51,17 +51,20 @@ bool	findInVector(std::vector<T> vec, T needle) {
 	return false;
 }
 
-ssize_t	writeToSocket(int socket, std::string text);
+ssize_t		writeToSocket(int socket, std::string text);
 
-char **	mapToArray(std::map<std::string, std::string> map);
+char **		mapToArray(std::map<std::string, std::string> map);
 
 std::string	toAbsolutPath(std::string path);
 
-void	writeStatus(int status, int socket);
+void		writeStatus(int status, int socket);
 
-int hex_to_decimal(std::string hex);
+int			hex_to_decimal(std::string hex);
 
-void	emptyUploadFile( std::string path);
-void	createUploadFile( std::string path, std::string content );
+void		emptyUploadFile( std::string path);
+void		createUploadFile( std::string path, std::string content );
 
-int		dirExists(const char *path);
+int			dirExists(const char *path);
+std::string	convertDoubleSlashToSingle( std::string path );
+std::string	fileToString( std::string filePath );
+std::string	getPWD( void );

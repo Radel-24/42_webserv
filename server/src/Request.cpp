@@ -466,18 +466,16 @@ std::string	Request::formatString( std::string file_content ) {
 	std::string	length;
 	std::string	full_header;
 	std::string	ret;
-	header = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
-	length = std::to_string(file_content.length()) + "\n\n";
+	header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: ";
+	length = std::to_string(file_content.length()) + "\r\n\r\n";
 	full_header = header.append(length);
 	if (requestKey == HEAD)
 		return full_header;
 	ret = full_header.append(file_content);
-	//LOG_RED_INFO("response: " << ret);
 	return ret;
 }
 
-/* start alex new */
-// can only delete one file
+// TODO some tests
 void	Request::deleteResponder( void ) {
 	LOG_RED_INFO("deleteRequest starts here ------------------");
 	std::string	filename = getFilename();
@@ -494,37 +492,12 @@ void	Request::deleteResponder( void ) {
 		LOG_RED_INFO("error: file not found");
 	LOG_RED_INFO("deleteRequest ends here --------------------");
 }
-/* end alex new */
-
-std::string	removeDoubleSlashesFromPath( std::string path ) {
-	std::string	ret = path;
-	size_t		pos;
-	while ((pos = ret.find("//")) != std::string::npos)
-		ret = ret.erase(pos);
-	return ret;
-}
 
 void	Request::doDirectoryListing( Location * locationToList ) {
-	// LOG_BLUE_INFO("requestedPath: " << requestedPath);
-	// for (std::map<std::string, Location*>::iterator it = server->locations.begin(); it != server->locations.end(); it++)
-	// {
-	// 	std::string	locationPath = server->root + it->second->path;
-
-	// 	requestedPath = removeDoubleSlashesFromPath(requestedPath);
-	// 	locationPath = removeDoubleSlashesFromPath(locationPath);
-
-	// 	// use location pointer
-	// 	if (it->second->directory_listing == true && (requestedPath == locationPath)) {
-	// 		if (dirExists(toAbsolutPath(requestedPath).c_str())) {
-	// 			LOG_GREEN_INFO("Requested Directory exists");
-				LOG_GREEN_INFO("entering createFileTree");
-				std::string fileTree = server->createFileTree(locationToList);
-				std::string formattedTree = formatString(fileTree);
-				writeToSocket(socket, formattedTree);
-	// 			exit(0);
-	// 		}
-	// 	}
-	// }
+	LOG_GREEN_INFO("entering createFileTree");
+	std::string fileTree = server->createFileTree(locationToList);
+	std::string formattedTree = formatString(fileTree);
+	writeToSocket(socket, formattedTree);
 }
 
 Location *	Request::checkDirectoryListing( std::string requestedPath ) {
@@ -533,19 +506,14 @@ Location *	Request::checkDirectoryListing( std::string requestedPath ) {
 	{
 		std::string	locationPath = server->root + it->second->path;
 
-		requestedPath = removeDoubleSlashesFromPath(requestedPath);
-		locationPath = removeDoubleSlashesFromPath(locationPath);
+		requestedPath = convertDoubleSlashToSingle(requestedPath);
+		locationPath = convertDoubleSlashToSingle(locationPath);
 
 		// use location pointer
 		if (it->second->directory_listing == true && (requestedPath == locationPath)) {
 			if (dirExists(toAbsolutPath(requestedPath).c_str())) {
 				LOG_GREEN_INFO("Requested Directory exists");
 				return it->second;
-				// LOG_GREEN_INFO("entering updateFilesHTML");
-				// std::string fileTree = server->createFileTree(it->second);
-				// std::string formattedTree = formatString(fileTree);
-				// writeToSocket(socket, formattedTree);
-				// exit(0);
 			}
 		}
 	}
@@ -556,7 +524,11 @@ void	Request::responder() {
 	std::string	file_content;
 	std::string	formatted;
 
-
+	// TODO return deafault file when neseecary
+	// TODO create files always in www
+	LOG_CYAN("path: " << path);
+	LOG_CYAN("filename: " << filename);
+	LOG_CYAN("header: " << header);
 	LOG_CYAN("================================================");
 	std::string	requestedPath = server->root + "/" + filename;
 	Location *	locationToList = checkDirectoryListing(requestedPath);
@@ -581,17 +553,14 @@ void	Request::responder() {
 		return;
 	}
 	if (S_ISREG(path_stat.st_mode)) {
-		//path += "/" + location->default_file;
 		LOG_CYAN_INFO("default file request: " << path);
 	}
 	if (S_ISDIR(path_stat.st_mode)) {
 		path += "/" + location->default_file;
 		LOG_CYAN_INFO("default dir request: " << path);
 	}
-	if (path == (server->root + "/"))
-	{
+	if (path == (server->root + "/")) {
 		file_content = readFile( "." + server->root + "/index.html");
-		formatted = formatString(file_content);
 	}
 	else
 	{
@@ -600,14 +569,8 @@ void	Request::responder() {
 			writeStatus(404, socket);
 			return ;
 		}
-		if (file_content.empty()) {
-			formatted = formatString("error: 404"); //TODO check if this is reached
-		}
-		else
-			formatted = formatString(file_content);
 	}
 	formatted = formatString(file_content);
-	//LOG_RED_INFO("writes " << formatted);
 	writeToSocket(socket, formatted);
 }
 

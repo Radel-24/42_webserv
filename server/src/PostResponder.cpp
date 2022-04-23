@@ -49,8 +49,7 @@ void	PostResponder::uploadFiles( void )
 		bodyContent = cutBody.substr(dblNewline + 4, cutBody.length() - dblNewline - 4);
 
 		// remove new
-		char * buf = getcwd(NULL, FILENAME_MAX);
-		std::string cwd(buf);
+		std::string	cwd = getPWD();
 		std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
 		createUploadFile(path, bodyContent);
 
@@ -215,11 +214,9 @@ void PostResponder::run() {
 		if (!request.cgi_request)
 		{
 			std::string filename = request.filename;
-			char * buf = getcwd(NULL, FILENAME_MAX);
-			std::string cwd(buf);
+			std::string cwd = getPWD();
 			std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
 			LOG_RED_INFO("check this out: " << path);
-			free(buf);
 			emptyUploadFile(path);
 			createUploadFile(path, request.body);
 		}
