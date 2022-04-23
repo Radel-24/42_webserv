@@ -170,7 +170,7 @@ int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 			//		server->updateFilesHTML();
 			//	}
 			//}
-			createServerDirectory(server); // alex new
+			// createServerDirectory(server); // TODO unnessecary?
 		}
 		else if (line.empty()) { continue; }
 		else {

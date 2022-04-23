@@ -89,31 +89,52 @@ void	Request::deleteResponder( void ) {
 }
 /* end alex new */
 
-void	Request::doDirectoryListing( Location * locationToList ) {
-	LOG_GREEN_INFO("entering createFileTree");
-	std::string fileTree = server->createFileTree(locationToList);
+// void	Request::doDirectoryListing( Location * locationToList ) {
+// 	std::string fileTree = server->createFileTree(locationToList);
+// 	std::string formattedTree = formatString(fileTree);
+// 	writeToSocket(socket, formattedTree);
+// }
+
+// Location *	Request::checkDirectoryListing( std::string requestedPath ) {
+// 	LOG_BLUE_INFO("requested Location: " << requestedPath);
+// 	for (std::map<std::string, Location*>::iterator it = server->locations.begin(); it != server->locations.end(); it++)
+// 	{
+// 		std::string	locationPath = server->root + it->second->path;
+
+// 		requestedPath = convertDoubleSlashToSingle(requestedPath);
+// 		locationPath = convertDoubleSlashToSingle(locationPath);
+
+// 		// use location pointer
+// 		if (it->second->directory_listing == true && (requestedPath == locationPath)) {
+// 			if (dirExists(toAbsolutPath(requestedPath).c_str())) {
+// 				LOG_CYAN_INFO("LISTING ON REQUESTED LOCATION IS ON");
+// 				return it->second;
+// 			}
+// 		}
+// 	}
+// 	return nullptr;
+// }
+
+void	Request::doDirectoryListing( void ) {
+	std::string fileTree = server->createFileTree(location);
 	std::string formattedTree = formatString(fileTree);
 	writeToSocket(socket, formattedTree);
 }
 
-Location *	Request::checkDirectoryListing( std::string requestedPath ) {
-	LOG_BLUE_INFO("requestedPath: " << requestedPath);
-	for (std::map<std::string, Location*>::iterator it = server->locations.begin(); it != server->locations.end(); it++)
-	{
-		std::string	locationPath = server->root + it->second->path;
-
-		requestedPath = convertDoubleSlashToSingle(requestedPath);
-		locationPath = convertDoubleSlashToSingle(locationPath);
-
-		// use location pointer
-		if (it->second->directory_listing == true && (requestedPath == locationPath)) {
-			if (dirExists(toAbsolutPath(requestedPath).c_str())) {
-				LOG_GREEN_INFO("Requested Directory exists");
-				return it->second;
-			}
-		}
+bool	Request::checkDirectoryListing( void ) {
+	if (("/" + filename) != location->path) {
+		LOG_RED_INFO("requested Location doesnt exist in config");
+		return false;
 	}
-	return nullptr;
+	if (location->directory_listing == false) {
+		LOG_RED_INFO("error: requested Location doesnt allow listing");
+		return false;
+	}
+	if (!dirExists(toAbsolutPath(server->root + location->path).c_str())) {
+		LOG_RED_INFO("error: requested Location doesnt have directory");
+		return false;
+	}
+	return true;
 }
 
 void	Request::responder() {
@@ -121,16 +142,19 @@ void	Request::responder() {
 	std::string	formatted;
 
 	// TODO return deafault file when neseecary
-	// TODO create files always in www
-	LOG_CYAN("path: " << path);
-	LOG_CYAN("filename: " << filename);
-	LOG_CYAN("header: " << header);
-	LOG_CYAN("================================================");
-	std::string	requestedPath = server->root + "/" + filename;
-	Location *	locationToList = checkDirectoryListing(requestedPath);
-	if (locationToList != nullptr) {
-		doDirectoryListing(locationToList);
-		LOG_CYAN("================================================");
+	// std::string	requestedPath = server->root + "/" + filename;
+	LOG("");
+
+	// LOG_YELLOW_INFO("max_size:\t" << location->client_max_body_size);
+	LOG_YELLOW_INFO("root:\t\t" << location->root);
+	LOG_YELLOW_INFO("path:\t\t" << location->path);
+	LOG_YELLOW_INFO("listing:\t" << location->directory_listing);
+	LOG_YELLOW_INFO("default file:\t" << location->default_file);
+	// Location *	locationToList = checkDirectoryListing(requestedPath);
+	if (checkDirectoryListing()) {
+		LOG_CYAN_INFO("EXECUTING DIRECTORY LISTING");
+		// doDirectoryListing(locationToList);
+		doDirectoryListing();
 		return ;
 	}
 
