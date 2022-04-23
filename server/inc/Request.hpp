@@ -10,6 +10,8 @@
 #include "PostResponder.hpp"
 #include "utils.hpp"
 
+#include <sys/stat.h>
+
 class Server;
 class PostResponder;
 

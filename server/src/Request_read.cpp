@@ -1,7 +1,4 @@
 #include "Request.hpp"
-#include "PostResponder.hpp"
-
-#include <sys/stat.h>
 
 void	Request::init() {
 	//header = "";
@@ -29,6 +26,31 @@ Request::Request(int socket, Server * server) : socket(socket), server(server) {
 
 Request::~Request() {
 	close(socket);
+}
+
+void	Request::readRequest(std::map<int, Server *> & servers) {
+	if (status == READING_HEADER) {
+		readHeader();
+		if (status == HEADER_READ) {
+			processHeader(servers);
+			if (status >= 100) {
+				return ;
+			}
+			if (getRequestKey() == GET || getRequestKey() == HEAD || getRequestKey() == DELETE) {
+				status = DONE_READING;
+				LOG_GREEN("read all in one");
+				return ;
+			}
+		}
+	}
+	else if (status == HEADER_READ && (getRequestKey() == POST || getRequestKey() == PUT)) {
+		if (headerValues.find("Transfer-Encoding")->second == "chunked") {
+			readBodyChunked();
+		}
+		else {
+			readBodyLength();
+		}
+	}
 }
 
 int	Request::getRequestKey() const { return requestKey; }
@@ -72,9 +94,9 @@ void	Request::changePath() { // TODO make hacking save when relative path is giv
 }
 
 void	Request::setPath() {
-	LOG_PINK_INFO("IN SET PATH");
+	LOG_PINK_INFO("IN SET PATH" << header);
 	size_t posBegin = header.find("/");
-	size_t posEnd = header.find_first_of(" \t", posBegin + 1);
+	size_t posEnd = header.find_first_of(" \t?", posBegin + 1);
 	if (posBegin == std::string::npos || posEnd == std::string::npos) { // TODO usually not needed, except when header is wrong
 		path = "";
 		LOG_RED_INFO("shit path not found");
@@ -82,7 +104,7 @@ void	Request::setPath() {
 	}
 	path = header.substr(posBegin, posEnd - posBegin);
 	uploadPath = path;
-	if (path.find_last_of(server->cgi_extension) == (path.length() - 1)) {
+	if (path.length() >= server->cgi_extension.length() && (path.compare(path.length() - server->cgi_extension.length(), server->cgi_extension.length(), server->cgi_extension)) == 0){
 		cgi_request = true;
 	}
 }
@@ -142,9 +164,8 @@ void	Request::parseHeader(std::string header)
 		header.erase(0, pos + delimiter.length());
 	}
 
-	// if check == 1 muessen error pages returned werden, je nachdm was falsch am header ist
+	// TODO if check == 1 muessen error pages returned werden, je nachdm was falsch am header ist
 }
-/* END ALEX NEW */
 
 
 /* if there is a server that has a fitting name to the request, the request hast to get forwarded to that server */
@@ -167,8 +188,7 @@ void Request::checkRequest() {
 	if (requestKey == NIL) { status = 405; }
 	else if (requestKey == GET || requestKey == HEAD) {
 		if (!findInVector(location->methods, std::string("GET"))) {
-			status = 405; // TODO compulsory method mustn't be deactivated: https://developer.mozilla.org/de/docs/Web/HTTP/Status
-			LOG_RED_INFO("this shit!!!");
+			status = 405; // compulsory method mustn't be deactivated: https://developer.mozilla.org/de/docs/Web/HTTP/Status
 		}
 	}
 	else if (requestKey == POST) {
@@ -241,31 +261,6 @@ void	Request::processHeader(std::map<int, Server *> & servers) {
 	setType();
 	extractFilename();
 	checkRequest();
-}
-
-void	Request::readRequest(std::map<int, Server *> & servers) {
-	if (status == READING_HEADER) {
-		readHeader();
-		if (status == HEADER_READ) {
-			processHeader(servers);
-			if (status >= 100) {
-				return ;
-			}
-			if (getRequestKey() == GET || getRequestKey() == HEAD || getRequestKey() == DELETE) {
-				status = DONE_READING;
-				LOG_GREEN("read all in one");
-				return ;
-			}
-		}
-	}
-	else if (status == HEADER_READ && (getRequestKey() == POST || getRequestKey() == PUT)) {
-		if (headerValues.find("Transfer-Encoding")->second == "chunked") {
-			readBodyChunked();
-		}
-		else {
-			readBodyLength();
-		}
-	}
 }
 
 int	Request::checkBodySize(void) {
@@ -348,7 +343,6 @@ void	Request::readBodyChunked() {
 	}
 	else {
 		LOG_RED_INFO("recv error occured"); // TODO this is weird shit
-		sleep(1);
 	}
 	if (body.find("\r\n\r\n") != std::string::npos) {
 		status = DONE_READING;

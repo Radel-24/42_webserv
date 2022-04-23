@@ -1,8 +1,4 @@
 #include "Request.hpp"
-#include "PostResponder.hpp"
-
-#include <sys/stat.h>
-
 
 void	Request::writeRequest() {
 	LOG_RED_INFO("request key " << requestKey);
@@ -11,7 +7,7 @@ void	Request::writeRequest() {
 		writeStatus(status, socket);
 		status =  DONE_WRITING;
 	}
-	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
+	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT || cgi_request == true)) {
 		if (!postResponder)
 			postResponder = new PostResponder(*this);
 		postResponder->run();
