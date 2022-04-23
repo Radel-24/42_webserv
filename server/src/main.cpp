@@ -142,7 +142,6 @@ void accepter(std::map<int, Server *> & servers)
 		for (int check_socket = 2; check_socket <= highestSocket; check_socket++) {
 			if (FD_ISSET(check_socket, &write_sockets)) {
 				Request &	request = *(requests[check_socket]);
-				LOG_RED_INFO("request status: " << request.status);
 				if (request.status >= 100 && request.status < 200) {
 					requests[check_socket]->writeRequest();
 					FD_CLR(request.socket, &watching_write_sockets);
@@ -159,7 +158,7 @@ void accepter(std::map<int, Server *> & servers)
 				}
 				else if (request.status >= 400 && request.status < 600) {
 					requests[check_socket]->writeRequest();
-					usleep(1000);
+					//usleep(1000);
 					FD_CLR(request.socket, &watching_write_sockets);
 					delete &request;
 					requests.erase(requests.find(check_socket));

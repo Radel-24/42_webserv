@@ -58,6 +58,7 @@ void	Cgi::runCgi() {
 	int fout = fileno(tempFile);
 	LOG_CYAN_INFO("cgi file opened");
 
+
 	pid_t pid = fork();
 	if (pid == -1) {
 		LOG_RED_INFO("fork failed"); // TODO error handling

@@ -10,6 +10,8 @@
 #include "PostResponder.hpp"
 #include "utils.hpp"
 
+#include <sys/stat.h>
+
 class Server;
 class PostResponder;
 
@@ -63,6 +65,8 @@ class	Request {
 
 
 	private:
+		void	processHeader(std::map<int, Server *> & servers);
+		void	getBodyOutOfHeader();
 
 	public:
 		void	init();
