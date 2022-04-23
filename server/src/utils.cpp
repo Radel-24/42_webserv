@@ -103,6 +103,7 @@ std::string toAbsolutPath(std::string path) {
 	char * buf = getcwd(NULL, FILENAME_MAX);
 	std::string retStr = buf;
 	retStr += "/" + path;
+	free(buf);
 	return (retStr);
 }
 
@@ -153,3 +154,4 @@ void	createUploadFile( std::string path, std::string content )
 	}
 	file.close();
 }
+

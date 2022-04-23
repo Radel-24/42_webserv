@@ -209,78 +209,70 @@ void	Request::extractFilename() {
 	filename = file;
 }
 
+void	Request::getBodyOutOfHeader() {
+	size_t	posHeaderEnd = header.find("\r\n\r\n");
+	if (posHeaderEnd != header.size() - 4) {
+		LOG_BLACK("takes body out of header; pos header end: " << posHeaderEnd);
+		body = header;
+
+		header.erase(posHeaderEnd, std::string::npos);
+
+		body.erase(0, posHeaderEnd + 4);
+		//LOG_RED_INFO("header: " << header << "\nbody: " << body);
+
+		LOG_BLACK("body size " << body.size() << "check size " << checkBodySize());
+
+		if ((int)body.size() == checkBodySize()) { // transfer encoding length
+			status = DONE_READING;
+		}
+		if (body.find("\r\n\r\n") != std::string::npos) { // transfer encoding chunked
+			status = DONE_READING;
+		}
+	}
+}
+
+void	Request::processHeader(std::map<int, Server *> & servers) {
+	getBodyOutOfHeader();
+	parseHeader(header);
+	checkHeaderValues();
+	detectCorrectServer(servers);
+	setPath();
+	changePath();
+	setType();
+	extractFilename();
+	checkRequest();
+}
+
 void	Request::readRequest(std::map<int, Server *> & servers) {
-	//server->updateFilesHTML(); // TODO put to uesful position
-	//LOG_PINK_INFO("server name: " << getServer()->server_name);
-	//LOG_PINK_INFO("sock: " << getServer()->sock);
-	//LOG_RED_INFO("request status " << status << " request key " << requestKey);
 	if (status == READING_HEADER) {
 		readHeader();
 		if (status == HEADER_READ) {
-			LOG_YELLOW("START READ REQUEST ---------------------------------------------");
-			parseHeader(header);
-			checkHeaderValues();
-			printHeaderValues();
-			if (status >= 100)
+			processHeader(servers);
+			if (status >= 100) {
 				return ;
-			detectCorrectServer(servers);
-			setPath();
-			changePath();
-			setType();
-			extractFilename();
-			checkRequest();
-			if (status >= 100)
-				return ;
-
-			LOG_GREEN("START HEADER VALUES");
-			printHeaderValues(); // TODO why is this needed so that the tester is running?!
-			LOG_GREEN("END HEADER VALUES");
-
-			LOG_BLUE("HEADER END ------------------------");
-			LOG_YELLOW("END READ REQUEST ---------------------------------------------");
-			// end new alex
-			if (status == DONE_READING) {
+			}
+			if (getRequestKey() == GET || getRequestKey() == HEAD || getRequestKey() == DELETE) {
+				status = DONE_READING;
 				LOG_GREEN("read all in one");
 				return ;
 			}
 		}
 	}
-	else if (status == HEADER_READ && getRequestKey() == DELETE) {
-		status = DONE_READING;
-		return ;
-	}
-	if (status == HEADER_READ && (getRequestKey() == POST || getRequestKey() == PUT)) {
+	else if (status == HEADER_READ && (getRequestKey() == POST || getRequestKey() == PUT)) {
 		if (headerValues.find("Transfer-Encoding")->second == "chunked") {
-			//readBodyChunked();
-			//LOG_GREEN_INFO("READ BODY CHUNKED");
 			readBodyChunked();
 		}
 		else {
-			LOG_GREEN_INFO("READ BODY LENGTH");
 			readBodyLength();
 		}
-		if (status == DONE_READING) {
-			return ;
-		}
 	}
-	if (status == HEADER_READ && (getRequestKey() == GET || getRequestKey() == HEAD)) {
-		status = DONE_READING;
-		return ;
-	}
-	//if (status == HEADER_READ && getRequestKey() == PUT) {
-	//	status = DONE_READING;
-	//	return ;
-	//}
 }
 
 void	Request::writeRequest() {
-	//LOG_RED_INFO("request status " << status);
+	LOG_RED_INFO("request key " << requestKey);
 	if (status >= 100 && status < 600) {
 		LOG_RED_INFO("request status " << status);
 		writeStatus(status, socket);
-		//if (status >= 400 && status < 600)
-		//	status = CLOSE_CONNECTION;
-		//else
 		status =  DONE_WRITING;
 	}
 	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
@@ -324,7 +316,6 @@ void	Request::setRequestKey(unsigned int KeyIn) {
 }
 
 void	Request::setType() {
-	// LOG_RED_INFO("find: " << header);
 	if (header.find("GET") == 0 ) { setRequestKey(GET); }// if keyword not always at the beginning, us find("GET")
 	else if (header.find("POST") == 0) { setRequestKey(POST); }
 	else if (header.find("PUT") == 0) { setRequestKey(PUT); }
@@ -342,12 +333,12 @@ void Request::readHeader() {
 	LOG_BLACK("header read bytes: " << bytes_read << std::endl);
 	if (bytes_read == -1) {
 		status = CLOSE_CONNECTION;
-		LOG_RED_INFO("bytes read -1 means error according to manual");
+		LOG_RED_INFO("bytes read -1: error");
 		return;
 	}
 	if (bytes_read == 0) {
 		status = CLOSE_CONNECTION;
-		LOG_PINK_INFO("bytes read 0 means client closed connection according to manual");
+		LOG_PINK_INFO("bytes read 0: client closed connection");
 	}
 	appendHeader(buffer, bytes_read);
 
@@ -355,19 +346,7 @@ void Request::readHeader() {
 		status = HEADER_READ;
 		//LOG_WHITE_INFO(header);
 
-		size_t	posHeaderEnd = header.find("\r\n\r\n");
-		if (posHeaderEnd != header.size() - 4) {
-			LOG_BLACK("takes body out of header; pos header end: " << posHeaderEnd);
-			body = header;
-			body.erase(0, posHeaderEnd + 4);
-			//LOG_RED_INFO("header: " << header << "\nbody: " << body);
-
-			LOG_BLACK("body size " << body.size() << "check size " << checkBodySize());
-			if ((int)body.size() == checkBodySize()) {
-				status = DONE_READING;
-				//LOG_WHITE_INFO(header);
-			}
-		}
+		
 	}
 }
 
@@ -433,7 +412,6 @@ void Request::readBodyLength() {
 }
 
 
-// TODO put following 2 functions into utils file
 std::string	Request::readFile( std::string filename ) {
 	std::ifstream	newFile;
 	std::string		ret;
@@ -467,7 +445,7 @@ std::string	Request::formatString( std::string file_content ) {
 	std::string	full_header;
 	std::string	ret;
 	header = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
-	length = std::to_string(file_content.length()) + "\n\n";
+	length = std::to_string(file_content.length()) + "\r\n\r\n";
 	full_header = header.append(length);
 	if (requestKey == HEAD)
 		return full_header;

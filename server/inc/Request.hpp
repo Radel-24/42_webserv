@@ -63,6 +63,8 @@ class	Request {
 
 
 	private:
+		void	processHeader(std::map<int, Server *> & servers);
+		void	getBodyOutOfHeader();
 
 	public:
 		void	init();

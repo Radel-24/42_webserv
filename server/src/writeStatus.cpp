@@ -138,7 +138,8 @@ void	writeStatus(int status, int socket) {
 	LOG_RED_INFO("write status request: " << status);
 	std::string protocol = "HTTP/1.1 ";
 	std::string response = getReason(status);
-	std::string contLength = "\r\nContent-Length: 0\r\n\r\n";
-	std::string sendStr = protocol + response + contLength;
+	std::string contLength = "\r\nContent-Length: " + std::to_string(getReason(status).length()) + "\r\n\r\n";
+	std::string content = getReason(status);
+	std::string sendStr = protocol + response + contLength + content;
 	writeToSocket(socket, sendStr);
 }
