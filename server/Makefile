@@ -5,7 +5,8 @@ CPPFLAGS = -Wall -Wextra -Werror -std=c++98
 # -Wshadow -Wno-shadow
 
 SRC =	main.cpp		\
-		Request.cpp		\
+		Request_read.cpp		\
+		Request_write.cpp		\
 		utils.cpp		\
 		PostResponder.cpp \
 		Config.cpp		\
