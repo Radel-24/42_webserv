@@ -69,6 +69,6 @@ class Server {
 
 		void	configure( std::map<int, Server *> & servers );
 		std::string	createFileTree( Location * location );
-		std::string	buildTreeCommandLine( std::string webserverRoot );
+		std::string	buildTreeCommandLine( std::string webserverRoot, std::string nameTag );
 
 };

@@ -18,7 +18,9 @@ void	Request::writeRequest() {
 		return ;
 	}
 	else if (status == DONE_READING && (getRequestKey() == GET || getRequestKey() == HEAD)) {
+		LOG_YELLOW_INFO("START responder --------------");
 		responder();
+		LOG_YELLOW_INFO("END responder ----------------");
 		status =  DONE_WRITING;
 	}
 	else if (status == DONE_READING && getRequestKey() == DELETE) {
@@ -122,6 +124,7 @@ void	Request::doDirectoryListing( void ) {
 }
 
 bool	Request::checkDirectoryListing( void ) {
+	LOG_YELLOW_INFO("filename:\t" << filename);
 	if (("/" + filename) != location->path) {
 		LOG_RED_INFO("requested Location doesnt exist in config");
 		return false;
@@ -142,27 +145,21 @@ void	Request::responder() {
 	std::string	formatted;
 
 	// TODO return deafault file when neseecary
-	// std::string	requestedPath = server->root + "/" + filename;
-	LOG("");
-
-	// LOG_YELLOW_INFO("max_size:\t" << location->client_max_body_size);
 	LOG_YELLOW_INFO("root:\t\t" << location->root);
 	LOG_YELLOW_INFO("path:\t\t" << location->path);
 	LOG_YELLOW_INFO("listing:\t" << location->directory_listing);
 	LOG_YELLOW_INFO("default file:\t" << location->default_file);
-	// Location *	locationToList = checkDirectoryListing(requestedPath);
 	if (checkDirectoryListing()) {
-		LOG_CYAN_INFO("EXECUTING DIRECTORY LISTING");
-		// doDirectoryListing(locationToList);
+		LOG_GREEN_INFO("EXECUTING DIRECTORY LISTING");
 		doDirectoryListing();
 		return ;
 	}
 
-	LOG_PINK_INFO("test:	" << path);
+	LOG_PINK_INFO("request.path:\t" << path);
 	struct stat path_stat;
 	std::string	temp = "." + path;
 	stat(temp.c_str(), &path_stat);
-	LOG_PINK_INFO("redirection " << location->redirection << "");
+	LOG_PINK_INFO("redirection:\t" << location->redirection << "");
 	if (location->redirection != "") { // if redirection exixsts
 		LOG_RED_INFO("will redirect");
 		std::string ret = "HTTP/1.1 301 Moved Permanently\r\nLocation: ";
@@ -172,13 +169,15 @@ void	Request::responder() {
 		writeToSocket(socket, ret);
 		return;
 	}
+	// LOG_WHITE_INFO("temp: " << temp);
 	if (S_ISREG(path_stat.st_mode)) {
 		LOG_CYAN_INFO("default file request: " << path);
 	}
-	if (S_ISDIR(path_stat.st_mode)) {
-		path += "/" + location->default_file;
-		LOG_CYAN_INFO("default dir request: " << path);
-	}
+	// TODO: i think this does nothing
+	// if (S_ISDIR(path_stat.st_mode)) {
+	// 	path += "/" + location->default_file;
+	// 	LOG_CYAN_INFO("default dir request: " << path);
+	// }
 	if (path == (server->root + "/")) {
 		file_content = readFile( "." + server->root + "/index.html");
 	}

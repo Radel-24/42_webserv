@@ -107,15 +107,18 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 	}
 }
 
-std::string	Server::buildTreeCommandLine( std::string webserverRoot ) {
+// try if this woks and change prototype in hp
+std::string	Server::buildTreeCommandLine( std::string webserverRoot, std::string nameTag ) {
 	std::string	execPath = webserverRoot;
 
 	execPath += "/tree -H "; // tree executable
 	execPath += "."; // which files do you want to show (cwd)
-	execPath += " -T 'Your Files' -L 1 --noreport --charset utf-8 -o ";
+	execPath += " -T '";
+	execPath += nameTag; // title inside the HTML
+	execPath += "' -L 1 --noreport --charset utf-8 -o ";
 	execPath += webserverRoot + root; // where to create file
-	execPath += "/files.html"; // name of file
-	LOG_BLUE_INFO("execPath: " << execPath);
+	execPath += "/tree.html"; // name of file
+	// LOG_BLUE_INFO("execPath: " << execPath);
 	return execPath;
 }
 
@@ -129,11 +132,11 @@ std::string	Server::createFileTree( Location * location ) {
 	std::string	locationPath = cwd + root + "/" + location->path;
 
 	if (!chdir(locationPath.c_str())) {
-		std::string execPath = buildTreeCommandLine(cwd);
+		std::string execPath = buildTreeCommandLine(cwd, location->path);
 		if (system(execPath.c_str()) == -1)
 			LOG_RED("file tree went wrong");
 		else {
-			fileContent = fileToString(cwd + root + "/files.html");
+			fileContent = fileToString(cwd + root + "/tree.html");
 		}
 		if (chdir(cwd.c_str())) {
 			LOG_RED_INFO("ERROR: chdir: " << cwd);

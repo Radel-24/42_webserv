@@ -94,7 +94,7 @@ void	Request::changePath() { // TODO make hacking save when relative path is giv
 }
 
 void	Request::setPath() {
-	LOG_PINK_INFO("IN SET PATH" << header);
+	LOG_BLUE_INFO(header);
 	size_t posBegin = header.find("/");
 	size_t posEnd = header.find_first_of(" \t?", posBegin + 1);
 	if (posBegin == std::string::npos || posEnd == std::string::npos) { // TODO usually not needed, except when header is wrong
@@ -184,7 +184,7 @@ void Request::detectCorrectServer(std::map<int, Server *> & servers) {
 /* end alex new */
 
 void Request::checkRequest() {
-	LOG_RED_INFO("request key " << requestKey);
+	// LOG_RED_INFO("request key " << requestKey);
 	if (requestKey == NIL) { status = 405; }
 	else if (requestKey == GET || requestKey == HEAD) {
 		if (!findInVector(location->methods, std::string("GET"))) {
@@ -221,11 +221,12 @@ void Request::checkRequest() {
 }
 
 void	Request::extractFilename() {
-	// LOG_WHITE("ABC: uploadPath: " << uploadPath);
-	size_t	pos = uploadPath.find_last_of("/") + 1;
+	if (uploadPath == "//") {
+		filename = "/";
+		return ;
+	}
+	size_t			pos = uploadPath.find_last_of("/") + 1;
 	std::string		file = uploadPath.substr(pos, uploadPath.length() - pos);
-	// LOG_WHITE("ABC: filename: " << filename);
-	// LOG_GREEN("ABC -----------");
 	filename = file;
 }
 
