@@ -48,6 +48,10 @@ class	Request {
 		std::string							header;
 		ssize_t								bytes_written;
 		PostResponder *	postResponder;
+		Location *							location;
+		std::string							path;
+
+		std::string		headerKeyValuePairs;
 
 
 
@@ -55,9 +59,7 @@ class	Request {
 	private:
 		unsigned int						requestKey;
 		ssize_t								bytes_read;
-		std::string							path;
 		std::string							uploadPath;
-		Location *							location;
 		std::string	chunk;
 
 
@@ -101,6 +103,8 @@ class	Request {
 		void	readHeader();
 		void	readBodyLength();
 		void	readBodyChunked();
+
+		void	hundredStatus();
 
 		int	checkBodySizeChunk();
 		int	chunkSize();

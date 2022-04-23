@@ -79,6 +79,25 @@ ssize_t	writeToSocket(int socket, std::string text) {
 	// TO-DO CALL SELECT BEFORE WRITE AGAIN IF NOT ALL AT ONCE IS WRITTEN
 }
 
+char ** vectorToArray(std::vector<std::string> inVec) {
+	char ** array = (char **)calloc(sizeof(char *), inVec.size() + 1);
+	size_t index = 0;
+
+	for (std::vector<std::string>::iterator iter = inVec.begin(); iter != inVec.end(); ++iter) {
+		char * c_str = (char *)calloc(sizeof(char *), iter->length());
+		size_t i = 0;
+		char * helpStr = const_cast<char *>(iter->c_str());
+		while (helpStr[i]) {
+			c_str[i] = helpStr[i];
+			++i;
+		}
+		array[index] = c_str;
+		++index;
+	}
+	array[index] = NULL;
+	return array;
+}
+
 char ** mapToArray(std::map<std::string, std::string> map) {
 	char ** array = (char **)calloc(sizeof(char *), map.size() + 1);
 	size_t index = 0;

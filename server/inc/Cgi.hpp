@@ -20,6 +20,8 @@ class Cgi {
 		FILE *								tempFile;
 		std::string							response;
 
+		char ** input;
+
 		void	init();
 		void	setEnv();
 		void	runCgi();
@@ -29,4 +31,5 @@ class Cgi {
 		Cgi(Request & request);
 		~Cgi();
 		void	answerCgi();
+		void	setInput();
 };

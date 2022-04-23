@@ -7,7 +7,7 @@ void	Request::writeRequest() {
 		writeStatus(status, socket);
 		status =  DONE_WRITING;
 	}
-	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT || cgi_request == true)) {
+	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
 		if (!postResponder)
 			postResponder = new PostResponder(*this);
 		postResponder->run();
@@ -17,13 +17,17 @@ void	Request::writeRequest() {
 		}
 		return ;
 	}
-	else if (status == DONE_READING && (getRequestKey() == GET || getRequestKey() == HEAD)) {
+	else if (status == DONE_READING && cgi_request == false && (getRequestKey() == GET || getRequestKey() == HEAD)) {
 		responder();
 		status =  DONE_WRITING;
 	}
 	else if (status == DONE_READING && getRequestKey() == DELETE) {
 		deleteResponder();
 		status =  DONE_WRITING;
+	}
+	else if (status == DONE_READING && getRequestKey() == GET && cgi_request == true) {
+		Cgi * cgi = new Cgi(*this);
+		(void)cgi;
 	}
 }
 
