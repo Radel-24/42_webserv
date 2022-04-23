@@ -497,35 +497,73 @@ void	Request::deleteResponder( void ) {
 /* end alex new */
 
 std::string	removeDoubleSlashesFromPath( std::string path ) {
-	std::string	ret = path + "/";
+	std::string	ret = path;
 	size_t		pos;
 	while ((pos = ret.find("//")) != std::string::npos)
 		ret = ret.erase(pos);
 	return ret;
 }
 
-void	Request::responder() {
-	std::string	file_content;
-	std::string	formatted;
+void	Request::doDirectoryListing( Location * locationToList ) {
+	// LOG_BLUE_INFO("requestedPath: " << requestedPath);
+	// for (std::map<std::string, Location*>::iterator it = server->locations.begin(); it != server->locations.end(); it++)
+	// {
+	// 	std::string	locationPath = server->root + it->second->path;
 
-	// TODO alex ist stuck af und hat
+	// 	requestedPath = removeDoubleSlashesFromPath(requestedPath);
+	// 	locationPath = removeDoubleSlashesFromPath(locationPath);
+
+	// 	// use location pointer
+	// 	if (it->second->directory_listing == true && (requestedPath == locationPath)) {
+	// 		if (dirExists(toAbsolutPath(requestedPath).c_str())) {
+	// 			LOG_GREEN_INFO("Requested Directory exists");
+				LOG_GREEN_INFO("entering createFileTree");
+				std::string fileTree = server->createFileTree(locationToList);
+				std::string formattedTree = formatString(fileTree);
+				writeToSocket(socket, formattedTree);
+	// 			exit(0);
+	// 		}
+	// 	}
+	// }
+}
+
+Location *	Request::checkDirectoryListing( std::string requestedPath ) {
+	LOG_BLUE_INFO("requestedPath: " << requestedPath);
 	for (std::map<std::string, Location*>::iterator it = server->locations.begin(); it != server->locations.end(); it++)
 	{
 		std::string	locationPath = server->root + it->second->path;
 
-		// anstatt path muss ich wissen welche location der user requested (zb http://localhost:1000/felix)
-		std::string	comparePath = removeDoubleSlashesFromPath(path);
+		requestedPath = removeDoubleSlashesFromPath(requestedPath);
 		locationPath = removeDoubleSlashesFromPath(locationPath);
 
-		LOG_PINK_INFO("comparePath: " << comparePath);
-		LOG_PINK_INFO("locationPath: " << locationPath);
-
-		// TODO there should be no default file       path + "/" is hardcoded
-		if (it->second->directory_listing == true && (comparePath == locationPath)) {
-			LOG_GREEN_INFO("entering tree logic");
-			server->updateFilesHTML(it->second);
+		// use location pointer
+		if (it->second->directory_listing == true && (requestedPath == locationPath)) {
+			if (dirExists(toAbsolutPath(requestedPath).c_str())) {
+				LOG_GREEN_INFO("Requested Directory exists");
+				return it->second;
+				// LOG_GREEN_INFO("entering updateFilesHTML");
+				// std::string fileTree = server->createFileTree(it->second);
+				// std::string formattedTree = formatString(fileTree);
+				// writeToSocket(socket, formattedTree);
+				// exit(0);
+			}
 		}
-		LOG("");
+	}
+	return nullptr;
+}
+
+void	Request::responder() {
+	std::string	file_content;
+	std::string	formatted;
+
+
+	LOG_CYAN("================================================");
+	std::string	requestedPath = server->root + "/" + filename;
+	Location *	locationToList = checkDirectoryListing(requestedPath);
+	if (locationToList != nullptr) {
+		doDirectoryListing(locationToList);
+		LOG_CYAN("================================================");
+		return ;
 	}
 
 	LOG_PINK_INFO("test:	" << path);
@@ -533,7 +571,7 @@ void	Request::responder() {
 	std::string	temp = "." + path;
 	stat(temp.c_str(), &path_stat);
 	LOG_PINK_INFO("redirection " << location->redirection << "");
-	if (location->redirection != "") {
+	if (location->redirection != "") { // if redirection exixsts
 		LOG_RED_INFO("will redirect");
 		std::string ret = "HTTP/1.1 301 Moved Permanently\r\nLocation: ";
 		ret += location->redirection;

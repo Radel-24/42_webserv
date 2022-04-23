@@ -106,32 +106,51 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 	}
 }
 
+std::string	Server::buildTreeCommandLine( Location * location, std::string webserverRoot ) {
+	std::string	execPath = webserverRoot;
+
+	execPath += "/tree -H "; // tree executable
+	execPath += "."; // which files do you want to show (cwd)
+	execPath += " -T 'Your Files' -L 1 --noreport --charset utf-8 -o ";
+	execPath += webserverRoot + root + "/" + location->path; // where to create file
+	execPath += "/files.html"; // name of file
+	return execPath;
+}
+
+
+std::string	fileToString( std::string filePath ) {
+	// LOG_BLUE_INFO("filePath: " << filePath);
+	std::ifstream		t(filePath);
+	std::stringstream	buffer;
+	buffer << t.rdbuf();
+	return buffer.str();
+}
 /*
-This function runs the tree command on the root of the server to list alle the uploaded files in html format.
+	the tree command on the root of the server to list alle the uploaded files in html format.
 */
-void	Server::updateFilesHTML( Location * location ) {
+std::string	Server::createFileTree( Location * location ) {
+	char *		buf = getcwd(NULL, FILENAME_MAX);
+	std::string cwd = std::string(buf);
+	free(buf);
+	std::string	fileContent = "";
 
-	std::string cwd = std::string(getcwd(NULL, FILENAME_MAX));
-	LOG_YELLOW_INFO("cwd: " << cwd);
+	std::string	locationPath = cwd + root + "/" + location->path;
+	LOG_YELLOW_INFO("locationPath in updateFilesHTML: " << locationPath);
 
-	std::string	path = cwd + root + "/" + server_name + location->path;
-	LOG_YELLOW_INFO("path: " << path);
-
-	if (!chdir(path.c_str())) {
-		std::string execPath = cwd;
-		execPath += "/tree -H "; // tree executable
-		execPath += "."; // which files do you want to show (cwd)
-		execPath += " -T 'Your Files' -L 1 --noreport --charset utf-8 -o ";
-		execPath += cwd + root + "/" + server_name + location->path; // where to create file
-		execPath += "/files.html"; // name of file
-		LOG_YELLOW_INFO("execPath: " << execPath);
+	if (!chdir(locationPath.c_str())) {
+		std::string execPath = buildTreeCommandLine(location, cwd);
+		LOG_YELLOW_INFO("execPath in updateFilesHTML: " << execPath);
 		if (system(execPath.c_str()) == -1)
 			LOG_RED("file tree went wrong");
+		else {
+			fileContent = fileToString(toAbsolutPath("files.html"));
+		}
 		if (!chdir(cwd.c_str())) {
 			LOG_RED_INFO("ERROR: chdir: " << cwd);
 		}
 	}
 	else {
-		LOG_RED_INFO("ERROR: chdir: " << path);
+		LOG_RED_INFO("ERROR: chdir: " << locationPath);
 	}
+	return fileContent;
 }

@@ -142,6 +142,9 @@ class	Request {
 			}
 			return "";
 		}
+
+		Location *	checkDirectoryListing( std::string requestedPath );
+		void		doDirectoryListing( Location * locationToList );
 		/* end alex new */
 
 };
