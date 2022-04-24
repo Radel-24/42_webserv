@@ -1,5 +1,35 @@
 #include "Request.hpp"
 
+void	Request::writeRequest() {
+	LOG_RED_INFO("request key " << requestKey);
+	if (responseCreated == false) {
+		if (status >= 100 && status < 600) {
+			LOG_RED_INFO("request status " << status);
+			response = writeStatus(status);
+			//status =  DONE_WRITING;
+		}
+		else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
+			PostResponder pr(*this);
+			refreshFilesHTML(); // only for website
+		}
+		else if (status == DONE_READING && cgi_request == false && (getRequestKey() == GET || getRequestKey() == HEAD)) {
+			responder();
+			LOG_YELLOW_INFO("END responder ----------------");
+			//status =  DONE_WRITING;
+		}
+		else if (status == DONE_READING && getRequestKey() == DELETE) {
+			deleteResponder();
+			//status =  DONE_WRITING;
+		}
+		else if (status == DONE_READING && getRequestKey() == GET && cgi_request == true) {
+			Cgi * cgi = new Cgi(*this);
+			(void)cgi;
+		}
+		responseCreated = true;
+	}
+	writeResponse();
+}
+
 // only for website
 void	Request::refreshFilesHTML() {
 	std::string	cwd = getPWD();
@@ -27,60 +57,32 @@ void	Request::refreshFilesHTML() {
 	}
 }
 
-void	Request::postResponder() {
-		if (!pr)
-			pr = new PostResponder(*this);
-		pr->run();
-		if (status == DONE_WRITING_CGI) {
-			delete (pr);
-			pr = NULL;
-		}
-}
+//void	Request::postResponder() {
+//		if (!pr)
+//			pr = new PostResponder(*this);
+//		if (status == DONE_WRITING_CGI) {
+//			delete (pr);
+//			pr = NULL;
+//		}
+//}
 
 void	Request::writeResponse() {
-	ssize_t bytes_written = writeToSocket(socket, response.c_str() + bytes_written);
-	LOG_BLACK_INFO("bytes written " << bytes_written);
-	if (bytes_written == -1) {
+	//LOG_BLACK_INFO("bytes already written " << bytes_written);
+	ssize_t tmp_bytes_written = writeToSocket(socket, response.substr(bytes_written, std::string::npos));
+	//LOG_BLACK_INFO("bytes written " << tmp_bytes_written);
+	//LOG_BLACK_INFO("response length " << response.length());
+	//LOG_BLACK(response);
+	if (tmp_bytes_written == -1) {
 		status = CLOSE_CONNECTION;
 		LOG_BLACK_INFO("write failed");
 		return ;
 	}
-	bytes_written += bytes_written;
-	if ((size_t)bytes_written >= response.length()) {
+	bytes_written += (size_t)tmp_bytes_written;
+	if (bytes_written >= response.length() - 1) {
 		status = DONE_WRITING;
 		LOG_GREEN_INFO("done writing");
 	}
 
-}
-
-void	Request::writeRequest() {
-	LOG_RED_INFO("request key " << requestKey);
-	if (responseCreated == false) {
-		if (status >= 100 && status < 600) {
-			LOG_RED_INFO("request status " << status);
-			writeStatus(status, socket);
-			status =  DONE_WRITING;
-		}
-		else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
-			postResponder();
-			refreshFilesHTML(); // only for website
-		}
-		else if (status == DONE_READING && cgi_request == false && (getRequestKey() == GET || getRequestKey() == HEAD)) {
-			responder();
-			LOG_YELLOW_INFO("END responder ----------------");
-			status =  DONE_WRITING;
-		}
-		else if (status == DONE_READING && getRequestKey() == DELETE) {
-			deleteResponder();
-			status =  DONE_WRITING;
-		}
-		else if (status == DONE_READING && getRequestKey() == GET && cgi_request == true) {
-			Cgi * cgi = new Cgi(*this);
-			(void)cgi;
-		}
-		responseCreated = true;
-	}
-	writeResponse();
 }
 
 void	Request::clearResponse() {
@@ -152,7 +154,7 @@ void	Request::deleteResponder( void ) {
 void	Request::doDirectoryListing( void ) {
 	std::string fileTree = server->createFileTree(location);
 	std::string formattedTree = formatString(fileTree);
-	writeToSocket(socket, formattedTree);
+	response = formattedTree;
 }
 
 bool	Request::checkDirectoryListing( void ) {
@@ -193,7 +195,7 @@ void	Request::responder() {
 		ret += location->redirection;
 		ret += "\r\n\r\n";
 		LOG_PINK_INFO(ret);
-		writeToSocket(socket, ret);
+		response = ret;
 		return;
 	}
 	if (S_ISDIR(path_stat.st_mode)) {
@@ -206,12 +208,12 @@ void	Request::responder() {
 	else {
 		file_content = readFile(path.substr(1, std::string::npos));
 		if (status == 404){
-			writeStatus(404, socket);
+			response = writeStatus(404);
 			return ;
 		}
 	}
 	formatted = formatString(file_content);
-	writeToSocket(socket, formatted);
+	response = formatted;
 }
 
 std::string	Request::getFilename() {

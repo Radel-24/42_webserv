@@ -56,7 +56,7 @@ char **		vectorToArray(std::vector<std::string> inVec);
 
 std::string	toAbsolutPath(std::string path);
 
-std::string		writeStatus(int status, int socket);
+std::string		writeStatus(int status);
 
 int			hex_to_decimal(std::string hex);
 

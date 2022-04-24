@@ -21,12 +21,12 @@ class PostResponder {
 		int				_numOfBoundaries;
 
 		Request &		request;
-		Cgi * cgi;
+		//Cgi * cgi;
 
 		std::string	extractBoundary( void );
 		int			countBoundaries( void );
 		void		uploadFiles( void );
-		void		writeResponse(std::string response);
+		//void		writeResponse(std::string response);
 		int			checkBodySizeChuncked();
 		int			checkBodyStart();
 		int			extractStartChunk();

@@ -21,7 +21,6 @@ Cgi::Cgi(Request & request) : request(request) {
 	runCgi();
 	request.file_created = true;
 	parseCgi();
-	answerCgi();
 }
 
 Cgi::~Cgi() {
@@ -151,26 +150,9 @@ void	Cgi::parseCgi() {
 
 	body = answer.substr(bodyBegin, std::string::npos);
 
-	response = "HTTP/1.1 200 OK\r\nContent-Length: ";
-	response += std::to_string(body.length());
-	response += "\r\n\r\n";
-	response += body;
-}
-
-void	Cgi::answerCgi() {
-	ssize_t bytes_written = writeToSocket(request.socket, response.c_str() + request.bytes_written);
-	LOG_BLACK_INFO("bytes written " << bytes_written);
-	if (bytes_written == -1) {
-		request.status = CLOSE_CONNECTION;
-		LOG_BLACK_INFO("write failed");
-		return ;
-	}
-	request.bytes_written += bytes_written;
-	if ((size_t)request.bytes_written >= response.length()) {
-		request.init();
-		request.status = DONE_WRITING_CGI;
-		fclose(tempFile);
-		fclose(inFile);
-		LOG_GREEN("FINISHED CGI");
-	}
+	request.response = "HTTP/1.1 200 OK\r\nContent-Length: ";
+	request.response += std::to_string(body.length());
+	request.response += "\r\n\r\n";
+	request.response += body;
+	LOG_GREEN("FINISHED CGI");
 }

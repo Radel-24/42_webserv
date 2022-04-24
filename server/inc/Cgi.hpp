@@ -18,7 +18,6 @@ class Cgi {
 
 		FILE *								inFile; 
 		FILE *								tempFile;
-		std::string							response;
 
 		char ** input;
 
