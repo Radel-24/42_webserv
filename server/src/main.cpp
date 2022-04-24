@@ -147,6 +147,8 @@ void accepter(std::map<int, Server *> & servers)
 					FD_CLR(request.socket, &watching_write_sockets);
 					FD_SET(request.socket, &watching_read_sockets);
 					request.status = HEADER_READ;
+					request.clearResponse();
+
 				}
 				else if (request.status == DONE_READING && request.closeConnection == false){
 					requests[check_socket]->writeRequest();

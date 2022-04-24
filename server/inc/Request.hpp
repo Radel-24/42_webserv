@@ -52,12 +52,16 @@ class	Request {
 		std::string							path;
 
 		std::string		headerKeyValuePairs;
+		bool	responseCreated;
 
 
 
 		std::string							filename;
 
 		bool		closeConnection;
+
+		std::string	response;
+
 	private:
 		unsigned int						requestKey;
 		ssize_t								bytes_read;
@@ -66,6 +70,7 @@ class	Request {
 
 
 		void					extractFilename();
+		void		writeResponse();
 
 
 	private:
@@ -82,6 +87,8 @@ class	Request {
 		std::string	getBody() const;
 		int			checkHeaderRead(void);
 		int			checkBodySize(void);
+
+		void	clearResponse();
 
 		void	appendHeader(char * input, size_t size);
 		void	appendBody( char *, size_t);

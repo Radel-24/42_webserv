@@ -6,7 +6,6 @@ void	Request::init() {
 	header.clear();
 	body.clear();
 	bytes_read = 0;
-	bytes_written = 0;
 	location = NULL;
 	status = READING_HEADER;
 	requestKey = NIL;
@@ -19,6 +18,7 @@ void	Request::init() {
 	chunk.clear();
 	filename.clear();
 	closeConnection = false;
+	clearResponse();
 }
 
 Request::Request() { init(); }

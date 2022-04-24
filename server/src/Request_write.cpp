@@ -37,31 +37,56 @@ void	Request::postResponder() {
 		}
 }
 
-void	Request::writeRequest() {
-	LOG_RED_INFO("request key " << requestKey);
-	if (status >= 100 && status < 600) {
-		LOG_RED_INFO("request status " << status);
-		writeStatus(status, socket);
-		status =  DONE_WRITING;
-	}
-	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
-		postResponder();
-		refreshFilesHTML(); // only for website
+void	Request::writeResponse() {
+	ssize_t bytes_written = writeToSocket(socket, response.c_str() + bytes_written);
+	LOG_BLACK_INFO("bytes written " << bytes_written);
+	if (bytes_written == -1) {
+		status = CLOSE_CONNECTION;
+		LOG_BLACK_INFO("write failed");
 		return ;
 	}
-	else if (status == DONE_READING && cgi_request == false && (getRequestKey() == GET || getRequestKey() == HEAD)) {
-		responder();
-		LOG_YELLOW_INFO("END responder ----------------");
-		status =  DONE_WRITING;
+	bytes_written += bytes_written;
+	if ((size_t)bytes_written >= response.length()) {
+		status = DONE_WRITING;
+		LOG_GREEN_INFO("done writing");
 	}
-	else if (status == DONE_READING && getRequestKey() == DELETE) {
-		deleteResponder();
-		status =  DONE_WRITING;
+
+}
+
+void	Request::writeRequest() {
+	LOG_RED_INFO("request key " << requestKey);
+	if (responseCreated == false) {
+		if (status >= 100 && status < 600) {
+			LOG_RED_INFO("request status " << status);
+			writeStatus(status, socket);
+			status =  DONE_WRITING;
+		}
+		else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
+			postResponder();
+			refreshFilesHTML(); // only for website
+		}
+		else if (status == DONE_READING && cgi_request == false && (getRequestKey() == GET || getRequestKey() == HEAD)) {
+			responder();
+			LOG_YELLOW_INFO("END responder ----------------");
+			status =  DONE_WRITING;
+		}
+		else if (status == DONE_READING && getRequestKey() == DELETE) {
+			deleteResponder();
+			status =  DONE_WRITING;
+		}
+		else if (status == DONE_READING && getRequestKey() == GET && cgi_request == true) {
+			Cgi * cgi = new Cgi(*this);
+			(void)cgi;
+		}
+		responseCreated = true;
 	}
-	else if (status == DONE_READING && getRequestKey() == GET && cgi_request == true) {
-		Cgi * cgi = new Cgi(*this);
-		(void)cgi;
-	}
+	writeResponse();
+}
+
+void	Request::clearResponse() {
+	responseCreated = false;
+	response.clear();
+	bytes_written = 0;
 }
 
 std::string	Request::readFile( std::string filename ) {
