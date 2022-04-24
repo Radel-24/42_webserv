@@ -221,7 +221,8 @@ void Request::checkRequest() {
 }
 
 void	Request::extractFilename() {
-	if (uploadPath == "//") { // need to this, otherwise we cant redirect to default file on root
+	if ((uploadPath.length() > 1)
+		&& (uploadPath.find_first_not_of("/") == std::string::npos)) { // need to this, otherwise we cant redirect to default file on root
 		filename = "/";
 		return ;
 	}
@@ -314,8 +315,6 @@ void Request::readHeader() {
 	if (checkHeaderRead()) {
 		status = HEADER_READ;
 		//LOG_WHITE_INFO(header);
-
-		
 	}
 }
 
