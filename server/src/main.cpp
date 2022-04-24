@@ -148,7 +148,7 @@ void accepter(std::map<int, Server *> & servers)
 					FD_SET(request.socket, &watching_read_sockets);
 					request.status = HEADER_READ;
 				}
-				else if (request.status == DONE_READING){
+				else if (request.status == DONE_READING && request.closeConnection == false){
 					requests[check_socket]->writeRequest();
 					if (request.status == DONE_WRITING_CGI || request.status == DONE_WRITING) {
 						FD_CLR(request.socket, &watching_write_sockets);
@@ -156,7 +156,7 @@ void accepter(std::map<int, Server *> & servers)
 						request.init();
 					}
 				}
-				else if (request.status >= 400 && request.status < 600) {
+				else if ((request.status >= 400 && request.status < 600) || request.closeConnection == true) {
 					requests[check_socket]->writeRequest();
 					//usleep(1000);
 					FD_CLR(request.socket, &watching_write_sockets);

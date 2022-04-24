@@ -18,6 +18,7 @@ void	Request::init() {
 	uploadPath.clear();
 	chunk.clear();
 	filename.clear();
+	closeConnection = false;
 }
 
 Request::Request() { init(); }
@@ -186,11 +187,18 @@ void Request::detectCorrectServer(std::map<int, Server *> & servers) {
 /* end alex new */
 
 void	Request::hundredStatus() {
-	if (headerValues.find("Expect") != headerValues.end()) {
+	std::map<std::string, std::string>::iterator iter = headerValues.find("Expect");
+	if (iter != headerValues.end()) {
 		LOG_CYAN_INFO("expect found");
-		std::map<std::string, std::string>::iterator iter = headerValues.find("Expect");
 		if (iter->second == "100-continue") {
 			status = 100;
+		}
+	}
+	iter = headerValues.find("Connection");
+	if (iter != headerValues.end()) {
+		if (iter->second == "close") {
+			LOG_CYAN_INFO("Connection close found");
+			closeConnection = true;
 		}
 	}
 }

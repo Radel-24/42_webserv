@@ -78,11 +78,11 @@ void	Cgi::setInput() {
 void	Cgi::runCgi() {
 	char ** localEnv = mapToArray(env);
 	
-	int i = 0;
-	while (input[i]) {
-		LOG_YELLOW_INFO("|" << input[i] << "|");
-		++i;
-	}
+	//int i = 0;
+	//while (input[i]) {
+	//	LOG_YELLOW_INFO("|" << input[i] << "|");
+	//	++i;
+	//}
 
 	int fin = fileno(inFile);
 
@@ -91,10 +91,6 @@ void	Cgi::runCgi() {
 
 
 	pid_t pid = fork();
-	if(request.getRequestKey() == GET) {
-		LOG_RED_INFO("does the right " << request.getRequestKey());
-
-	}
 
 	if (pid == -1) {
 		LOG_RED_INFO("fork failed"); // TODO error handling

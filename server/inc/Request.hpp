@@ -56,6 +56,8 @@ class	Request {
 
 
 		std::string							filename;
+
+		bool		closeConnection;
 	private:
 		unsigned int						requestKey;
 		ssize_t								bytes_read;
