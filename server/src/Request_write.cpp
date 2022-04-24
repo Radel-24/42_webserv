@@ -1,5 +1,32 @@
 #include "Request.hpp"
 
+// only for website
+void	Request::refreshFilesHTML() {
+	std::string	cwd = getPWD();
+	std::string	execPath = cwd;
+
+	execPath += "/tree -H ";
+	execPath += ".";
+	execPath += " -T 'Your Files' -L 1 --nolinks --noreport --charset utf-8 -o ";
+	execPath += cwd + server->root;
+	execPath += "/files.html";
+
+	if (dirExists((cwd + server->root + server->uploadPath).c_str())) {
+		if (!chdir((cwd + server->root + server->uploadPath).c_str())) {
+			if (system(execPath.c_str()) == -1)
+				LOG_RED("file tree went wrong");
+			if (chdir(cwd.c_str()))
+				LOG_RED_INFO("error: chdir went wrong: " << cwd);
+		}
+		else {
+			LOG_RED_INFO("error: chdir went wrong: " << (cwd + server->root + server->uploadPath));
+		}
+	}
+	else {
+		LOG_RED_INFO("error: upload directory doesnt exists: " << (cwd + server->root + server->uploadPath));
+	}
+}
+
 void	Request::writeRequest() {
 	LOG_RED_INFO("request key " << requestKey);
 	if (status >= 100 && status < 600) {
@@ -15,10 +42,12 @@ void	Request::writeRequest() {
 			delete (postResponder);
 			postResponder = NULL;
 		}
+		refreshFilesHTML(); // only for website
 		return ;
 	}
 	else if (status == DONE_READING && cgi_request == false && (getRequestKey() == GET || getRequestKey() == HEAD)) {
 		responder();
+		LOG_YELLOW_INFO("END responder ----------------");
 		status =  DONE_WRITING;
 	}
 	else if (status == DONE_READING && getRequestKey() == DELETE) {
@@ -73,7 +102,6 @@ std::string	Request::formatString( std::string file_content ) {
 	return ret;
 }
 
-/* start alex new */
 // can only delete one file
 void	Request::deleteResponder( void ) {
 	LOG_RED_INFO("deleteRequest starts here ------------------");
@@ -91,58 +119,45 @@ void	Request::deleteResponder( void ) {
 		LOG_RED_INFO("error: file not found");
 	LOG_RED_INFO("deleteRequest ends here --------------------");
 }
-/* end alex new */
 
-void	Request::doDirectoryListing( Location * locationToList ) {
-	LOG_GREEN_INFO("entering createFileTree");
-	std::string fileTree = server->createFileTree(locationToList);
+void	Request::doDirectoryListing( void ) {
+	std::string fileTree = server->createFileTree(location);
 	std::string formattedTree = formatString(fileTree);
 	writeToSocket(socket, formattedTree);
 }
 
-Location *	Request::checkDirectoryListing( std::string requestedPath ) {
-	LOG_BLUE_INFO("requestedPath: " << requestedPath);
-	for (std::map<std::string, Location*>::iterator it = server->locations.begin(); it != server->locations.end(); it++)
-	{
-		std::string	locationPath = server->root + it->second->path;
-
-		requestedPath = convertDoubleSlashToSingle(requestedPath);
-		locationPath = convertDoubleSlashToSingle(locationPath);
-
-		// use location pointer
-		if (it->second->directory_listing == true && (requestedPath == locationPath)) {
-			if (dirExists(toAbsolutPath(requestedPath).c_str())) {
-				LOG_GREEN_INFO("Requested Directory exists");
-				return it->second;
-			}
-		}
+bool	Request::checkDirectoryListing( void ) {
+	LOG_YELLOW_INFO("filename:\t" << filename);
+	if (("/" + filename) != location->path) {
+		LOG_RED_INFO("requested Location doesnt exist in config");
+		return false;
 	}
-	return nullptr;
+	if (location->directory_listing == false) {
+		LOG_RED_INFO("error: requested Location doesnt allow listing");
+		return false;
+	}
+	if (!dirExists(toAbsolutPath(server->root + location->path).c_str())) {
+		LOG_RED_INFO("error: requested Location doesnt have directory");
+		return false;
+	}
+	return true;
 }
 
 void	Request::responder() {
 	std::string	file_content;
 	std::string	formatted;
 
-	// TODO return deafault file when neseecary
-	// TODO create files always in www
-	LOG_CYAN("path: " << path);
-	LOG_CYAN("filename: " << filename);
-	LOG_CYAN("header: " << header);
-	LOG_CYAN("================================================");
-	std::string	requestedPath = server->root + "/" + filename;
-	Location *	locationToList = checkDirectoryListing(requestedPath);
-	if (locationToList != nullptr) {
-		doDirectoryListing(locationToList);
-		LOG_CYAN("================================================");
+	if (checkDirectoryListing()) {
+		LOG_GREEN_INFO("EXECUTING DIRECTORY LISTING");
+		doDirectoryListing();
 		return ;
 	}
 
-	LOG_PINK_INFO("test:	" << path);
+	LOG_PINK_INFO("request.path:\t" << path);
 	struct stat path_stat;
 	std::string	temp = "." + path;
 	stat(temp.c_str(), &path_stat);
-	LOG_PINK_INFO("redirection " << location->redirection << "");
+	LOG_PINK_INFO("redirection:\t" << location->redirection << "");
 	if (location->redirection != "") { // if redirection exixsts
 		LOG_RED_INFO("will redirect");
 		std::string ret = "HTTP/1.1 301 Moved Permanently\r\nLocation: ";
@@ -152,9 +167,6 @@ void	Request::responder() {
 		writeToSocket(socket, ret);
 		return;
 	}
-	if (S_ISREG(path_stat.st_mode)) {
-		LOG_CYAN_INFO("default file request: " << path);
-	}
 	if (S_ISDIR(path_stat.st_mode)) {
 		path += "/" + location->default_file;
 		LOG_CYAN_INFO("default dir request: " << path);
@@ -162,8 +174,7 @@ void	Request::responder() {
 	if (path == (server->root + "/")) {
 		file_content = readFile( "." + server->root + "/index.html");
 	}
-	else
-	{
+	else {
 		file_content = readFile(path.substr(1, std::string::npos));
 		if (status == 404){
 			writeStatus(404, socket);

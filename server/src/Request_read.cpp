@@ -204,11 +204,8 @@ void	Request::hundredStatus() {
 }
 
 void Request::checkRequest() {
-	LOG_RED_INFO("request key " << requestKey);
-	if (requestKey == NIL) { 
-		status = 405;
-		return;
-	}
+	// LOG_RED_INFO("request key " << requestKey);
+	if (requestKey == NIL) { status = 405; }
 	else if (requestKey == GET || requestKey == HEAD) {
 		if (!findInVector(location->methods, std::string("GET"))) {
 			status = 405; // compulsory method mustn't be deactivated: https://developer.mozilla.org/de/docs/Web/HTTP/Status
@@ -233,11 +230,13 @@ void Request::checkRequest() {
 }
 
 void	Request::extractFilename() {
-	// LOG_WHITE("ABC: uploadPath: " << uploadPath);
-	size_t	pos = uploadPath.find_last_of("/") + 1;
+	if ((uploadPath.length() > 1)
+		&& (uploadPath.find_first_not_of("/") == std::string::npos)) { // need to this, otherwise we cant redirect to default file on root
+		filename = "/";
+		return ;
+	}
+	size_t			pos = uploadPath.find_last_of("/") + 1;
 	std::string		file = uploadPath.substr(pos, uploadPath.length() - pos);
-	// LOG_WHITE("ABC: filename: " << filename);
-	// LOG_GREEN("ABC -----------");
 	filename = file;
 }
 
@@ -326,8 +325,6 @@ void Request::readHeader() {
 	if (checkHeaderRead()) {
 		status = HEADER_READ;
 		//LOG_WHITE_INFO(header);
-
-		
 	}
 }
 
