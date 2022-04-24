@@ -32,140 +32,103 @@ enum Status {
 	DONE_READING,
 	WRITING,
 	DONE_WRITING,
-	DONE_WRITING_CGI,
 	CLOSE_CONNECTION
 };
 
 class	Request {
 	public:
-		int file_created;
-		int	status;
+		int									file_created;
+		int									status;
 		int									socket;
 		Server *							server;
-		bool	cgi_request;
+		bool								cgi_request;
 		std::map<std::string, std::string>	headerValues;
 		std::string							body;
 		std::string							header;
 		size_t								bytes_written;
-		PostResponder *	pr;
+		PostResponder *						pr;
 		Location *							location;
 		std::string							path;
 
-		std::string		headerKeyValuePairs;
-		bool	responseCreated;
+		std::string							headerKeyValuePairs;
+		bool								responseCreated;
 
 
 
 		std::string							filename;
 
-		bool		closeConnection;
+		bool								closeConnection;
 
-		std::string	response;
+		std::string							response;
 
 	private:
 		unsigned int						requestKey;
 		ssize_t								bytes_read;
 		std::string							uploadPath;
-		std::string	chunk;
 
-
-		void					extractFilename();
-		void		writeResponse();
-
-
-	private:
-		void	processHeader(std::map<int, Server *> & servers);
-		void	getBodyOutOfHeader();
-
-	public:
-		void	init();
+		void								extractFilename();
+		void								writeResponse();
+						
+		void								processHeader(std::map<int, Server *> & servers);
+		void								getBodyOutOfHeader();
+						
+	public:						
 		Request();
 		Request(int socket, Server * server);
 		~Request();
-		int			getRequestKey() const;
-		std::string	getHeader() const;
-		std::string	getBody() const;
-		int			checkHeaderRead(void);
-		int			checkBodySize(void);
+		void								init();
+		int									getRequestKey() const;
+		std::string							getHeader() const;
+		std::string							getBody() const;
+		int									checkHeaderRead(void);
+		int									checkBodySize(void);
 
-		void	clearResponse();
+		void								clearResponse();
 
-		void	appendHeader(char * input, size_t size);
-		void	appendBody( char *, size_t);
-		// void	setHeaderValues(std::pair<std::string, std::string> pair);
+		void								appendHeader(char * input, size_t size);
+		void								appendBody( char *, size_t);
+		void								setRequestKey(unsigned int);
 
-		//void	clearBody();
-		//void	clearHeader();
+		void								detectCorrectServer(std::map<int, Server *> & servers);
 
-		void	setRequestKey(unsigned int);
+		void								readRequest(std::map<int, Server *> & servers);
+		void								writeRequest();
 
-		void	detectCorrectServer(std::map<int, Server *> & servers);
+		void								setType();
+		void								changePath();
+		void								setPath();
+		void								readHeader();
+		void								readBodyLength();
+		void								readBodyChunked();
 
-		void	readRequest(std::map<int, Server *> & servers);
-		void writeRequest();
+		void								hundredStatus();
 
-		void	setType();
-		void	changePath();
-		void	setPath();
-		std::string	getPath();
-		std::string	getUploadPath();
-		void	readHeader();
-		void	readBodyLength();
-		void	readBodyChunked();
+		void								postResponder();
 
-		void	hundredStatus();
+		int									checkBodySizeChunk();
+		int									chunkSize();
 
-		void	postResponder();
-
-		int	checkBodySizeChunk();
-		int	chunkSize();
-
-		std::string	formatString( std::string file_content);
+		std::string							formatString( std::string file_content);
 
 
-		void	responder();
-		std::string	getFilename();
+		void								responder();
+		std::string							getFilename();
 
-		void	printHeaderValues() {
-			std::map<std::string, std::string>::iterator iter = headerValues.begin();
-			while (iter != headerValues.end()) {
-				LOG_GREEN(iter->first << " | " << iter->second);
-				++iter;
-			}
-		}
-
-		/* start alex new */
 		void								deleteResponder( void );
 		void								parseHeader(std::string header);
 		std::pair<std::string, std::string>	splitToken( std::string token );
 		std::string							&leftTrim( std::string &str, char c );
 		void								setHeaderValues( const std::pair<std::string, std::string> &pair );
-		std::map<std::string, std::string>	getHeaderValues( void ) const {
-			return this->headerValues;
-		}
-		Server								*getServer( void ) const {
-			return this->server;
-		}
-		void									checkHeaderValues( void );
+		void								checkHeaderValues( void );
 
-		void	checkRequest();
-		std::string	readFile( std::string filename );
+		void								checkRequest();
+		std::string							readFile( std::string filename );
 
-		std::string							getHostName( void ) const {
-			std::map<std::string, std::string>::const_iterator	iter = headerValues.begin();
-			while (iter != headerValues.end())
-			{
-				if (iter->first == "Host")
-					return iter->second;
-				iter++;
-			}
-			return "";
-		}
+		std::string							getHostName( void ) const;
 
-		bool		checkDirectoryListing( void );
-		void		doDirectoryListing( void );
-		void		refreshFilesHTML( void );
-		/* end alex new */
+		bool								checkDirectoryListing( void );
+		void								doDirectoryListing( void );
+		void								refreshFilesHTML( void );
 
 };
 

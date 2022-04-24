@@ -36,9 +36,9 @@
 std::pair<std::string, std::string>	divideString(std::string input, std::string divide);
 std::map<std::string, std::string>	stringToMap(std::string input, std::string divide = ": ",
 											char separate = '\n', std::string comment = "#");
-std::vector<std::string> stringSplit(std::string sep, std::string str);
+std::vector<std::string>			stringSplit(std::string sep, std::string str);
 
-std::string ToHex(const std::string & s, bool upper_case /* = true */);
+std::string							ToHex(const std::string & s, bool upper_case /* = true */);
 
 template <class T>
 bool	findInVector(std::vector<T> vec, T needle) {
@@ -56,7 +56,7 @@ char **		vectorToArray(std::vector<std::string> inVec);
 
 std::string	toAbsolutPath(std::string path);
 
-std::string		writeStatus(int status);
+std::string	writeStatus(int status);
 
 int			hex_to_decimal(std::string hex);
 

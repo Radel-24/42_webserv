@@ -4,7 +4,6 @@
 #include "utils.hpp"
 #include <map>
 #include <unistd.h>
-
 #include <string>
 
 class Request;
@@ -14,21 +13,20 @@ class Cgi {
 		std::map<std::string, std::string>	env;
 		Request &							request;
 		std::string							answer;
-		std::string 						body;
 
 		FILE *								inFile; 
 		FILE *								tempFile;
 
-		char ** input;
+		char **								input;
 
 		void	init();
 		void	setEnv();
 		void	runCgi();
 		void	parseCgi();
+		void	answerCgi();
+		void	setInput();
 
 	public:
 		Cgi(Request & request);
 		~Cgi();
-		void	answerCgi();
-		void	setInput();
 };

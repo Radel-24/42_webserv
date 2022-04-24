@@ -1,5 +1,4 @@
 #include "Config.hpp"
-#include "PostResponder.hpp"
 
 size_t	is_parameter(std::string const & parameter, std::string const & line) {
 	if (line.find(parameter) == 0) {

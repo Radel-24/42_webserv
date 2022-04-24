@@ -53,7 +53,7 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 
 	//Establish socket and test
 	sock = socket(PF_INET, SOCK_STREAM, 0);
-	test_connection(sock); // when failed, protect
+	test_connection(sock);
 
 	g_address.sin_family = PF_INET;
 	g_address.sin_port = htons(port);
@@ -76,17 +76,16 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 
 	// you can bind to a port only once, so we don't bind if there is already a server on the port
 	/* BINDING SOCKET */
-	bool								skip_bind = false;
+	bool	skip_bind = false;
 	for (std::map<int, Server *>::iterator	iter = servers.begin(); iter != servers.end(); ++iter) {
 		if (iter->second->port == this->port) {
 			skip_bind = true;
 			break;
 		}
 	}
-	if (!skip_bind)
-	{
+	if (!skip_bind) {
 		connection = bind(sock, (struct sockaddr *) &g_address, sizeof(g_address));
-		test_connection(connection); // TODO still needed?
+		test_connection(connection);
 	}
 	/* BINDING SOCKET */
 
@@ -109,14 +108,12 @@ std::string	Server::buildTreeCommandLine( std::string webserverRoot, std::string
 	std::string	execPath = webserverRoot;
 
 	execPath += "/tree -H "; // tree executable
-	// execPath += "./www/default_server/upload"; // which files do you want to show (cwd)
 	execPath += "."; // which files do you want to show (cwd)
 	execPath += " -T '";
 	execPath += nameTag; // title inside the HTML
 	execPath += "' -L 1 --nolinks --noreport --charset utf-8 -o ";
 	execPath += webserverRoot + root; // where to create file
 	execPath += "/tree.html"; // name of file
-	// LOG_BLUE_INFO("execPath: " << execPath);
 	return execPath;
 }
 
@@ -129,7 +126,7 @@ std::string	Server::createFileTree( Location * location ) {
 	if (!chdir(locationPath.c_str())) {
 		std::string execPath = buildTreeCommandLine(cwd, location->path);
 		if (system(execPath.c_str()) == -1)
-			LOG_RED("file tree went wrong");
+			LOG_RED_INFO("ERROR: file tree went wrong");
 		else {
 			fileContent = fileToString(cwd + root + "/tree.html");
 		}

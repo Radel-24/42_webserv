@@ -1,27 +1,25 @@
 #include "Request.hpp"
 
 void	Request::writeRequest() {
-	LOG_RED_INFO("request key " << requestKey);
 	if (responseCreated == false) {
 		if (status >= 100 && status < 600) {
-			LOG_RED_INFO("request status " << status);
 			response = writeStatus(status);
-			//status =  DONE_WRITING;
 		}
 		else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
+			LOG_BLUE_INFO("POST Responder");
 			PostResponder pr(*this);
 			refreshFilesHTML(); // only for website
 		}
 		else if (status == DONE_READING && cgi_request == false && (getRequestKey() == GET || getRequestKey() == HEAD)) {
+			LOG_BLUE_INFO("GET Responder");
 			responder();
-			LOG_YELLOW_INFO("END responder ----------------");
-			//status =  DONE_WRITING;
 		}
 		else if (status == DONE_READING && getRequestKey() == DELETE) {
+			LOG_BLUE_INFO("DELETE Responder");
 			deleteResponder();
-			//status =  DONE_WRITING;
 		}
 		else if (status == DONE_READING && getRequestKey() == GET && cgi_request == true) {
+			LOG_BLUE_INFO("CGI GET Responder");
 			Cgi * cgi = new Cgi(*this);
 			(void)cgi;
 		}
@@ -44,45 +42,31 @@ void	Request::refreshFilesHTML() {
 	if (dirExists((cwd + server->root + server->uploadPath).c_str())) {
 		if (!chdir((cwd + server->root + server->uploadPath).c_str())) {
 			if (system(execPath.c_str()) == -1)
-				LOG_RED("file tree went wrong");
+				LOG_RED_INFO("ERROR: file tree went wrong");
 			if (chdir(cwd.c_str()))
-				LOG_RED_INFO("error: chdir went wrong: " << cwd);
+				LOG_RED_INFO("ERROR: chdir went wrong: " << cwd);
 		}
 		else {
-			LOG_RED_INFO("error: chdir went wrong: " << (cwd + server->root + server->uploadPath));
+			LOG_RED_INFO("ERROR: chdir went wrong: " << (cwd + server->root + server->uploadPath));
 		}
 	}
 	else {
-		LOG_RED_INFO("error: upload directory doesnt exists: " << (cwd + server->root + server->uploadPath));
+		LOG_RED_INFO("ERROR: upload directory doesnt exists: " << (cwd + server->root + server->uploadPath));
 	}
 }
 
-//void	Request::postResponder() {
-//		if (!pr)
-//			pr = new PostResponder(*this);
-//		if (status == DONE_WRITING_CGI) {
-//			delete (pr);
-//			pr = NULL;
-//		}
-//}
-
 void	Request::writeResponse() {
-	//LOG_BLACK_INFO("bytes already written " << bytes_written);
 	ssize_t tmp_bytes_written = writeToSocket(socket, response.substr(bytes_written, std::string::npos));
-	//LOG_BLACK_INFO("bytes written " << tmp_bytes_written);
-	//LOG_BLACK_INFO("response length " << response.length());
-	//LOG_BLACK(response);
-	if (tmp_bytes_written == -1) {
+	if (tmp_bytes_written == -1) { // TODO: what do do here?
 		status = CLOSE_CONNECTION;
-		LOG_BLACK_INFO("write failed");
+		LOG_BLACK_INFO("ERROR: write failed");
 		return ;
 	}
 	bytes_written += (size_t)tmp_bytes_written;
-	if (bytes_written >= response.length() - 1) {
+	if (bytes_written >= response.length()) {
 		status = DONE_WRITING;
-		LOG_GREEN_INFO("done writing");
+		LOG_GREEN_INFO("done writing response");
 	}
-
 }
 
 void	Request::clearResponse() {
@@ -109,8 +93,7 @@ std::string	Request::readFile( std::string filename ) {
 	if (!newFile){
 		return "";
 	}
-	while (!newFile.eof())
-	{
+	while (!newFile.eof()) {
 		newFile >> std::noskipws >> c;
 		ret.push_back(c);
 	}
@@ -129,16 +112,13 @@ std::string	Request::formatString( std::string file_content ) {
 	if (requestKey == HEAD)
 		return full_header;
 	ret = full_header.append(file_content);
-	//LOG_RED_INFO("response: " << ret);
 	return ret;
 }
 
 // can only delete one file
 void	Request::deleteResponder( void ) {
-	LOG_RED_INFO("deleteRequest starts here ------------------");
 	std::string	filename = getFilename();
 	std::string	deleteRoute = "." + server->root + server->uploadPath + "/" + filename;
-	LOG_CYAN_INFO("deleteRoute: " << deleteRoute);
 	if (std::ifstream(deleteRoute)) {
 		std::remove(deleteRoute.c_str());
 		if (std::ifstream(deleteRoute))
@@ -148,27 +128,21 @@ void	Request::deleteResponder( void ) {
 	}
 	else
 		LOG_RED_INFO("error: file not found");
-	LOG_RED_INFO("deleteRequest ends here --------------------");
 }
 
 void	Request::doDirectoryListing( void ) {
 	std::string fileTree = server->createFileTree(location);
-	std::string formattedTree = formatString(fileTree);
-	response = formattedTree;
+	response = formatString(fileTree);
 }
 
 bool	Request::checkDirectoryListing( void ) {
-	LOG_YELLOW_INFO("filename:\t" << filename);
 	if (("/" + filename) != location->path) {
-		LOG_RED_INFO("requested Location doesnt exist in config");
 		return false;
 	}
 	if (location->directory_listing == false) {
-		LOG_RED_INFO("error: requested Location doesnt allow listing");
 		return false;
 	}
 	if (!dirExists(toAbsolutPath(server->root + location->path).c_str())) {
-		LOG_RED_INFO("error: requested Location doesnt have directory");
 		return false;
 	}
 	return true;
@@ -176,29 +150,21 @@ bool	Request::checkDirectoryListing( void ) {
 
 void	Request::responder() {
 	std::string	file_content;
-	std::string	formatted;
 
 	if (checkDirectoryListing()) {
 		LOG_GREEN_INFO("EXECUTING DIRECTORY LISTING");
 		doDirectoryListing();
 		return ;
 	}
-
-	LOG_PINK_INFO("request.path:\t" << path);
-	struct stat path_stat;
-	std::string	temp = "." + path;
-	stat(temp.c_str(), &path_stat);
-	LOG_PINK_INFO("redirection:\t" << location->redirection << "");
 	if (location->redirection != "") { // if redirection exixsts
-		LOG_RED_INFO("will redirect");
-		std::string ret = "HTTP/1.1 301 Moved Permanently\r\nLocation: ";
-		ret += location->redirection;
-		ret += "\r\n\r\n";
-		LOG_PINK_INFO(ret);
-		response = ret;
+		LOG_CYAN_INFO("will redirect");
+		response = "HTTP/1.1 301 Moved Permanently\r\nLocation: ";
+		response += location->redirection;
+		response += "\r\n\r\n";
 		return;
 	}
-	if (S_ISDIR(path_stat.st_mode)) {
+	std::string	temp = "." + path;
+	if (dirExists(temp.c_str())) {
 		path += "/" + location->default_file;
 		LOG_CYAN_INFO("default dir request: " << path);
 	}
@@ -207,13 +173,12 @@ void	Request::responder() {
 	}
 	else {
 		file_content = readFile(path.substr(1, std::string::npos));
-		if (status == 404){
+		if (status == 404) {
 			response = writeStatus(404);
 			return ;
 		}
 	}
-	formatted = formatString(file_content);
-	response = formatted;
+	response = formatString(file_content);
 }
 
 std::string	Request::getFilename() {
@@ -221,16 +186,5 @@ std::string	Request::getFilename() {
 	int			start = converted.find("/") + 1;
 	int			end = converted.find("HTTP") - 1;
 	std::string	file = converted.substr(start, end - start);
-	LOG_CYAN_INFO("filename: " << file);
 	return file;
-}
-
-std::string	Request::getPath()
-{
-	return this->path;
-}
-
-std::string	Request::getUploadPath()
-{
-	return this->uploadPath;
 }

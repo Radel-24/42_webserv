@@ -6,14 +6,7 @@ AFTER 3-5 SEC CHUNKED BODY WITH THIS LOGIC IS OVER
 WRITE BODY TO FILE TAKES 20 SECS
 -> SUM OF 1:25 MINUTES TO UPLOAD 100MB -> needs to be like max 5-10 secs
 */
-PostResponder::PostResponder(Request & request ) : request(request)
-{
-	run();
-}
-
-
-//std::string ToHex(const std::string & s, bool upper_case /* = true */);
-
+PostResponder::PostResponder(Request & request ) : request(request) { run(); }
 
 void	PostResponder::uploadFiles( void )
 {
@@ -61,7 +54,6 @@ void	PostResponder::uploadFiles( void )
 		size_t	dblNewline = cutBody.find("\r\n\r\n");
 		bodyContent = cutBody.substr(dblNewline + 4, cutBody.length() - dblNewline - 4);
 
-		// remove new
 		std::string	cwd = getPWD();
 		std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
 		createUploadFile(path, bodyContent);
@@ -76,7 +68,6 @@ void	PostResponder::uploadFiles( void )
 			return ;
 		}
 	}
-	// request.server->updateFilesHTML(); // TODO is this neccesary?
 }
 
 int	PostResponder::countBoundaries( void )
@@ -84,8 +75,7 @@ int	PostResponder::countBoundaries( void )
 	size_t	count = 0;
 	size_t	pos = request.body.find(_boundary, 0);
 
-	while(pos != std::string::npos)
-	{
+	while(pos != std::string::npos) {
 		pos = request.body.find(_boundary, pos + 1);
 		count++;
 	}
@@ -119,7 +109,6 @@ int	PostResponder::checkBodyStart(void) {
 	std::string content_length_in_hex;
 	size_t	type_start = request.body.find("\r\n");
 	content_length_in_hex = request.body.substr(0, type_start);
-	//LOG_RED(content_length_in_hex);
 	return (content_length_in_hex.length());
 }
 
@@ -127,25 +116,18 @@ int	PostResponder::extractStartChunk(void) {
 	std::string content_length_in_hex;
 	size_t	type_start = request.body.find("\r\n") + 2;
 	content_length_in_hex = request.body.substr(0, type_start);
-	//LOG_RED(content_length_in_hex);
 	return (content_length_in_hex.length());
 }
 
 int	PostResponder::extractEndChunk(void) {
 	size_t	type_end = checkBodySizeChuncked();
-	//LOG_YELLOW(type_end);
 	return (type_end);
 }
 
 void PostResponder::run() {
-	//LOG_YELLOW("START");
-	//LOG_YELLOW(request.header);
-	//LOG_YELLOW("END");
-	//----------------------------------------------------------------------------------------------------------------------------
 	if (request.header.find("Transfer-Encoding: chunked") != std::string::npos && request.file_created == false)
 	{
-		//TO-DO create the right file name, and create new file per reuest atm im appending it
-		LOG_YELLOW("chunked body!!!!");
+		LOG_YELLOW_INFO("chunked body");
 		std::string cleanBody;
 
 		int i = 0;
@@ -153,11 +135,9 @@ void PostResponder::run() {
 		std::istringstream tmp_body;
 		tmp_body.str(request.body);
 		std::getline(tmp_body, cleanBody);
-		LOG_YELLOW("START LOOP");
-		while(cleanBody.front() != '0' && cleanBody.size() != 1)
-		{
-			if (i % 2)
-			{
+		LOG_YELLOW_INFO("START LOOP");
+		while(cleanBody.front() != '0' && cleanBody.size() != 1) {
+			if (i % 2) {
 				cleanBody.pop_back();
 				tmp.append(cleanBody);
 			}
@@ -166,96 +146,57 @@ void PostResponder::run() {
 		}
 		request.body.clear();
 		request.body = tmp;
-		LOG_YELLOW("END LOOP");
+		LOG_YELLOW_INFO("END LOOP");
 
 		if (request.location && request.location->client_max_body_size != -1 && request.body.length() > (unsigned long)request.location->client_max_body_size) {
 			LOG_RED_INFO("error: BODY TO BIG!");
 			request.response = writeStatus(413);
-			//request.status = DONE_WRITING;
 			return ;
 		}
 
-		LOG_YELLOW("ABC CREATE FILE");
-		if (!request.cgi_request)
-		{
+		if (!request.cgi_request) {
+			LOG_YELLOW_INFO("CREATE FILE");
 			std::string filename = request.filename;
 			std::string cwd = getPWD();
 			std::string path = cwd + request.server->root + request.server->uploadPath + "/" + filename;
-			LOG_RED_INFO("check this out: " << path);
 			emptyUploadFile(path);
 			createUploadFile(path, request.body);
+			LOG_YELLOW_INFO("FILE CREATED");
 		}
-		LOG_YELLOW("FILE CREATED");
 
 		if (request.cgi_request) {
-			//request.status = DONE_READING;
-			LOG_GREEN("ABC RUN CGI");
+			LOG_GREEN_INFO("RUN CGI");
 			Cgi cgi(request);
-			//(void)cgi;
-			//Cgi cgi(request);
-			LOG_GREEN("END CGI");
+			LOG_GREEN_INFO("END CGI");
 			return ;
 		}
-		//------------------------------------------------------------------------------------------------------------------------------------------
-		//LOG_BLACK("FLEX");
 		request.response = writeStatus(201);
-		//request.status = DONE_WRITING;
 		return ;
 	}
-	//if (request.cgi_request && request.file_created) {
-	//		request.status = DONE_READING;
-	//		LOG_GREEN("RUN CGI");
-	//		//cgi->answerCgi();
-	//		if (request.status == DONE_WRITING_CGI) {
-	//			delete cgi;
-	//			LOG_GREEN("END CGI");
-	//		}
-	//		//Cgi cgi(request);
-	//		return ;
-	//	}
 	if (request.body.size() == 0) {
 		LOG_RED_INFO("empty body in post request");
-		//LOG_RED_INFO(request.header);
 		request.response = writeStatus(204);
-		//request.status = DONE_WRITING;
 		return ;
 	}
 	_boundary = extractBoundary();
-	if (_boundary == "error")
-	{
-		// es gibt kein boundary, also wuden keine files geschickt und ich muss irgendwas anderes tun
+	if (_boundary == "error") {
 		request.response = writeStatus(200);
-		//writeToSocket(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: extractBoundary");
-		//request.status = DONE_WRITING;
 		return ;
 	}
 
 	_numOfBoundaries = countBoundaries();
-	if (!_numOfBoundaries)
-	{
+	if (!_numOfBoundaries) {
 		request.response = request.response = writeStatus(200);
-		//writeToSocket(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 37\n\nerror: PostResponder: countBoundaries");
-		//request.status = DONE_WRITING;
 		return ;
 	}
 
-	if (_numOfBoundaries > 0)
-	{
+	if (_numOfBoundaries > 0) {
 		uploadFiles();
 		if (request.cgi_request) {
 			Cgi cgi(request);
 			return ;
 		}
 		request.response = writeStatus(201);
-		//request.status = DONE_WRITING;
 		return ;
 	}
-
-	//write(request.socket, "HTTP/1.1 200 OK\nContent-Type: text/plain\nContent-Length: 16\n\nfile was created", 80);
-	//char redirection[] = "HTTP/1.1 301 Moved Permanently\nLocation: http://127.0.0.1:1000/index.html\n\n"; //TODO include path from rerouting
-
-	//writeToSocket(request.socket, redirection);
-	//request.response = redirection;
-	//request.status = DONE_WRITING;
 }
-

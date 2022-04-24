@@ -1,6 +1,6 @@
 #include "Cgi.hpp"
 
-// LOGIC: <request.body php-cgi >response -> socket
+// LOGIC: <request.body php-cgi -> response -> socket
 void	Cgi::init() {
 	inFile = tmpfile();
 	tempFile = tmpfile();
@@ -9,8 +9,6 @@ void	Cgi::init() {
 	}
 	answer = "";
 	answer.clear();
-	body = "";
-	body.clear();
 	input = NULL;
 }
 
@@ -23,9 +21,7 @@ Cgi::Cgi(Request & request) : request(request) {
 	parseCgi();
 }
 
-Cgi::~Cgi() {
-	request.file_created = false;
-}
+Cgi::~Cgi() { request.file_created = false; }
 
 void	Cgi::setEnv() {
 	env["GATEWAY_INTERFACE"] = "CGI/1.1";
@@ -39,10 +35,6 @@ void	Cgi::setEnv() {
 	env["REDIRECT_STATUS"] = "200";
 	env["PATH_TRANSLATED"] = toAbsolutPath("cgi/" + request.filename);
 	env["CONTENT_TYPE"] = request.headerValues["Content-Type"];
-	
-	//env["CONTENT_TYPE"] = "test/file";
-	//env["CONTENT_LENGTH"] = std::to_string(request.getBody().length());
-	//env["QUERY_STRING"] = request.getBody();
 
 	std::map<std::string, std::string>::const_iterator it = request.headerValues.begin();
 	while (it != request.headerValues.end())
@@ -84,10 +76,7 @@ void	Cgi::runCgi() {
 	//}
 
 	int fin = fileno(inFile);
-
 	int fout = fileno(tempFile);
-	LOG_CYAN_INFO("cgi file opened");
-
 
 	pid_t pid = fork();
 
@@ -97,11 +86,9 @@ void	Cgi::runCgi() {
 	}
 	if (pid == 0) {
 		// !!!!!!!! Don't write log messages in here !!!!!!!
-
 		if (dup2(fin, STDIN_FILENO) == -1) {
 			LOG_RED_INFO("dup2 failed");
 		}
-
 		if (dup2(fout, STDOUT_FILENO) == -1) {
 			LOG_RED_INFO("dup2 failed");
 		}
@@ -115,7 +102,8 @@ void	Cgi::runCgi() {
 			LOG_RED_INFO("cgi failed");
 			exit(1);
 		}
-	} else {
+	}
+	else {
 		close(fin);
 		int exit_status;
 		wait(&exit_status);
@@ -129,30 +117,29 @@ void	Cgi::parseCgi() {
 	char *buffer;
 
 	// obtain file size:
-	fseek (tempFile , 0 , SEEK_END);
-	long lSize = ftell (tempFile);
-	rewind (tempFile);
+	fseek(tempFile , 0 , SEEK_END);
+	long	lSize = ftell(tempFile);
+	rewind(tempFile);
 
-	buffer = (char*) calloc (lSize, sizeof(char));
+	buffer = (char*)calloc(lSize, sizeof(char));
 	if (buffer == NULL)
-		LOG_RED_INFO("MALLOC FAILED");
+		LOG_RED_INFO("ERROR: malloc failed");
 
-	long result = fread (buffer, 1,lSize ,tempFile);
+	long	result = fread(buffer, 1,lSize ,tempFile);
 
   	if (result != lSize)
-	  	LOG_RED("ERROR");
+	  	LOG_RED_INFO("ERROR: fread failed");
 	answer = std::string(buffer);
 	free(buffer);
-	int fout = fileno(tempFile);
+	int		fout = fileno(tempFile);
 	close(fout);
 
 	size_t	bodyBegin = answer.find("\r\n\r\n") + 4;
 
-	body = answer.substr(bodyBegin, std::string::npos);
+	std::string	body = answer.substr(bodyBegin, std::string::npos);
 
 	request.response = "HTTP/1.1 200 OK\r\nContent-Length: ";
 	request.response += std::to_string(body.length());
 	request.response += "\r\n\r\n";
 	request.response += body;
-	LOG_GREEN("FINISHED CGI");
 }

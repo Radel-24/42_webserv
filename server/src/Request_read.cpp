@@ -1,8 +1,6 @@
 #include "Request.hpp"
 
 void	Request::init() {
-	//header = "";
-	//body = "";
 	header.clear();
 	body.clear();
 	bytes_read = 0;
@@ -15,7 +13,6 @@ void	Request::init() {
 	headerValues.clear();
 	path.clear();
 	uploadPath.clear();
-	chunk.clear();
 	filename.clear();
 	closeConnection = false;
 	clearResponse();
@@ -25,21 +22,19 @@ Request::Request() { init(); }
 
 Request::Request(int socket, Server * server) : socket(socket), server(server) { init(); }
 
-Request::~Request() {
-	close(socket);
-}
+Request::~Request() { close(socket); }
 
 void	Request::readRequest(std::map<int, Server *> & servers) {
 	if (status == READING_HEADER) {
 		readHeader();
 		if (status == HEADER_READ) {
+			LOG_GREEN_INFO("header read");
 			processHeader(servers);
 			if (status >= 100) {
 				return ;
 			}
 			if (getRequestKey() == GET || getRequestKey() == HEAD || getRequestKey() == DELETE) {
 				status = DONE_READING;
-				LOG_GREEN("read all in one");
 				return ;
 			}
 		}
@@ -67,14 +62,8 @@ int	Request::checkHeaderRead(void) {
 }
 
 void	Request::appendHeader(char * input, size_t size) {
-	//if (this->header.empty()) {
-	//	this->header = input;
-	//}
-	//else {
-		std::string tmp(input, size);
-		//this->header = this->header + input;
-		this->header += tmp;
-	//}
+	std::string tmp(input, size);
+	this->header += tmp;
 }
 
 void	Request::changePath() { // TODO make hacking save when relative path is given in request
@@ -83,9 +72,9 @@ void	Request::changePath() { // TODO make hacking save when relative path is giv
 			location = riter->second;
 			path = path.substr(riter->first.length(), std::string::npos);
 			path = riter->second->root + path;
-			struct stat path_stat; // TODO, I don't think this is allowed
-			stat(path.c_str(), &path_stat);
-			if (S_ISDIR(path_stat.st_mode)) {
+			//struct stat path_stat;
+			//stat(path.c_str(), &path_stat);
+			if (dirExists(path.c_str())) { // TODO maybe this causes problems ( propably not )
 				path += "/" + location->default_file;
 			}
 			break ;
@@ -143,10 +132,6 @@ void	Request::checkHeaderValues( void )
 		status = 400; // TODO don't know error code
 		LOG_RED("error: request is missing host");
 	}
-	//if (headerValues.find("Content-Length") == headerValues.end()) {
-	//	status = 411;
-	//	LOG_RED("error: request is missing content length");
-	//}
 }
 
 void	Request::parseHeader(std::string header)
@@ -158,7 +143,6 @@ void	Request::parseHeader(std::string header)
 
 	while ((pos = header.find(delimiter)) != std::string::npos) {
 		token = header.substr(0, pos - 1);
-		// LOG_PINK("|" << token << "|");
 		if (token.find(":") != std::string::npos)
 		{
 			thePair = splitToken(token);
@@ -166,14 +150,11 @@ void	Request::parseHeader(std::string header)
 		}
 		header.erase(0, pos + delimiter.length());
 	}
-
-	// TODO if check == 1 muessen error pages returned werden, je nachdm was falsch am header ist
 }
 
 
 /* if there is a server that has a fitting name to the request, the request hast to get forwarded to that server */
 /* else we use the default server, which is the first from the config file, that uses the same port */
-/* PORT HAS TO FIT AS WELL !!!!!!!!!!!!!!!!!!!!! */
 void Request::detectCorrectServer(std::map<int, Server *> & servers) {
 	std::map<int, Server *>::iterator	iter = servers.begin();
 	while (iter != servers.end()) {
@@ -184,7 +165,6 @@ void Request::detectCorrectServer(std::map<int, Server *> & servers) {
 		++iter;
 	}
 }
-/* end alex new */
 
 void	Request::hundredStatus() {
 	std::map<std::string, std::string>::iterator iter = headerValues.find("Expect");
@@ -204,7 +184,6 @@ void	Request::hundredStatus() {
 }
 
 void Request::checkRequest() {
-	// LOG_RED_INFO("request key " << requestKey);
 	if (requestKey == NIL) { status = 405; }
 	else if (requestKey == GET || requestKey == HEAD) {
 		if (!findInVector(location->methods, std::string("GET"))) {
@@ -243,15 +222,11 @@ void	Request::extractFilename() {
 void	Request::getBodyOutOfHeader() {
 	size_t	posHeaderEnd = header.find("\r\n\r\n");
 	if (posHeaderEnd != header.size() - 4) {
-		LOG_BLACK("takes body out of header; pos header end: " << posHeaderEnd);
 		body = header;
 
 		header.erase(posHeaderEnd, std::string::npos);
 
 		body.erase(0, posHeaderEnd + 4);
-		//LOG_RED_INFO("header: " << header << "\nbody: " << body);
-
-		LOG_BLACK("body size " << body.size() << "check size " << checkBodySize());
 
 		if ((int)body.size() == checkBodySize()) { // transfer encoding length
 			status = DONE_READING;
@@ -278,6 +253,8 @@ void	Request::processHeader(std::map<int, Server *> & servers) {
 int	Request::checkBodySize(void) {
 	std::string content_length;
 	size_t	type_start = header.find("Content-Length: ") + strlen("Content-Length: ");
+	if (type_start == std::string::npos)
+		LOG_RED_INFO("No Centent-Length in header");
 	size_t	type_end = type_start;
 
 	while(header[type_end] != '\n')
@@ -296,7 +273,7 @@ void	Request::setRequestKey(unsigned int KeyIn) {
 }
 
 void	Request::setType() {
-	if (header.find("GET") == 0 ) { setRequestKey(GET); }// if keyword not always at the beginning, us find("GET")
+	if (header.find("GET") == 0 ) { setRequestKey(GET); }
 	else if (header.find("POST") == 0) { setRequestKey(POST); }
 	else if (header.find("PUT") == 0) { setRequestKey(PUT); }
 	else if (header.find("DELETE") == 0) { setRequestKey(DELETE);}
@@ -305,12 +282,10 @@ void	Request::setType() {
 }
 
 void Request::readHeader() {
-	LOG_BLUE("HEADER START ----------------------");
-	int buffer_size = 200000;
+	int		buffer_size = 200000;
 	char	buffer[buffer_size]; // TODO dirty fix so that POST tester doesn't fail at / because of broken pipe
 	memset(buffer, 0, buffer_size * sizeof(char));
 	ssize_t bytes_read = recv(socket, buffer, buffer_size, 0);
-	LOG_BLACK("header read bytes: " << bytes_read << std::endl);
 	if (bytes_read == -1) {
 		status = CLOSE_CONNECTION;
 		LOG_RED_INFO("bytes read -1: error");
@@ -324,7 +299,6 @@ void Request::readHeader() {
 
 	if (checkHeaderRead()) {
 		status = HEADER_READ;
-		//LOG_WHITE_INFO(header);
 	}
 }
 
@@ -346,7 +320,7 @@ void	Request::readBodyChunked() {
 		bytes_read += tmp_bytes_read;
 	}
 	else if (tmp_bytes_read == 0) {
-		LOG_YELLOW_INFO("CLIENT CLOSED CONNECTION: " << socket << " bytes read " << tmp_bytes_read);
+		LOG_YELLOW_INFO("CLIENT CLOSED CONNECTION: " << socket);
 		status = CLOSE_CONNECTION;
 		delete read_body;
 		return;
@@ -362,7 +336,6 @@ void	Request::readBodyChunked() {
 
 void Request::readBodyLength() {
 	int max_size = checkBodySize();
-	LOG_BLACK("body size: " << max_size);
 	if (max_size < 1) {
 		status = DONE_READING;
 		return ;
@@ -376,15 +349,24 @@ void Request::readBodyLength() {
 		bytes_read += tmp_bytes_read;
 	}
 	else {
-		LOG_YELLOW_INFO("CLIENT CLOSED CONNECTION: " << socket << " bytes read " << tmp_bytes_read);
+		LOG_YELLOW_INFO("CLIENT CLOSED CONNECTION: " << socket);
 		status = CLOSE_CONNECTION;
 		delete read_body;
 		return;
 	}
 	if ((int)body.size() == checkBodySize()) {
 		status = DONE_READING;
-		//std::cout << getBody() << std::endl;
-		LOG_BLACK("body read true" << body.size());
 	}
 	delete read_body;
+}
+
+std::string	Request::getHostName( void ) const {
+	std::map<std::string, std::string>::const_iterator	iter = headerValues.begin();
+	while (iter != headerValues.end())
+	{
+		if (iter->first == "Host")
+			return iter->second;
+		iter++;
+	}
+	return "";
 }

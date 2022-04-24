@@ -14,5 +14,5 @@
 #define STR_END std::string::npos
 
 
-int	read_config(std::string file, std::map<int, Server *> & servers);
+int		read_config(std::string file, std::map<int, Server *> & servers);
 void	check_config(std::map<int, Server *> & servers);

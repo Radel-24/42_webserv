@@ -21,19 +21,16 @@ class PostResponder {
 		int				_numOfBoundaries;
 
 		Request &		request;
-		//Cgi * cgi;
 
 		std::string	extractBoundary( void );
 		int			countBoundaries( void );
 		void		uploadFiles( void );
-		//void		writeResponse(std::string response);
 		int			checkBodySizeChuncked();
 		int			checkBodyStart();
 		int			extractStartChunk();
 		int			extractEndChunk();
+		void		run();
 
 	public:
-		// TODO pass server and request by reference?
 		PostResponder(Request & request );
-		void	run();
 };
