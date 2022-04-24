@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Webserv</title>
+		<style>
+			body {
+				margin: 0;
+				padding: 0;
+
+				text-align: center;
+
+				/* cut img */
+				background-image: url(./img/compbg-min.jpg);
+				background-size: cover;
+				background-attachment: fixed;
+				background-position: center center;
+				background-repeat: no-repeat;
+
+				width: 100%;
+				height: 100%;
+
+				font-family: 'Segoe UI', Tahoma, sans-serif;
+			}
+
+			.container {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				position: absolute;
+
+				top: 50%;
+				left: 50%;
+				transform: translate(-50%, -50%);
+
+				background-color: black;
+				box-shadow: 0px 5px 40px 0px #3A3B3C;
+				border: 1px solid #FFFFFF;
+
+				color: white;
+
+				min-width: 500px;
+				padding: 24px;
+			}
+
+			.information {
+				width: 100%;
+			}
+
+			.line {
+				color: #FFFFFF;
+				width: 80%;
+				height: 12px;
+				border-bottom: 1px solid white;
+				margin-bottom: 30px;
+			}
+
+			.choose-file-field {
+				margin-bottom: 24px;
+				padding-left: 32.5%;
+			}
+
+			/* Upload Button start */
+			button {
+				display: inline-block;
+				background-color: #000000;
+				color: #FFFFFF;
+				border: 1px solid #FFFFFF;
+				text-align: center;
+				text-decoration: none;
+				font-family: inherit;
+				padding: 14px 25px;
+				margin-top: 5px;
+				margin-bottom: 5px;
+			}
+
+			button:hover, button:active {
+				cursor: pointer;
+				border-color: #00e600;
+				color: #00e600;
+			}
+			/* Upload Button end */
+
+			input {
+				font-family: inherit;
+			}
+
+			/* navbar start */
+			.navbar {
+				color: #FFFFFF;
+				border-bottom: 1px solid white;
+				position: relative;
+			}
+
+			.navbar ul {
+				list-style-type: none;
+				margin: 0;
+				padding: 0;
+				overflow: hidden;
+				background-color: #000000;
+			}
+
+			.navbar li {
+				display: inline;
+			}
+
+			.navbar a {
+				display: block;
+				background-color: #000000;
+				color: #FFFFFF;
+				text-align: center;
+				font-size: 20px;
+				text-decoration: none;
+				padding: 20px 32px;
+			}
+
+			.navbar a:hover {
+				color: #00e600;
+			}
+			/* navbar end */
+		</style>
+	</head>
+	<body>
+		<div class="navbar">
+			<ul>
+				<li><a href="./index.html" style="float: left;">webserv</a></li>
+				<li><a href="" style="float: right;">Team</a></li>
+				<li><a href="./files.html" style="float: right;">Files</a></li>
+			</ul>
+		</div>
+		<div class="container">
+			<img src="./img/42logo.png" alt="">
+			<div class="line"></div>
+			<div class="upload-section">
+				<form method="post" enctype="multipart/form-data">
+					<div class="choose-file-field">
+						<label>
+							<input id="chooseFile" name="datei" type="file">
+						</label>
+					</div>
+					<div class="upload-button">
+						<button id="submit" type="submit">Upload</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</body>
+</html>

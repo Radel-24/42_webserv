@@ -1,0 +1,31 @@
+GET:
+
+http://localhost:7000/test.php?name=felix
+
+calls test.php file with the variable name and the value felix!
+
+http://localhost:7000/test.php?name=felix&money=0
+
+calls test.php file with the variable name and the value felix and second variable+value
+
+<?php echo $GET['name'];?>
+
+POST:
+
+http://localhost:7000/test.php
+
+Body: name=felix&money=0
+
+
+<?php echo $POST['name'];?>
+
+
+
+TO-DO
+
+1. create a file
+2. call php file with query-string(parameters)
+3. pipe output to my file
+4. send file content back to hmtl and display it
+
+https://www.tcl.tk/man/aolserver3.0/cgi-ch1.html
