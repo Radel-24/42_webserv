@@ -175,14 +175,9 @@ void accepter(std::map<int, Server *> & servers)
 	}
 }
 
-//void	sig_handler(int signum) {
-//	(void)signum;
-//	LOG_GREEN_INFO("Hah, you can't harm our server!");
-//}
-
 int	main(int argc, char ** argv)
 {
-	//signal(SIGINT, SIG_IGN); // TODO doesn't work
+	signal(SIGPIPE, SIG_IGN);
 
 	// LOG_RED_INFO(getPWD());
 	std::string configFile;

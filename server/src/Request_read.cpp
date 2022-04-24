@@ -12,7 +12,7 @@ void	Request::init() {
 	requestKey = NIL;
 	cgi_request = false;
 	file_created = false;
-	postResponder = NULL;
+	pr = NULL;
 	headerValues.clear();
 	path.clear();
 	uploadPath.clear();

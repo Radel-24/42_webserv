@@ -47,7 +47,7 @@ class	Request {
 		std::string							body;
 		std::string							header;
 		ssize_t								bytes_written;
-		PostResponder *	postResponder;
+		PostResponder *	pr;
 		Location *							location;
 		std::string							path;
 
@@ -107,6 +107,8 @@ class	Request {
 		void	readBodyChunked();
 
 		void	hundredStatus();
+
+		void	postResponder();
 
 		int	checkBodySizeChunk();
 		int	chunkSize();

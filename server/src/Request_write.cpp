@@ -27,6 +27,16 @@ void	Request::refreshFilesHTML() {
 	}
 }
 
+void	Request::postResponder() {
+		if (!pr)
+			pr = new PostResponder(*this);
+		pr->run();
+		if (status == DONE_WRITING_CGI) {
+			delete (pr);
+			pr = NULL;
+		}
+}
+
 void	Request::writeRequest() {
 	LOG_RED_INFO("request key " << requestKey);
 	if (status >= 100 && status < 600) {
@@ -35,13 +45,7 @@ void	Request::writeRequest() {
 		status =  DONE_WRITING;
 	}
 	else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
-		if (!postResponder)
-			postResponder = new PostResponder(*this);
-		postResponder->run();
-		if (status == DONE_WRITING_CGI) {
-			delete (postResponder);
-			postResponder = NULL;
-		}
+		postResponder();
 		refreshFilesHTML(); // only for website
 		return ;
 	}
