@@ -17,6 +17,7 @@ void	Server::default_init() {
 	port = 80;
 	backlog = 150;
 	client_max_body_size = -1;
+	cookies.clear();
 }
 
 //check if socket or connection has been properly established

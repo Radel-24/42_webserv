@@ -40,6 +40,8 @@ class	Request {
 		int									file_created;
 		int									status;
 		int									socket;
+		std::string							cookie;
+		bool								newClient;
 		Server *							server;
 		bool								cgi_request;
 		std::map<std::string, std::string>	headerValues;
@@ -82,6 +84,8 @@ class	Request {
 		std::string							getBody() const;
 		int									checkHeaderRead(void);
 		int									checkBodySize(void);
+
+		void								createCookie();
 
 		void								clearResponse();
 

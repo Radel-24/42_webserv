@@ -58,6 +58,7 @@ char **		vectorToArray(std::vector<std::string> inVec);
 std::string	toAbsolutPath(std::string path);
 
 std::string	writeStatus(int status);
+std::string	writeStatusCookie(int status, std::string cookie);
 
 int			hex_to_decimal(std::string hex);
 
@@ -68,3 +69,4 @@ int			dirExists(const char *path);
 std::string	convertDoubleSlashToSingle( std::string path );
 std::string	fileToString( std::string filePath );
 std::string	getPWD( void );
+std::string	IntToHex(uint64_t in);

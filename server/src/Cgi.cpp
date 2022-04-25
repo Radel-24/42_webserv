@@ -113,6 +113,7 @@ void	Cgi::runCgi() {
 	}
 }
 
+//TO-DO remove file creation to get more performance
 void	Cgi::parseCgi() {
 	char *buffer;
 

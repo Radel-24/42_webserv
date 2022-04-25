@@ -16,6 +16,7 @@ void	Request::init() {
 	filename.clear();
 	closeConnection = false;
 	clearResponse();
+	newClient = false;
 }
 
 Request::Request() { init(); }
@@ -46,6 +47,16 @@ void	Request::readRequest(std::map<int, Server *> & servers) {
 		else {
 			readBodyLength();
 		}
+	}
+}
+
+void	Request::createCookie() {
+	if (cookie.empty() || server->cookies.find(cookie) == server->cookies.end()) {
+		uint64_t id = reinterpret_cast<uint64_t>(this);
+		cookie = IntToHex(id);
+		server->cookies.insert(cookie);
+		newClient = true;
+		LOG_YELLOW("NEWCLIENT RECOGNISED " << cookie);
 	}
 }
 
@@ -133,6 +144,11 @@ void	Request::checkHeaderValues( void )
 	if (headerValues.find("Host") == headerValues.end()) {
 		status = 400; // TODO don't know error code
 		LOG_RED("error: request is missing host");
+	}
+	std::map<std::string, std::string>::iterator iter = headerValues.find("Cookie");
+	if (iter != headerValues.end()) {
+		cookie = iter->second.substr(iter->second.find_last_of("=") + 1, std::string::npos);
+		LOG_RED_INFO("cookie already set: " << cookie);
 	}
 }
 
@@ -243,6 +259,7 @@ void	Request::processHeader(std::map<int, Server *> & servers) {
 	getBodyOutOfHeader();
 	parseHeader(header);
 	checkHeaderValues();
+	createCookie();
 	detectCorrectServer(servers);
 	setPath();
 	changePath();
