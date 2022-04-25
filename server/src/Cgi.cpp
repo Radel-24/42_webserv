@@ -90,6 +90,12 @@ void	Cgi::runCgi() {
 		close(fin);
 		int exit_status;
 		wait(&exit_status);
+		for (int i = 0; localEnv[i] != NULL; ++i) {
+			free(localEnv[i]);
+		}
+		for (int i = 0; input[i] != NULL; ++i) {
+			free(input[i]);
+		}
 		free(localEnv);
 		free(input);
 	}

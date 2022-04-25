@@ -82,7 +82,7 @@ char ** vectorToArray(std::vector<std::string> inVec) {
 	size_t index = 0;
 
 	for (std::vector<std::string>::iterator iter = inVec.begin(); iter != inVec.end(); ++iter) {
-		char * c_str = (char *)calloc(sizeof(char *), iter->length());
+		char * c_str = (char *)calloc(sizeof(char), iter->length());
 		size_t i = 0;
 		char * helpStr = const_cast<char *>(iter->c_str());
 		while (helpStr[i]) {
@@ -102,7 +102,7 @@ char ** mapToArray(std::map<std::string, std::string> map) {
 
 	for (std::map<std::string, std::string>::iterator iter = map.begin(); iter != map.end(); ++iter) {
 		std::string str = iter->first + "=" + iter->second;
-		char * c_str = (char *)calloc(sizeof(char *), str.length());
+		char * c_str = (char *)calloc(sizeof(char), str.length());
 		char * helpStr = const_cast<char *>(str.c_str());
 		size_t i = 0;
 		while (helpStr[i]) {
