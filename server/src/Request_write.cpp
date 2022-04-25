@@ -191,7 +191,11 @@ void	Request::responder() {
 	else {
 		file_content = readFile(path.substr(1, std::string::npos));
 		if (status == 404) {
+<<<<<<< HEAD
 			response = writeStatus(404, *this);
+=======
+			response = writeStatus(404);
+>>>>>>> d73306f9fd8eb2c1ecf65230ea773e2d6965133d
 			return ;
 		}
 	}

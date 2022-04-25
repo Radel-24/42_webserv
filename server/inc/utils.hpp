@@ -12,10 +12,13 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+<<<<<<< HEAD
 #include <fcntl.h>
 #include "Request.hpp"
 
 class Request;
+=======
+>>>>>>> d73306f9fd8eb2c1ecf65230ea773e2d6965133d
 
 #define LOG(x) (std::cout << x << std::endl)
 
