@@ -3,8 +3,15 @@
 void	Request::writeRequest() {
 	if (responseCreated == false) {
 		if (status >= 100 && status < 600) {
-			response = writeStatus(status);
-		}
+			if (newClient == true)
+			{
+				LOG_RED_INFO("writeStatusCookie");
+				response = writeStatusCookie(status, cookie);
+				newClient = false;
+			}
+			else
+				response = writeStatus(status);
+			}
 		else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
 			LOG_BLUE_INFO("POST Responder");
 			PostResponder pr(*this);
@@ -60,7 +67,7 @@ void	Request::refreshFilesHTML() {
 
 void	Request::writeResponse() {
 	ssize_t tmp_bytes_written = writeToSocket(socket, response.substr(bytes_written, std::string::npos));
-	if (tmp_bytes_written == -1) {
+	if (tmp_bytes_written == -1 || tmp_bytes_written == 0) { // TODO only check for -1 or even 0
 		status = CLOSE_CONNECTION;
 		LOG_BLACK_INFO("ERROR: write failed");
 		return ;
@@ -109,7 +116,12 @@ std::string	Request::formatString( std::string file_content ) {
 	std::string	length;
 	std::string	full_header;
 	std::string	ret;
-	header = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: ";
+	if (newClient == true) {
+		header = "HTTP/1.1 200 OK\nSet-Cookie: I_Like_Cookies=" + cookie + "\nContent-Type: text/html\nContent-Length: ";
+	}
+	else {
+		header = "HTTP/1.1 200 OK\nContent-Type: text/html\nContent-Length: ";
+	}
 	length = std::to_string(file_content.length()) + "\r\n\r\n";
 	full_header = header.append(length);
 	if (requestKey == HEAD)
@@ -172,7 +184,6 @@ void	Request::responder() {
 	std::string	temp = "." + path;
 	if (dirExists(temp.c_str())) {
 		path += "/" + location->default_file;
-		LOG_CYAN_INFO("default dir request: " << path);
 	}
 	if (path == (server->root + "/")) {
 		file_content = readFile( "." + server->root + "/index.html");
@@ -185,6 +196,8 @@ void	Request::responder() {
 		}
 	}
 	response = formatString(file_content);
+	if (newClient == true) 
+		newClient = false;
 }
 
 std::string	Request::getFilename() {

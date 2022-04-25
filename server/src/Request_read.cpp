@@ -16,6 +16,7 @@ void	Request::init() {
 	filename.clear();
 	closeConnection = false;
 	clearResponse();
+	newClient = false;
 }
 
 Request::Request() { init(); }
@@ -49,6 +50,16 @@ void	Request::readRequest(std::map<int, Server *> & servers) {
 	}
 }
 
+void	Request::createCookie() {
+	if (cookie.empty() || server->cookies.find(cookie) == server->cookies.end()) {
+		uint64_t id = reinterpret_cast<uint64_t>(this);
+		cookie = IntToHex(id);
+		server->cookies.insert(cookie);
+		newClient = true;
+		LOG_YELLOW("NEWCLIENT RECOGNISED " << cookie);
+	}
+}
+
 int	Request::getRequestKey() const { return requestKey; }
 
 std::string	Request::getHeader() const { return header; }
@@ -70,8 +81,10 @@ void	Request::changePath() { // TODO make hacking save when relative path is giv
 	for (std::map<std::string, Location *>::reverse_iterator riter = server->locations.rbegin(); riter != server->locations.rend(); ++riter) {
 		if (path.find(riter->first) == 0) {
 			location = riter->second;
-			path = path.substr(riter->first.length(), std::string::npos);
-			path = riter->second->root + path;
+			if (location->root.empty() == false) {
+				path = path.substr(riter->first.length(), std::string::npos);
+				path = riter->second->root + path;
+			}
 			if (dirExists(path.c_str())) {
 				path += "/" + location->default_file;
 			}
@@ -124,6 +137,11 @@ void	Request::checkHeaderValues( void ) {
 	if (headerValues.find("Host") == headerValues.end()) {
 		status = 400;
 		LOG_RED_INFO("ERROR: request is missing host");
+	}
+	std::map<std::string, std::string>::iterator iter = headerValues.find("Cookie");
+	if (iter != headerValues.end()) {
+		cookie = iter->second.substr(iter->second.find_last_of("=") + 1, std::string::npos);
+		LOG_RED_INFO("cookie already set: " << cookie);
 	}
 }
 
@@ -232,6 +250,7 @@ void	Request::processHeader(std::map<int, Server *> & servers) {
 	getBodyOutOfHeader();
 	parseHeader(header);
 	checkHeaderValues();
+	createCookie();
 	detectCorrectServer(servers);
 	setPath();
 	changePath();

@@ -46,6 +46,8 @@ void	Cgi::setEnv() {
 void	Cgi::setInput() {
 	std::vector<std::string> inVec;
 
+	inVec.push_back(toAbsolutPath(request.server->cgi_path));
+	inVec.push_back("-f");
 	inVec.push_back(toAbsolutPath("cgi/" + request.filename));
 	std::map<std::string, std::string> headerInfos;
 	while (request.headerKeyValuePairs.find("&") != std::string::npos) {
@@ -101,6 +103,7 @@ void	Cgi::runCgi() {
 	}
 }
 
+//TO-DO remove file creation to get more performance
 void	Cgi::parseCgi() {
 	// if error happened while cgi ran
 	if (request.status >= 500) {
