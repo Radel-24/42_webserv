@@ -57,7 +57,7 @@ void	Request::refreshFilesHTML() {
 
 void	Request::writeResponse() {
 	ssize_t tmp_bytes_written = writeToSocket(socket, response.substr(bytes_written, std::string::npos));
-	if (tmp_bytes_written == -1) { // TODO: what do do here?
+	if (tmp_bytes_written == -1 || tmp_bytes_written == 0) { // TODO only check for -1 or even 0
 		status = CLOSE_CONNECTION;
 		LOG_BLACK_INFO("ERROR: write failed");
 		return ;

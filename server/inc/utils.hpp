@@ -11,6 +11,7 @@
 #include <string>
 #include <unistd.h>
 #include <sys/stat.h>
+#include <sys/socket.h>
 
 #define LOG(x) (std::cout << x << std::endl)
 

@@ -74,7 +74,8 @@ std::string ToHex(const std::string & s, bool upper_case /* = true */)
 }
 
 ssize_t	writeToSocket(int socket, std::string text) {
-	return (write(socket, text.c_str(), text.length()));
+	//return (write(socket, text.c_str(), text.length()));
+	return (send(socket, text.c_str(), text.length(), 0));
 }
 
 char ** vectorToArray(std::vector<std::string> inVec) {
