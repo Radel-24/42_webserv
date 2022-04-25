@@ -168,6 +168,11 @@ void PostResponder::run() {
 		return ;
 	}
 	_boundary = extractBoundary();
+	if (request.location && request.location->client_max_body_size != -1 && request.body.length() > (unsigned long)request.location->client_max_body_size) {
+		LOG_RED_INFO("error: BODY TO BIG!");
+		request.response = writeStatus(413, request);
+		return ;
+	}
 	if (_boundary == "error") {
 		request.response = writeStatus(200, request);
 		return ;
