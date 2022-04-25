@@ -26,8 +26,7 @@ void	Request::writeRequest() {
 		}
 		else if (status == DONE_READING && getRequestKey() == GET && cgi_request == true) {
 			LOG_BLUE_INFO("CGI GET Responder");
-			Cgi * cgi = new Cgi(*this);
-			(void)cgi;
+			Cgi cgi(*this);
 		}
 		responseCreated = true;
 	}
