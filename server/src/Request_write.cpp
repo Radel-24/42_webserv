@@ -81,6 +81,7 @@ std::string	Request::readFile( std::string filename ) {
 	std::string		values;
 	char			c;
 
+	LOG_RED_INFO("filename " << filename);
 	int fd = open(filename.c_str(), std::ios::in);
 	if (fd == -1) {
 		status = 404;

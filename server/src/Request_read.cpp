@@ -70,8 +70,10 @@ void	Request::changePath() { // TODO make hacking save when relative path is giv
 	for (std::map<std::string, Location *>::reverse_iterator riter = server->locations.rbegin(); riter != server->locations.rend(); ++riter) {
 		if (path.find(riter->first) == 0) {
 			location = riter->second;
-			path = path.substr(riter->first.length(), std::string::npos);
-			path = riter->second->root + path;
+			if (location->root.empty() == false) {
+				path = path.substr(riter->first.length(), std::string::npos);
+				path = riter->second->root + path;
+			}
 			//struct stat path_stat;
 			//stat(path.c_str(), &path_stat);
 			if (dirExists(path.c_str())) { // TODO maybe this causes problems ( propably not )
