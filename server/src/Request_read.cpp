@@ -141,7 +141,7 @@ void	Request::checkHeaderValues( void ) {
 	std::map<std::string, std::string>::iterator iter = headerValues.find("Cookie");
 	if (iter != headerValues.end()) {
 		cookie = iter->second.substr(iter->second.find_last_of("=") + 1, std::string::npos);
-		LOG_RED_INFO("cookie already set: " << cookie);
+		LOG_RED_INFO("cookie from browser: " << cookie);
 	}
 }
 
@@ -327,14 +327,11 @@ void	Request::readBodyChunked() {
 		appendBody(read_body, tmp_bytes_read);
 		bytes_read += tmp_bytes_read;
 	}
-	else if (tmp_bytes_read == 0) {
+	else {
 		LOG_YELLOW_INFO("CLIENT CLOSED CONNECTION: " << socket);
 		status = CLOSE_CONNECTION;
 		delete read_body;
 		return;
-	}
-	else {
-		LOG_RED_INFO("ERROR: recv"); // TODO this is weird shit
 	}
 	if (body.find("\r\n\r\n") != std::string::npos) {
 		status = DONE_READING;

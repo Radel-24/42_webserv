@@ -139,7 +139,7 @@ void PostResponder::run() {
 
 		if (request.location && request.location->client_max_body_size != -1 && request.body.length() > (unsigned long)request.location->client_max_body_size) {
 			LOG_RED_INFO("error: BODY TO BIG!");
-			request.response = writeStatus(413);
+			request.response = writeStatus(413, request);
 			return ;
 		}
 
@@ -159,23 +159,23 @@ void PostResponder::run() {
 			LOG_GREEN_INFO("END CGI");
 			return ;
 		}
-		request.response = writeStatus(201);
+		request.response = writeStatus(201, request);
 		return ;
 	}
 	if (request.body.size() == 0) {
 		LOG_RED_INFO("empty body in post request");
-		request.response = writeStatus(204);
+		request.response = writeStatus(204, request);
 		return ;
 	}
 	_boundary = extractBoundary();
 	if (_boundary == "error") {
-		request.response = writeStatus(200);
+		request.response = writeStatus(200, request);
 		return ;
 	}
 
 	_numOfBoundaries = countBoundaries();
 	if (!_numOfBoundaries) {
-		request.response = request.response = writeStatus(200);
+		request.response = request.response = writeStatus(200, request);
 		return ;
 	}
 
@@ -185,7 +185,7 @@ void PostResponder::run() {
 			Cgi cgi(request);
 			return ;
 		}
-		request.response = writeStatus(201);
+		request.response = writeStatus(201, request);
 		return ;
 	}
 }

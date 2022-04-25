@@ -12,6 +12,10 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/socket.h>
+#include <fcntl.h>
+#include "Request.hpp"
+
+class Request;
 
 #define LOG(x) (std::cout << x << std::endl)
 
@@ -57,8 +61,8 @@ char **		vectorToArray(std::vector<std::string> inVec);
 
 std::string	toAbsolutPath(std::string path);
 
-std::string	writeStatus(int status);
-std::string	writeStatusCookie(int status, std::string cookie);
+std::string	writeStatus(int status, Request & request);
+std::string	writeStatusCookie(int status, std::string cookie, Request & request);
 
 int			hex_to_decimal(std::string hex);
 
@@ -70,3 +74,5 @@ std::string	convertDoubleSlashToSingle( std::string path );
 std::string	fileToString( std::string filePath );
 std::string	getPWD( void );
 std::string	IntToHex(uint64_t in);
+
+bool	isFile(std::string path);

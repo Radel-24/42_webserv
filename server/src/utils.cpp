@@ -214,3 +214,14 @@ std::string IntToHex(uint64_t in)
 
 	return ret.str();
 }
+
+bool	isFile(std::string path) {
+	int fd = open(path.c_str(), O_RDONLY);
+	if (fd == -1) {
+		return false;
+	}
+	else {
+		close(fd);
+		return true;
+	}
+}

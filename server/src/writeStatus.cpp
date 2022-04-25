@@ -134,22 +134,42 @@ static std::string const getReason(const int &code) {
 	}
 }
 
-std::string	writeStatus(int status) {
-	LOG_RED_INFO("write status request: " << status);
+std::string	statusContent(int status, Request & request) {
+	std::string	content;
+	std::string filename = toAbsolutPath(request.server->root + "/error_pages/" + std::to_string(request.status) + ".html");
+	if (isFile(filename)) {
+		std::ifstream newFile;
+		char c;
+		newFile.open(filename, std::ios::in);
+		while (!newFile.eof()) {
+			newFile >> std::noskipws >> c;
+			content.push_back(c);
+		}
+		newFile.close();
+	}
+	else {
+		content = getReason(status);
+	}
+	return content;
+}
+
+std::string	writeStatus(int status, Request & request) {
+	LOG_RED_INFO("write status request: " << request.status);
+	std::string content = statusContent(status, request);
 	std::string protocol = "HTTP/1.1 ";
 	std::string response = getReason(status);
-	std::string contLength = "\r\nContent-Length: " + std::to_string(getReason(status).length()) + "\r\n\r\n";
-	std::string content = getReason(status);
+	std::string contLength = "\r\nContent-Length: " + std::to_string(content.length()) + "\r\n\r\n";
 	std::string sendStr = protocol + response + contLength + content;
 	return sendStr;
 }
 
-std::string	writeStatusCookie(int status, std::string cookie) {
+std::string	writeStatusCookie(int status, std::string cookie, Request & request) {
 	LOG_RED_INFO("write status request: " << status);
+	std::string content = statusContent(status, request);
 	std::string protocol = "HTTP/1.1 ";
 	std::string response = getReason(status);
 	std::string addCookie = "Set-Cookie: I_Like_Cookies=" + cookie;
-	std::string contLength = "\r\nContent-Length: 0\r\n\r\n";
-	std::string sendStr = protocol + response + addCookie + contLength;
+	std::string contLength = "\r\nContent-Length: " + std::to_string(content.length()) + "\r\n\r\n";
+	std::string sendStr = protocol + response + addCookie + contLength + content;
 	return sendStr;
 }

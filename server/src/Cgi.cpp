@@ -99,7 +99,7 @@ void	Cgi::runCgi() {
 void	Cgi::parseCgi() {
 	// if error happened while cgi ran
 	if (request.status >= 500) {
-		request.response = writeStatus(request.status);
+		request.response = writeStatus(request.status, request);
 		return ;
 	}
 

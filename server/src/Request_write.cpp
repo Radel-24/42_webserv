@@ -6,11 +6,11 @@ void	Request::writeRequest() {
 			if (newClient == true)
 			{
 				LOG_RED_INFO("writeStatusCookie");
-				response = writeStatusCookie(status, cookie);
+				response = writeStatusCookie(status, cookie, *this);
 				newClient = false;
 			}
 			else
-				response = writeStatus(status);
+				response = writeStatus(status, *this);
 			}
 		else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
 			LOG_BLUE_INFO("POST Responder");
@@ -191,7 +191,7 @@ void	Request::responder() {
 	else {
 		file_content = readFile(path.substr(1, std::string::npos));
 		if (status == 404) {
-			response = writeStatus(404);
+			response = writeStatus(404, *this);
 			return ;
 		}
 	}
