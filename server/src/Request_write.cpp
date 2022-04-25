@@ -8,7 +8,6 @@ void	Request::writeRequest() {
 		else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
 			LOG_BLUE_INFO("POST Responder");
 			PostResponder pr(*this);
-			refreshFilesHTML(); // only for website
 		}
 		else if (status == DONE_READING && cgi_request == false && (getRequestKey() == GET || getRequestKey() == HEAD)) {
 			LOG_BLUE_INFO("GET Responder");
@@ -25,6 +24,8 @@ void	Request::writeRequest() {
 		}
 		responseCreated = true;
 	}
+	if (server->websiteConfig == true)
+		refreshFilesHTML(); // only for website
 	writeResponse();
 }
 

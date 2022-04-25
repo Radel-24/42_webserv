@@ -51,6 +51,8 @@ class Server {
 		struct sockaddr_in					g_address;
 		int									backlog;
 
+		bool								websiteConfig;
+
 	private:
 		int									connection;
 		int									listening;

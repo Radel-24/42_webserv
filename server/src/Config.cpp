@@ -105,7 +105,6 @@ int	server_parser(std::ifstream &fin, Server & server) {
 	This function created the main structure of the server. (directorys)
 	It then copies all the data into the root directory(default server)
 */
-// TODO why is root: /www/defualt server?
 void	createServerDirectory(Server *server) {
 
 	// std::string	serverWarehouse = "/www/";
@@ -152,7 +151,7 @@ extract the server data and write them into the newly created class.
 Then it will be configured (starting server/binding ports etc.) in the configure function.
 If there is a false line OR an empty file we exit with an error.
 */
-int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
+int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers, std::string file) {
 	std::string line;
 
 	while (getline(fin, line)) {
@@ -162,6 +161,10 @@ int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 			Server *server = new Server();
 			server_parser(fin, *server);
 			server->configure(servers);
+			if (file == "setup_website.conf")
+				server->websiteConfig = true;
+			else
+				server->websiteConfig = false;
 			servers.insert(std::pair<int, Server *>(server->sock, server));
 		}
 		else if (line.empty()) { continue; }
@@ -185,7 +188,7 @@ int	read_config(std::string file, std::map<int, Server *> & servers) {
 
 
 	if (fin.is_open()) {
-		if (main_parser(fin, servers) != SUCCESS) {
+		if (main_parser(fin, servers, file) != SUCCESS) {
 			std::cout << "Reading the config file failed\n";
 			exit(EXIT_SUCCESS);
 			// TODO other exit strategy?
