@@ -14,9 +14,6 @@
 #include <map>
 #include <vector>
 
-
-
-
 struct Location {
 	public:
 		int							port;

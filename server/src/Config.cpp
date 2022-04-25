@@ -27,7 +27,6 @@ void	remove_whitespace(std::string &line) {
 		line.erase(pos + 1);
 }
 
-
 /*
 This function reads all the data which is inside of the parantheses after the location variable.
 It checks for different parameter and puts them inside our location class.
@@ -164,12 +163,6 @@ int	main_parser(std::ifstream &fin, std::map<int, Server *> & servers) {
 			server_parser(fin, *server);
 			server->configure(servers);
 			servers.insert(std::pair<int, Server *>(server->sock, server));
-			//for (std::map<std::string, Location*>::iterator iter = server->locations.begin(); iter != server->locations.end(); ++iter) {
-			//	if (iter->second->directory_listing == true) {
-			//		server->updateFilesHTML();
-			//	}
-			//}
-			//createServerDirectory(server); // alex new
 		}
 		else if (line.empty()) { continue; }
 		else {
