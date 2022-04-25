@@ -17,6 +17,7 @@ void	Server::default_init() {
 	port = 80;
 	backlog = 150;
 	client_max_body_size = -1;
+	cookies.clear();
 }
 
 //check if socket or connection has been properly established
@@ -65,14 +66,14 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 
 	fcntl(sock, F_SETFL, O_NONBLOCK);
 
-	/* set reusable*/
+	/* set reusable */
 	tmp = setsockopt(sock, SOL_SOCKET,  SO_REUSEADDR, (char *)&on, sizeof(on));
 	if (tmp < 0) {
 		perror("setsockopt() failed");
 		close(sock);
 		exit(-1);
 	}
-	/* set reusable*/
+	/* set reusable */
 
 	// you can bind to a port only once, so we don't bind if there is already a server on the port
 	/* BINDING SOCKET */
@@ -89,13 +90,12 @@ void	Server::configure( std::map<int, Server *> & servers ) {
 	}
 	/* BINDING SOCKET */
 
-
 	/* LISTENING SOCKET */
 	listening = listen(sock, backlog);
 	test_connection(listening);
 	/* LISTENING SOCKET */
 
-	//check for main client_max_body_size and adapt all location client_max_body_size with this value
+	// check for main client_max_body_size and adapt all location client_max_body_size with this value
 	if (client_max_body_size != -1) {
 		for (std::map<std::string, Location*>::iterator location = locations.begin(); location != locations.end(); ++location) {
 			if (location->second->client_max_body_size == -1 || client_max_body_size < location->second->client_max_body_size)
@@ -117,10 +117,12 @@ std::string	Server::buildTreeCommandLine( std::string webserverRoot, std::string
 	return execPath;
 }
 
+// change directory into the requested location and create a file tree of this location
+// the file tree while be created in a tree.html file in server root
+// the file then gets read into a string and returned
 std::string	Server::createFileTree( Location * location ) {
 	std::string cwd = getPWD();
 	std::string	fileContent = "";
-
 	std::string	locationPath = cwd + root + "/" + location->path;
 
 	if (!chdir(locationPath.c_str())) {

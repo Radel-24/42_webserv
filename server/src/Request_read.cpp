@@ -16,6 +16,7 @@ void	Request::init() {
 	filename.clear();
 	closeConnection = false;
 	clearResponse();
+	newClient = false;
 }
 
 Request::Request() { init(); }
@@ -49,6 +50,16 @@ void	Request::readRequest(std::map<int, Server *> & servers) {
 	}
 }
 
+void	Request::createCookie() {
+	if (cookie.empty() || server->cookies.find(cookie) == server->cookies.end()) {
+		uint64_t id = reinterpret_cast<uint64_t>(this);
+		cookie = IntToHex(id);
+		server->cookies.insert(cookie);
+		newClient = true;
+		LOG_YELLOW("NEWCLIENT RECOGNISED " << cookie);
+	}
+}
+
 int	Request::getRequestKey() const { return requestKey; }
 
 std::string	Request::getHeader() const { return header; }
@@ -70,11 +81,11 @@ void	Request::changePath() { // TODO make hacking save when relative path is giv
 	for (std::map<std::string, Location *>::reverse_iterator riter = server->locations.rbegin(); riter != server->locations.rend(); ++riter) {
 		if (path.find(riter->first) == 0) {
 			location = riter->second;
-			path = path.substr(riter->first.length(), std::string::npos);
-			path = riter->second->root + path;
-			//struct stat path_stat;
-			//stat(path.c_str(), &path_stat);
-			if (dirExists(path.c_str())) { // TODO maybe this causes problems ( propably not )
+			if (location->root.empty() == false) {
+				path = path.substr(riter->first.length(), std::string::npos);
+				path = riter->second->root + path;
+			}
+			if (dirExists(path.c_str())) {
 				path += "/" + location->default_file;
 			}
 			break ;
@@ -101,20 +112,16 @@ void	Request::setPath() {
 	}
 }
 
-/* maybe map needs to be reset after handling */
-void	Request::setHeaderValues( const std::pair<std::string, std::string> &pair )
-{
+void	Request::setHeaderValues( const std::pair<std::string, std::string> &pair ) {
 	this->headerValues.insert(pair);
 }
 
-std::string	&Request::leftTrim( std::string &str, char c )
-{
+std::string	&Request::leftTrim( std::string &str, char c ) {
 	str.erase(0, str.find_first_not_of(c));
 	return str;
 }
 
-std::pair<std::string, std::string>	Request::splitToken( std::string token )
-{
+std::pair<std::string, std::string>	Request::splitToken( std::string token ) {
 	size_t	pos = 0;
 
 	pos = token.find(':');
@@ -126,16 +133,19 @@ std::pair<std::string, std::string>	Request::splitToken( std::string token )
 }
 
 
-void	Request::checkHeaderValues( void )
-{
+void	Request::checkHeaderValues( void ) {
 	if (headerValues.find("Host") == headerValues.end()) {
-		status = 400; // TODO don't know error code
-		LOG_RED("error: request is missing host");
+		status = 400;
+		LOG_RED_INFO("ERROR: request is missing host");
+	}
+	std::map<std::string, std::string>::iterator iter = headerValues.find("Cookie");
+	if (iter != headerValues.end()) {
+		cookie = iter->second.substr(iter->second.find_last_of("=") + 1, std::string::npos);
+		LOG_RED_INFO("cookie already set: " << cookie);
 	}
 }
 
-void	Request::parseHeader(std::string header)
-{
+void	Request::parseHeader(std::string header) {
 	std::string							delimiter = "\n";
 	size_t								pos = 0;
 	std::string							token;
@@ -151,7 +161,6 @@ void	Request::parseHeader(std::string header)
 		header.erase(0, pos + delimiter.length());
 	}
 }
-
 
 /* if there is a server that has a fitting name to the request, the request hast to get forwarded to that server */
 /* else we use the default server, which is the first from the config file, that uses the same port */
@@ -241,6 +250,7 @@ void	Request::processHeader(std::map<int, Server *> & servers) {
 	getBodyOutOfHeader();
 	parseHeader(header);
 	checkHeaderValues();
+	createCookie();
 	detectCorrectServer(servers);
 	setPath();
 	changePath();
@@ -251,15 +261,14 @@ void	Request::processHeader(std::map<int, Server *> & servers) {
 }
 
 int	Request::checkBodySize(void) {
-	std::string content_length;
-	size_t	type_start = header.find("Content-Length: ") + strlen("Content-Length: ");
+	std::string	content_length;
+	size_t		type_start = header.find("Content-Length: ") + strlen("Content-Length: ");
+	size_t		type_end = type_start;
 	if (type_start == std::string::npos)
 		LOG_RED_INFO("No Centent-Length in header");
-	size_t	type_end = type_start;
-
 	while(header[type_end] != '\n')
 		type_end++;
-	content_length = header.substr(type_start, type_end - type_start - 1); // TODO protect when content_lengt not written in header
+	content_length = header.substr(type_start, type_end - type_start - 1);
 	return (std::atol(content_length.c_str()));
 }
 
@@ -285,7 +294,7 @@ void Request::readHeader() {
 	int		buffer_size = 200000;
 	char	buffer[buffer_size]; // TODO dirty fix so that POST tester doesn't fail at / because of broken pipe
 	memset(buffer, 0, buffer_size * sizeof(char));
-	ssize_t bytes_read = recv(socket, buffer, buffer_size, 0);
+	ssize_t	bytes_read = recv(socket, buffer, buffer_size, 0);
 	if (bytes_read == -1) {
 		status = CLOSE_CONNECTION;
 		LOG_RED_INFO("bytes read -1: error");
@@ -303,13 +312,12 @@ void Request::readHeader() {
 }
 
 void	Request::readBodyChunked() {
-	int buffer_size = 200000;
-	char * read_body = NULL;
+	int		buffer_size = 200000;
+	char *	read_body = NULL;
 
 	read_body = new char[buffer_size];
 
-	if (body.find("\r\n\r\n") != std::string::npos)
-	{
+	if (body.find("\r\n\r\n") != std::string::npos) {
 		status = DONE_READING;
 		delete read_body;
 		return;
@@ -326,7 +334,7 @@ void	Request::readBodyChunked() {
 		return;
 	}
 	else {
-		LOG_RED_INFO("recv error occured"); // TODO this is weird shit
+		LOG_RED_INFO("ERROR: recv"); // TODO this is weird shit
 	}
 	if (body.find("\r\n\r\n") != std::string::npos) {
 		status = DONE_READING;

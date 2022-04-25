@@ -88,18 +88,18 @@ void	watchWriteSockets(t_accepter & acp, fd_set & write_sockets) {
 
 void accepter(std::map<int, Server *> & servers)
 {
-	t_accepter acp;
+	t_accepter	acp;
 
 	initAccepter(servers, acp);
 
 	int amount_ready_socks = 0;
 
-	struct timeval tv;
+	struct timeval	tv;
 	tv.tv_sec = 10;
 	tv.tv_usec = 0;
 
-	fd_set read_sockets;
-	fd_set write_sockets;
+	fd_set	read_sockets;
+	fd_set	write_sockets;
 
 	while (true){
 		FD_ZERO(&read_sockets);
@@ -132,20 +132,22 @@ int	main(int argc, char ** argv)
 {
 	signal(SIGPIPE, SIG_IGN);
 
-	std::string configFile;
 	//check if there is a config file in argv, if not we take the default server config file
+	std::string	configFile;
 	if (argc == 2)
 		configFile = argv[1];
 	else
 		configFile = "setup.conf";
+
 	//create a map of servers(Key: serversocket, Value: server class)
-	std::map<int, Server *> servers;
+	std::map<int, Server *>	servers;
+
 	//read the config file and setup the servers
 	read_config(configFile, servers);
+
 	//check if the servers are correctly setup
 	check_config(servers);
 
-	//hardest thing evaaaaaaa
 	accepter(servers);
 
 	return 0;

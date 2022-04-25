@@ -28,4 +28,4 @@ typedef struct s_accepter {
 	fd_set						watching_read_sockets;
 	fd_set						watching_write_sockets;
 	std::map<int, Request *>	requests;
-} t_accepter;
+}	t_accepter;
