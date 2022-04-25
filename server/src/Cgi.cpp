@@ -54,8 +54,9 @@ void	Cgi::setEnv() {
 void	Cgi::setInput() {
 	std::vector<std::string> inVec;
 
+	inVec.push_back(toAbsolutPath(request.server->cgi_path));
+	inVec.push_back("-f");
 	inVec.push_back(toAbsolutPath("cgi/" + request.filename));
-	//inVec.push_back("-f");
 	std::map<std::string, std::string> headerInfos;
 	while (request.headerKeyValuePairs.find("&") != std::string::npos) {
 		std::string strPair = request.headerKeyValuePairs.substr(0, request.headerKeyValuePairs.find("&"));
@@ -69,11 +70,11 @@ void	Cgi::setInput() {
 void	Cgi::runCgi() {
 	char ** localEnv = mapToArray(env);
 	
-	//int i = 0;
-	//while (input[i]) {
-	//	LOG_YELLOW_INFO("|" << input[i] << "|");
-	//	++i;
-	//}
+	int i = 0;
+	while (input[i]) {
+		LOG_YELLOW_INFO("|" << input[i] << "|");
+		++i;
+	}
 
 	int fin = fileno(inFile);
 	int fout = fileno(tempFile);
