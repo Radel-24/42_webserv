@@ -15,7 +15,6 @@ void	Request::writeRequest() {
 		else if (status == DONE_READING && (getRequestKey() == POST || getRequestKey() == PUT)) {
 			LOG_BLUE_INFO("POST Responder");
 			PostResponder pr(*this);
-			refreshFilesHTML(); // only for website
 		}
 		else if (status == DONE_READING && cgi_request == false && (getRequestKey() == GET || getRequestKey() == HEAD)) {
 			LOG_BLUE_INFO("GET Responder");
@@ -32,10 +31,14 @@ void	Request::writeRequest() {
 		}
 		responseCreated = true;
 	}
+	if (server->websiteConfig == true)
+		refreshFilesHTML(); // only for website
 	writeResponse();
 }
 
 // only for website
+// when called, change dir into upload directory and list all the files, that the user uploaded via POST
+// files.html gets created in sever root and gets returned when user clicks "Files" on Front End
 void	Request::refreshFilesHTML() {
 	std::string	cwd = getPWD();
 	std::string	execPath = cwd;
@@ -127,7 +130,6 @@ std::string	Request::formatString( std::string file_content ) {
 	return ret;
 }
 
-// can only delete one file
 void	Request::deleteResponder( void ) {
 	std::string	filename = getFilename();
 	std::string	deleteRoute = "." + server->root + server->uploadPath + "/" + filename;
@@ -142,11 +144,15 @@ void	Request::deleteResponder( void ) {
 		LOG_RED_INFO("error: file not found");
 }
 
+// directory listing of location
+// filling the response with the tree
 void	Request::doDirectoryListing( void ) {
 	std::string fileTree = server->createFileTree(location);
 	response = formatString(fileTree);
 }
 
+// check if directory listing is allowed on requested location
+// location has to exists
 bool	Request::checkDirectoryListing( void ) {
 	if (("/" + filename) != location->path) {
 		return false;

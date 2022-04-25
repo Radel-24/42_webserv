@@ -1,11 +1,5 @@
 #include "PostResponder.hpp"
 
-/*				TIMINGS
-AFTER 50-60 SEC CHUNKED BODY IS PRINTED
-AFTER 3-5 SEC CHUNKED BODY WITH THIS LOGIC IS OVER
-WRITE BODY TO FILE TAKES 20 SECS
--> SUM OF 1:25 MINUTES TO UPLOAD 100MB -> needs to be like max 5-10 secs
-*/
 PostResponder::PostResponder(Request & request ) : request(request) { run(); }
 
 void	PostResponder::uploadFiles( void )
@@ -26,9 +20,7 @@ void	PostResponder::uploadFiles( void )
 			continue ;
 		pos2 -= 1;
 
-
 		cutBody = request.body.substr(pos, pos2 - pos);
-
 
 		size_t	file_start = cutBody.find("filename=") + strlen("filename=") + 1;
 		size_t	file_end = file_start;
@@ -36,20 +28,17 @@ void	PostResponder::uploadFiles( void )
 			file_end++;
 		filename = cutBody.substr(file_start, file_end - file_start - 2);
 
-
 		size_t	name_start = cutBody.find("name=") + strlen("name=") + 1;
 		size_t	name_end = name_start;
 		while(cutBody[name_end] != ';')
 			name_end++;
 		name = cutBody.substr(name_start, name_end - name_start - 1);
 
-
 		size_t	type_start = cutBody.find("Content-Type: ") + strlen("Content-Type: ");
 		size_t	type_end = type_start;
 		while(cutBody[type_end] != '\n')
 			type_end++;
 		content_type = cutBody.substr(type_start, type_end - type_start - 1);
-
 
 		size_t	dblNewline = cutBody.find("\r\n\r\n");
 		bodyContent = cutBody.substr(dblNewline + 4, cutBody.length() - dblNewline - 4);
@@ -97,7 +86,7 @@ std::string	PostResponder::extractBoundary( void )
 	return request.header.substr(start, end - start);
 }
 
-//search body for first char until \r\n and hen convert it from hex to decimal
+// search body for first char until \r\n and then convert it from hex to decimal
 int	PostResponder::checkBodySizeChuncked(void) {
 	std::string content_length_in_hex;
 	size_t	type_start = request.body.find("\r\n");

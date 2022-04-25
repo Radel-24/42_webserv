@@ -15,9 +15,6 @@
 #include <vector>
 #include <set>
 
-
-
-
 struct Location {
 	public:
 		int							port;
@@ -55,6 +52,8 @@ class Server {
 		int									sock;
 		struct sockaddr_in					g_address;
 		int									backlog;
+
+		bool								websiteConfig;
 
 	private:
 		int									connection;
